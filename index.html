@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>班级信息墙</title>
     <style>
         /* ===== 基础样式 ===== */
@@ -1355,61 +1355,43 @@
         //  钉钉消息发送（模拟）
         // ================================================================
         // ================================================================
-//  钉钉消息发送（真实推送 - 已配置）
+// ================================================================
+//  钉钉消息发送（通过后端代理）
 // ================================================================
 
-var DING_WEBHOOK = 'https://oapi.dingtalk.com/robot/send?access_token=efc6dd930c477c804acc351c3a4cc924b72539dfc3134dce62e9c94132a4dc4b';
-var DING_SECRET = 'SEC0d6e9d85a8adf73b7773fd3524192e70104e983d23ee3ee06c9ed4fe20608857';
+var BACKEND_URL = '/send';  // 同域名下直接用相对路径
 
 function sendDingTalk(message, isEmergency) {
-    console.log('===== 准备发送钉钉消息 =====');
-    console.log('消息内容:', message);
-    console.log('是否紧急:', isEmergency);
+    console.log('===== 准备发送消息 =====');
+    console.log(message);
 
-    var url = DING_WEBHOOK;
-    var timestamp = Date.now();
-    var sign = CryptoJS.HmacSHA256(timestamp + '\n' + DING_SECRET, DING_SECRET).toString(CryptoJS.enc.Base64);
-    url = DING_WEBHOOK + '&timestamp=' + timestamp + '&sign=' + encodeURIComponent(sign);
-
-    var data = {
-        msgtype: 'markdown',
-        markdown: {
-            title: isEmergency ? '🚨 教学异常通报' : '📢 课堂点评通知',
-            text: message
-        },
-        at: {
-            isAtAll: false
-        }
-    };
-
-    console.log('发送到:', url);
-    console.log('发送数据:', data);
-
-    fetch(url, {
+    fetch(BACKEND_URL, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json'
         },
-        body: JSON.stringify(data)
+        body: JSON.stringify({
+            message: message,
+            isEmergency: isEmergency
+        })
     })
     .then(function(response) {
-        return response.json().then(function(result) {
-            return { status: response.status, body: result };
-        });
+        return response.json();
     })
     .then(function(result) {
-        if (result.status === 200 && result.body.errcode === 0) {
-            console.log('✅ 钉钉消息发送成功!');
+        if (result.success) {
+            console.log('✅ 消息发送成功!');
             showToast('✅ 已发送钉钉通知');
         } else {
-            console.log('❌ 钉钉发送失败:', result.status, result.body);
-            showToast('⚠️ 发送失败: ' + (result.body.errmsg || '未知错误'));
+            console.log('❌ 发送失败:', result.error);
+            showToast('⚠️ 发送失败: ' + result.error);
         }
     })
     .catch(function(err) {
         console.log('❌ 网络错误:', err);
         showToast('⚠️ 网络错误，请检查网络');
     });
+});
 }
 
         // ================================================================

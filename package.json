@@ -1,0 +1,13 @@
+{
+    "name": "dingtalk-proxy",
+    "version": "1.0.0",
+    "description": "钉钉消息转发代理",
+    "main": "server.js",
+    "scripts": {
+        "start": "node server.js"
+    },
+    "dependencies": {
+        "express": "^4.18.2",
+        "axios": "^1.6.0"
+    }
+}
