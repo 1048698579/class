@@ -963,7 +963,7 @@
     <!-- ===== 登录弹窗 ===== -->
     <div id="loginOverlay">
         <div id="loginBox">
-            <h2>🔐 身份验证</h2>
+            <h2>?? 身份验证</h2>
             <div class="sub">请选择账号并输入密码</div>
             <label>选择账号</label>
             <select id="loginUserSelect">
@@ -976,15 +976,15 @@
                 <label for="rememberMe" style="cursor:pointer;">记住我（7天免登录）</label>
             </div>
             <button class="login-btn" onclick="doLogin()">确认登录</button>
-            <div class="login-error" id="loginError">❌ 账号或密码错误，请重新输入</div>
-            <div style="text-align:center;margin-top:12px;font-size:12px;color:#ccc;">💡 默认超级管理员：admin / admin123</div>
+            <div class="login-error" id="loginError">? 账号或密码错误，请重新输入</div>
+            <div style="text-align:center;margin-top:12px;font-size:12px;color:#ccc;">?? 默认超级管理员：admin / admin123</div>
         </div>
     </div>
 
     <!-- ===== 顶部身份栏 ===== -->
     <div class="identity-bar hidden" id="identityBar">
         <div class="user-info">
-            👤 <span class="name" id="displayName">超级管理员</span>
+            ?? <span class="name" id="displayName">超级管理员</span>
             <span class="role" id="displayRole">· 超级管理员</span>
             <span class="class" id="displayClass"></span>
         </div>
@@ -993,47 +993,47 @@
 
     <!-- ===== 统计栏 ===== -->
     <div class="stats-bar hidden" id="statsBar">
-        <span class="stat-item present">✅ <span class="num" id="statPresent">0</span></span>
-        <span class="stat-item late">⏰ <span class="num" id="statLate">0</span></span>
-        <span class="stat-item absent">❌ <span class="num" id="statAbsent">0</span></span>
-        <span class="stat-item leave">📝 <span class="num" id="statLeave">0</span></span>
-        <span class="stat-item not-in-room">🚪 <span class="num" id="statNotInRoom">0</span></span>
+        <span class="stat-item present">? <span class="num" id="statPresent">0</span></span>
+        <span class="stat-item late">? <span class="num" id="statLate">0</span></span>
+        <span class="stat-item absent">? <span class="num" id="statAbsent">0</span></span>
+        <span class="stat-item leave">?? <span class="num" id="statLeave">0</span></span>
+        <span class="stat-item not-in-room">?? <span class="num" id="statNotInRoom">0</span></span>
     </div>
 
     <!-- ===== 头部 ===== -->
     <div class="header">
         <h1 id="className">加载中...</h1>
-        <div class="sub" id="classSub">🏫 扫码查看班级信息</div>
+        <div class="sub" id="classSub">?? 扫码查看班级信息</div>
     </div>
 
     <!-- ===== 教师团队 ===== -->
     <div class="card">
         <div class="card-title">
-            👨‍🏫 教师团队
+            ????? 教师团队
             <span class="badge" id="teacherBadge">点击可点评</span>
-            <span class="lock-icon" id="teacherLockIcon">🔒</span>
+            <span class="lock-icon" id="teacherLockIcon">??</span>
         </div>
         <div class="teacher-grid" id="teacherGrid"></div>
     </div>
 
     <!-- ===== 课程表 ===== -->
     <div class="card">
-        <div class="card-title">📚 课程表 <span class="badge">本周</span></div>
+        <div class="card-title">?? 课程表 <span class="badge">本周</span></div>
         <table class="schedule-table">
             <thead><tr><th>节次</th><th>周一</th><th>周二</th><th>周三</th><th>周四</th><th>周五</th></tr></thead>
             <tbody id="scheduleBody"></tbody>
         </table>
         <div class="admin-entry hidden" id="scheduleAdminEntry">
-            <button class="admin-btn" onclick="openAdminModal('schedule')">📝 编辑课程表</button>
+            <button class="admin-btn" onclick="openAdminModal('schedule')">?? 编辑课程表</button>
         </div>
     </div>
 
     <!-- ===== 座位表 ===== -->
     <div class="card">
         <div class="card-title">
-            💺 座位表
+            ?? 座位表
             <span class="badge" id="seatInfo">点击学生可标注</span>
-            <span class="lock-icon" id="seatLockIcon">🔒</span>
+            <span class="lock-icon" id="seatLockIcon">??</span>
         </div>
         <div class="seat-grid" id="seatGrid"></div>
         <div class="seat-legend">
@@ -1044,17 +1044,17 @@
             <span><span class="dot" style="background:#E8D5F5;border-color:#9B59B6;"></span> 未在教室</span>
         </div>
         <div class="action-row">
-            <button class="action-btn primary" id="classOverallBtn">📢 整体表现</button>
-            <button class="action-btn outline" id="resetAttendanceBtn">🔄 重置出勤</button>
-            <button class="action-btn outline" id="reportBtn">📋 出勤报表</button>
+            <button class="action-btn primary" id="classOverallBtn">?? 整体表现</button>
+            <button class="action-btn outline" id="resetAttendanceBtn">?? 重置出勤</button>
+            <button class="action-btn outline" id="reportBtn">?? 出勤报表</button>
         </div>
         <div class="admin-entry hidden" id="studentAdminEntry">
-            <button class="admin-btn" onclick="openAdminModal('student')">📝 管理学生名单</button>
-            <button class="admin-btn" onclick="openAdminModal('diner')">🍱 就餐统计</button>
+            <button class="admin-btn" onclick="openAdminModal('student')">?? 管理学生名单</button>
+            <button class="admin-btn" onclick="openAdminModal('diner')">?? 就餐统计</button>
         </div>
         <div class="admin-entry hidden" id="superAdminEntry">
-            <button class="admin-btn" onclick="openAdminModal('class')">🏫 班级管理</button>
-            <button class="admin-btn" onclick="openAdminModal('user')">👨‍🏫 教师账号</button>
+            <button class="admin-btn" onclick="openAdminModal('class')">?? 班级管理</button>
+            <button class="admin-btn" onclick="openAdminModal('user')">????? 教师账号</button>
         </div>
     </div>
 
@@ -1063,24 +1063,24 @@
         <div class="modal-box">
             <div class="modal-title" id="studentModalName">李小明</div>
             <div class="modal-sub" id="studentModalInfo">三年级(1)班 · 座位号 15</div>
-            <div class="section-label">📊 出勤状态</div>
+            <div class="section-label">?? 出勤状态</div>
             <div class="status-grid" id="studentStatusGrid">
-                <button class="status-btn present" data-status="present">✅ 到课</button>
-                <button class="status-btn late" data-status="late">⏰ 迟到</button>
-                <button class="status-btn absent" data-status="absent">❌ 缺勤</button>
-                <button class="status-btn leave" data-status="leave">📝 请假</button>
-                <button class="status-btn not-in-room" data-status="not-in-room">🚪 未在教室</button>
+                <button class="status-btn present" data-status="present">? 到课</button>
+                <button class="status-btn late" data-status="late">? 迟到</button>
+                <button class="status-btn absent" data-status="absent">? 缺勤</button>
+                <button class="status-btn leave" data-status="leave">?? 请假</button>
+                <button class="status-btn not-in-room" data-status="not-in-room">?? 未在教室</button>
             </div>
-            <div class="section-label">🌟 课堂表现</div>
-            <div class="comment-group-label">👍 表扬</div>
+            <div class="section-label">?? 课堂表现</div>
+            <div class="comment-group-label">?? 表扬</div>
             <div class="quick-grid" id="praiseGrid"></div>
-            <div class="comment-group-label">⚡ 待改进</div>
+            <div class="comment-group-label">? 待改进</div>
             <div class="quick-grid" id="negativeGrid"></div>
-            <div class="section-label">✏️ 补充说明（选填）</div>
+            <div class="section-label">?? 补充说明（选填）</div>
             <textarea class="custom-input" id="studentComment" placeholder="例如：该生平时表现优秀，今天状态不佳..."></textarea>
             <div class="submit-row">
                 <button class="submit-btn secondary" id="studentCancelBtn">取消</button>
-                <button class="submit-btn primary" id="studentSubmitBtn">✅ 提交</button>
+                <button class="submit-btn primary" id="studentSubmitBtn">? 提交</button>
             </div>
         </div>
     </div>
@@ -1090,18 +1090,18 @@
         <div class="modal-box">
             <div class="modal-title" id="teacherModalName">张明</div>
             <div class="modal-sub" id="teacherModalInfo">数学 · 三年级(1)班</div>
-            <div class="section-label">⚠️ 课堂异常通报</div>
+            <div class="section-label">?? 课堂异常通报</div>
             <div class="teacher-status-grid">
-                <button class="teacher-status-btn empty-class" data-status="empty">🕳️ 空堂</button>
-                <button class="teacher-status-btn phone" data-status="phone">📱 玩手机</button>
-                <button class="teacher-status-btn late" data-status="late">⏰ 教师迟到</button>
-                <button class="teacher-status-btn normal" data-status="normal" style="grid-column:span 3;">📋 正常（不推送）</button>
+                <button class="teacher-status-btn empty-class" data-status="empty">??? 空堂</button>
+                <button class="teacher-status-btn phone" data-status="phone">?? 玩手机</button>
+                <button class="teacher-status-btn late" data-status="late">? 教师迟到</button>
+                <button class="teacher-status-btn normal" data-status="normal" style="grid-column:span 3;">?? 正常（不推送）</button>
             </div>
-            <div class="section-label">✏️ 补充说明（选填）</div>
+            <div class="section-label">?? 补充说明（选填）</div>
             <textarea class="custom-input" id="teacherComment" placeholder="例如：教师迟到5分钟..."></textarea>
             <div class="submit-row">
                 <button class="submit-btn secondary" id="teacherCancelBtn">取消</button>
-                <button class="submit-btn danger" id="teacherSubmitBtn">🚨 提交异常通报</button>
+                <button class="submit-btn danger" id="teacherSubmitBtn">?? 提交异常通报</button>
             </div>
         </div>
     </div>
@@ -1109,25 +1109,25 @@
     <!-- ===== 班级整体表现弹窗 ===== -->
     <div class="modal-overlay" id="classOverallModal">
         <div class="modal-box">
-            <div class="modal-title">📢 班级整体表现</div>
+            <div class="modal-title">?? 班级整体表现</div>
             <div class="modal-sub" id="classOverallInfo">三年级(1)班</div>
-            <div class="section-label">🎯 课堂氛围</div>
+            <div class="section-label">?? 课堂氛围</div>
             <div class="class-comment-grid-full">
-                <button class="class-comment-btn-full atmosphere" data-value="积极活跃，互动良好">🔥 积极活跃</button>
-                <button class="class-comment-btn-full atmosphere" data-value="安静专注，秩序井然">📖 安静专注</button>
-                <button class="class-comment-btn-full atmosphere" data-value="略显沉闷，需调动">😐 略显沉闷</button>
+                <button class="class-comment-btn-full atmosphere" data-value="积极活跃，互动良好">?? 积极活跃</button>
+                <button class="class-comment-btn-full atmosphere" data-value="安静专注，秩序井然">?? 安静专注</button>
+                <button class="class-comment-btn-full atmosphere" data-value="略显沉闷，需调动">?? 略显沉闷</button>
             </div>
-            <div class="section-label">📋 纪律情况</div>
+            <div class="section-label">?? 纪律情况</div>
             <div class="class-comment-grid-full">
-                <button class="class-comment-btn-full discipline" data-value="纪律良好，无异常">✅ 纪律良好</button>
-                <button class="class-comment-btn-full discipline" data-value="个别学生需提醒">⚠️ 个别提醒</button>
-                <button class="class-comment-btn-full discipline" data-value="纪律松散，需整顿">🔴 需要整顿</button>
+                <button class="class-comment-btn-full discipline" data-value="纪律良好，无异常">? 纪律良好</button>
+                <button class="class-comment-btn-full discipline" data-value="个别学生需提醒">?? 个别提醒</button>
+                <button class="class-comment-btn-full discipline" data-value="纪律松散，需整顿">?? 需要整顿</button>
             </div>
-            <div class="section-label">✏️ 补充说明（选填）</div>
+            <div class="section-label">?? 补充说明（选填）</div>
             <textarea class="custom-input" id="classOverallComment" placeholder="例如：整体表现不错，建议加强互动..."></textarea>
             <div class="submit-row">
                 <button class="submit-btn secondary" id="classOverallCancelBtn">取消</button>
-                <button class="submit-btn primary" id="classOverallSubmitBtn">📢 提交整体评价</button>
+                <button class="submit-btn primary" id="classOverallSubmitBtn">?? 提交整体评价</button>
             </div>
         </div>
     </div>
@@ -1135,11 +1135,11 @@
     <!-- ===== 出勤报表弹窗 ===== -->
     <div class="modal-overlay" id="reportModal">
         <div class="modal-box">
-            <div class="modal-title">📋 今日出勤明细</div>
+            <div class="modal-title">?? 今日出勤明细</div>
             <div class="modal-sub" id="reportDate">2026-08-27</div>
             <div class="report-text" id="reportContent">加载中...</div>
             <div class="report-actions">
-                <button class="copy-btn" onclick="copyReport()">📋 复制报表</button>
+                <button class="copy-btn" onclick="copyReport()">?? 复制报表</button>
                 <button class="close-btn" onclick="closeReport()">关闭</button>
             </div>
         </div>
@@ -1148,18 +1148,18 @@
     <!-- ===== 管理弹窗 ===== -->
     <div class="modal-overlay" id="adminModal">
         <div class="modal-box" style="max-width:520px;">
-            <div class="modal-title">📝 数据管理</div>
+            <div class="modal-title">?? 数据管理</div>
             <div class="modal-sub" id="adminModalSub">三年级(1)班</div>
             <div class="admin-tabs" id="adminTabs">
-                <button class="active" data-tab="student">👨‍🎓 学生</button>
-                <button data-tab="schedule">📚 课表</button>
-                <button data-tab="teacher">👨‍🏫 教师</button>
-                <button data-tab="diner" class="hidden" id="dinerTabBtn">🍱 就餐</button>
-                <button data-tab="class" class="hidden" id="classTabBtn">🏫 班级</button>
-                <button data-tab="user" class="hidden" id="userTabBtn">👤 账号</button>
+                <button class="active" data-tab="student">????? 学生</button>
+                <button data-tab="schedule">?? 课表</button>
+                <button data-tab="teacher">????? 教师</button>
+                <button data-tab="diner" class="hidden" id="dinerTabBtn">?? 就餐</button>
+                <button data-tab="class" class="hidden" id="classTabBtn">?? 班级</button>
+                <button data-tab="user" class="hidden" id="userTabBtn">?? 账号</button>
             </div>
             <div id="adminContent"></div>
-            <div class="admin-tip">💡 修改后自动保存到云端</div>
+            <div class="admin-tip">?? 修改后自动保存到云端</div>
             <div class="submit-row">
                 <button class="submit-btn secondary" onclick="closeAdminModal()">关闭</button>
             </div>
@@ -1170,7 +1170,7 @@
 
     <script>
         // ================================================================
-        //  📌 权限配置
+        //  ?? 权限配置
         // ================================================================
         var ROLE_LEVELS = {
             '超级管理员': 5,
@@ -1181,13 +1181,13 @@
         };
 
         // ================================================================
-        //  📌 点评词配置
+        //  ?? 点评词配置
         // ================================================================
-        var PRAISE_COMMENTS = ['🌟 听课专注', '🙋 积极发言', '📝 笔记认真', '🤝 善于合作', '💡 思维活跃'];
-        var NEGATIVE_COMMENTS = ['💬 交头接耳', '😴 听课走神', '🤫 纪律差', '📱 注意力分散', '📢 随意讲话'];
+        var PRAISE_COMMENTS = ['?? 听课专注', '?? 积极发言', '?? 笔记认真', '?? 善于合作', '?? 思维活跃'];
+        var NEGATIVE_COMMENTS = ['?? 交头接耳', '?? 听课走神', '?? 纪律差', '?? 注意力分散', '?? 随意讲话'];
 
         // ================================================================
-        //  📌 全局状态
+        //  ?? 全局状态
         // ================================================================
         var USERS = {}
         var CLASS_DATA_LIST = {};
@@ -1347,13 +1347,13 @@
                         if (serverData.attendanceRecords) {
                             attendanceRecords = serverData.attendanceRecords;
                         }
-                        console.log('✅ 从服务器加载数据成功');
+                        console.log('? 从服务器加载数据成功');
                         return true;
                     }
                     return false;
                 })
                 .catch(function(err) {
-                    console.log('⚠️ 从服务器加载数据失败:', err);
+                    console.log('?? 从服务器加载数据失败:', err);
                     return false;
                 });
         }
@@ -1379,15 +1379,15 @@
             .then(function(response) { return response.json(); })
             .then(function(result) {
                 if (result.success) {
-                    console.log('✅ 数据已同步到服务器');
+                    console.log('? 数据已同步到服务器');
                     return true;
                 } else {
-                    console.log('❌ 数据同步失败:', result.error);
+                    console.log('? 数据同步失败:', result.error);
                     return false;
                 }
             })
             .catch(function(err) {
-                console.log('❌ 数据同步网络错误:', err);
+                console.log('? 数据同步网络错误:', err);
                 return false;
             });
         }
@@ -1412,16 +1412,16 @@
             .then(function(response) { return response.json(); })
             .then(function(result) {
                 if (result.success) {
-                    console.log('✅ 消息发送成功!');
-                    showToast('✅ 已发送钉钉通知');
+                    console.log('? 消息发送成功!');
+                    showToast('? 已发送钉钉通知');
                 } else {
-                    console.log('❌ 发送失败:', result.error);
-                    showToast('⚠️ 发送失败: ' + result.error);
+                    console.log('? 发送失败:', result.error);
+                    showToast('?? 发送失败: ' + result.error);
                 }
             })
             .catch(function(err) {
-                console.log('❌ 网络错误:', err);
-                showToast('⚠️ 网络错误，请检查网络');
+                console.log('? 网络错误:', err);
+                showToast('?? 网络错误，请检查网络');
             });
         }
 
@@ -1471,7 +1471,7 @@
             }
             showUI();
             loadClassData();
-            showToast('👋 欢迎回来，' + user.name);
+            showToast('?? 欢迎回来，' + user.name);
             return true;
         }
 
@@ -1514,7 +1514,7 @@
                 else if (teacherStatus[i] === 'phone') warnClass = 'warning-phone';
                 else if (teacherStatus[i] === 'late') warnClass = 'warning-late';
                 var disabledClass = canEdit ? '' : ' disabled';
-                var hint = canEdit ? '点击点评' : '🔒 仅领导可评';
+                var hint = canEdit ? '点击点评' : '?? 仅领导可评';
                 html += '<div class="teacher-item ' + warnClass + disabledClass + '" data-index="' + i + '">' +
                     '<div class="name">' + t.name + '</div>' +
                     '<div class="role">' + t.role + '</div>' +
@@ -1531,7 +1531,7 @@
                     });
                 })(items[i]);
             }
-            $('teacherLockIcon').textContent = canEdit ? '🔓' : '🔒';
+            $('teacherLockIcon').textContent = canEdit ? '??' : '??';
             $('teacherBadge').textContent = canEdit ? '点击可点评' : '仅领导可点评';
         }
 
@@ -1572,7 +1572,7 @@
                 var name = students[i];
                 var fontSize = name.length >= 4 ? '11px' : '12px';
                 var disabledClass = canEdit ? '' : ' disabled';
-                var hint = canEdit ? '' : '<span class="seat-hint">🔒</span>';
+                var hint = canEdit ? '' : '<span class="seat-hint">??</span>';
                 html += '<div class="seat' + disabledClass + '" data-index="' + i + '" style="font-size:' + fontSize +
                     ';">' +
                     name + '<span class="status-dot"></span>' + hint + '</div>';
@@ -1588,7 +1588,7 @@
                 })(seats[i]);
             }
             updateSeatStatus();
-            $('seatLockIcon').textContent = canEdit ? '🔓' : '🔒';
+            $('seatLockIcon').textContent = canEdit ? '??' : '??';
             var btns = ['classOverallBtn', 'resetAttendanceBtn', 'reportBtn'];
             for (var i = 0; i < btns.length; i++) {
                 var btn = $(btns[i]);
@@ -1619,12 +1619,12 @@
                 el.classList.remove('present', 'late', 'absent', 'leave', 'not-in-room');
                 var dot = el.querySelector('.status-dot');
                 if (status === 'present') { el.classList.add('present');
-                    dot.textContent = '✅'; } else if (status === 'late') { el.classList.add('late');
-                    dot.textContent = '⏰'; } else if (status === 'absent') { el.classList.add('absent');
-                    dot.textContent = '❌'; } else if (status === 'leave') { el.classList.add('leave');
-                    dot.textContent = '📝'; } else if (status === 'not-in-room') { el.classList.add('not-in-room');
-                    dot.textContent = '🚪'; } else { el.classList.add('present');
-                    dot.textContent = '✅'; }
+                    dot.textContent = '?'; } else if (status === 'late') { el.classList.add('late');
+                    dot.textContent = '?'; } else if (status === 'absent') { el.classList.add('absent');
+                    dot.textContent = '?'; } else if (status === 'leave') { el.classList.add('leave');
+                    dot.textContent = '??'; } else if (status === 'not-in-room') { el.classList.add('not-in-room');
+                    dot.textContent = '??'; } else { el.classList.add('present');
+                    dot.textContent = '?'; }
             }
             updateStats();
             saveDataToServer();
@@ -1671,11 +1671,11 @@
         //  学生弹窗
         // ================================================================
         function openStudentModal(index) {
-            if (!currentUser) { showToast('🔒 请先登录'); return; }
+            if (!currentUser) { showToast('?? 请先登录'); return; }
             var students = getCurrentStudents();
             if (!students || index >= students.length) return;
             var canEdit = canEditClass(currentUser, currentClassKey);
-            if (!canEdit) { showToast('🔒 您无权操作该班'); return; }
+            if (!canEdit) { showToast('?? 您无权操作该班'); return; }
             selectedStudentIndex = index;
             var data = getCurrentData();
             document.getElementById('studentModalName').textContent = students[index];
@@ -1707,8 +1707,8 @@
         //  教师弹窗
         // ================================================================
         function openTeacherModal(index) {
-            if (!currentUser) { showToast('🔒 请先登录'); return; }
-            if (getUserRoleLevel(currentUser) < 3) { showToast('🔒 仅领导可点评教师'); return; }
+            if (!currentUser) { showToast('?? 请先登录'); return; }
+            if (getUserRoleLevel(currentUser) < 3) { showToast('?? 仅领导可点评教师'); return; }
             var teachers = getCurrentTeachers();
             if (!teachers || index >= teachers.length) return;
             selectedTeacherIndex = index;
@@ -1731,7 +1731,7 @@
         //  班级整体表现
         // ================================================================
         function openClassOverallModal() {
-            if (!currentUser) { showToast('🔒 请先登录'); return; }
+            if (!currentUser) { showToast('?? 请先登录'); return; }
             var data = getCurrentData();
             document.getElementById('classOverallInfo').textContent = data.className;
             document.getElementById('classOverallComment').value = '';
@@ -1780,27 +1780,27 @@
 
             var isLeader = getUserRoleLevel(currentUser) >= 3;
             if (isLeader && comment) {
-                var statusMap = { present: '✅ 到课', late: '⏰ 迟到', absent: '❌ 缺勤', leave: '📝 请假',
-                    'not-in-room': '🚪 未在教室' };
-                var statusLabel = status ? (statusMap[status] || status) : '✅ 到课';
+                var statusMap = { present: '? 到课', late: '? 迟到', absent: '? 缺勤', leave: '?? 请假',
+                    'not-in-room': '?? 未在教室' };
+                var statusLabel = status ? (statusMap[status] || status) : '? 到课';
                 var canSend = canSendDingTalk(currentUser, currentClassKey);
-                var msg = '📢 **学生课堂点评**\n\n' +
-                    '🏫 班级：' + data.className + '\n' +
-                    '👤 学生：' + name + '\n' +
-                    '📊 出勤：' + statusLabel + '\n' +
-                    '💬 点评：' + comment + '\n' +
-                    '👨‍🏫 点评人：' + currentUser.name + '（' + currentUser.role + '）\n' +
-                    '🕐 时间：' + getNowStr();
+                var msg = '?? **学生课堂点评**\n\n' +
+                    '?? 班级：' + data.className + '\n' +
+                    '?? 学生：' + name + '\n' +
+                    '?? 出勤：' + statusLabel + '\n' +
+                    '?? 点评：' + comment + '\n' +
+                    '????? 点评人：' + currentUser.name + '（' + currentUser.role + '）\n' +
+                    '?? 时间：' + getNowStr();
                 if (canSend) {
                     sendDingTalk(msg, false);
-                    showToast('✅ 已点评 ' + name + '，已通知班主任');
+                    showToast('? 已点评 ' + name + '，已通知班主任');
                 } else {
-                    showToast('✅ 已点评 ' + name + '（本班记录）');
+                    showToast('? 已点评 ' + name + '（本班记录）');
                 }
             } else {
-                var statusMap = { present: '✅ 到课', late: '⏰ 迟到', absent: '❌ 缺勤', leave: '📝 请假',
-                    'not-in-room': '🚪 未在教室' };
-                showToast('✅ 已更新 ' + name + ' 状态：' + (statusMap[status] || status));
+                var statusMap = { present: '? 到课', late: '? 迟到', absent: '? 缺勤', leave: '?? 请假',
+                    'not-in-room': '?? 未在教室' };
+                showToast('? 已更新 ' + name + ' 状态：' + (statusMap[status] || status));
             }
             closeStudentModal();
         }
@@ -1819,27 +1819,27 @@
             if (status === 'normal') {
                 teacherStatus[selectedTeacherIndex] = 'normal';
                 renderTeachers();
-                showToast('✅ 已记录：' + t.name + ' 正常授课');
+                showToast('? 已记录：' + t.name + ' 正常授课');
                 closeTeacherModal();
                 return;
             }
-            var statusMap = { empty: '🕳️ 空堂（教师不在教室）', phone: '📱 玩手机/做与教学无关的事', late: '⏰ 教师迟到' };
+            var statusMap = { empty: '??? 空堂（教师不在教室）', phone: '?? 玩手机/做与教学无关的事', late: '? 教师迟到' };
             teacherStatus[selectedTeacherIndex] = status;
             renderTeachers();
 
             var canSend = canSendDingTalk(currentUser, currentClassKey);
-            var msg = '🚨 **教学异常紧急通报**\n\n' +
-                '🏫 班级：' + data.className + '\n' +
-                '👨‍🏫 教师：' + t.name + '（' + t.role.replace('班主任 · ', '') + '）\n' +
-                '⚠️ 问题：' + (statusMap[status] || status) + '\n' +
-                '📝 备注：' + (comment || '无') + '\n' +
-                '👨‍🏫 报告人：' + currentUser.name + '（' + currentUser.role + '）\n' +
-                '🕐 时间：' + getNowStr();
+            var msg = '?? **教学异常紧急通报**\n\n' +
+                '?? 班级：' + data.className + '\n' +
+                '????? 教师：' + t.name + '（' + t.role.replace('班主任 · ', '') + '）\n' +
+                '?? 问题：' + (statusMap[status] || status) + '\n' +
+                '?? 备注：' + (comment || '无') + '\n' +
+                '????? 报告人：' + currentUser.name + '（' + currentUser.role + '）\n' +
+                '?? 时间：' + getNowStr();
             if (canSend) {
                 sendDingTalk(msg, true);
-                showToast('🚨 已通报：' + t.name + ' ' + (statusMap[status] || status));
+                showToast('?? 已通报：' + t.name + ' ' + (statusMap[status] || status));
             } else {
-                showToast('✅ 已记录：' + t.name + ' ' + (statusMap[status] || status) + '（本班记录）');
+                showToast('? 已记录：' + t.name + ' ' + (statusMap[status] || status) + '（本班记录）');
             }
             closeTeacherModal();
         }
@@ -1853,31 +1853,31 @@
             var at = sa ? sa.dataset.value : '未评价';
             var dt = sd ? sd.dataset.value : '未评价';
             var canSend = canSendDingTalk(currentUser, currentClassKey);
-            var msg = '📢 **班级整体表现点评**\n\n' +
-                '🏫 班级：' + data.className + '\n' +
-                '🎯 课堂氛围：' + at + '\n' +
-                '📋 纪律情况：' + dt + '\n' +
-                '📝 补充说明：' + (comment || '无') + '\n' +
-                '👨‍🏫 评价人：' + currentUser.name + '（' + currentUser.role + '）\n' +
-                '🕐 时间：' + getNowStr();
+            var msg = '?? **班级整体表现点评**\n\n' +
+                '?? 班级：' + data.className + '\n' +
+                '?? 课堂氛围：' + at + '\n' +
+                '?? 纪律情况：' + dt + '\n' +
+                '?? 补充说明：' + (comment || '无') + '\n' +
+                '????? 评价人：' + currentUser.name + '（' + currentUser.role + '）\n' +
+                '?? 时间：' + getNowStr();
             if (canSend) {
                 sendDingTalk(msg, false);
-                showToast('✅ 班级整体评价已发送');
+                showToast('? 班级整体评价已发送');
             } else {
-                showToast('✅ 班级整体评价已记录');
+                showToast('? 班级整体评价已记录');
             }
             closeClassOverallModal();
         }
 
         function resetAttendance() {
-            if (!canEditClass(currentUser, currentClassKey)) { showToast('🔒 您无权重置该班出勤'); return; }
+            if (!canEditClass(currentUser, currentClassKey)) { showToast('?? 您无权重置该班出勤'); return; }
             if (confirm('确认将全班状态重置为"到课"吗？')) { seatStatus = {};
                 updateSeatStatus();
-                showToast('✅ 已重置今日出勤状态'); }
+                showToast('? 已重置今日出勤状态'); }
         }
 
         function openReport() {
-            if (!currentUser) { showToast('🔒 请先登录'); return; }
+            if (!currentUser) { showToast('?? 请先登录'); return; }
             var students = getCurrentStudents();
             var p = [],
                 l = [],
@@ -1893,13 +1893,13 @@
                 else if (status === 'leave') le.push(name);
                 else if (status === 'not-in-room') n.push(name);
             }
-            var text = '📊 今日出勤明细（' + getTodayStr() + '）\n\n' +
-                '✅ 到课：' + (p.length > 0 ? p.join('、') : '无') + '（' + p.length + '人）\n\n' +
-                '⏰ 迟到：' + (l.length > 0 ? l.join('、') : '无') + '（' + l.length + '人）\n\n' +
-                '❌ 缺勤：' + (a.length > 0 ? a.join('、') : '无') + '（' + a.length + '人）\n\n' +
-                '📝 请假：' + (le.length > 0 ? le.join('、') : '无') + '（' + le.length + '人）\n\n' +
-                '🚪 未在教室：' + (n.length > 0 ? n.join('、') : '无') + '（' + n.length + '人）\n\n' +
-                '📌 总计：' + students.length + '人';
+            var text = '?? 今日出勤明细（' + getTodayStr() + '）\n\n' +
+                '? 到课：' + (p.length > 0 ? p.join('、') : '无') + '（' + p.length + '人）\n\n' +
+                '? 迟到：' + (l.length > 0 ? l.join('、') : '无') + '（' + l.length + '人）\n\n' +
+                '? 缺勤：' + (a.length > 0 ? a.join('、') : '无') + '（' + a.length + '人）\n\n' +
+                '?? 请假：' + (le.length > 0 ? le.join('、') : '无') + '（' + le.length + '人）\n\n' +
+                '?? 未在教室：' + (n.length > 0 ? n.join('、') : '无') + '（' + n.length + '人）\n\n' +
+                '?? 总计：' + students.length + '人';
             document.getElementById('reportContent').textContent = text;
             document.getElementById('reportDate').textContent = getTodayStr();
             document.getElementById('reportModal').classList.add('active');
@@ -1910,7 +1910,7 @@
         function copyReport() {
             var text = document.getElementById('reportContent').textContent;
             if (navigator.clipboard) {
-                navigator.clipboard.writeText(text).then(function() { showToast('✅ 已复制到剪贴板'); }).catch(function() {
+                navigator.clipboard.writeText(text).then(function() { showToast('? 已复制到剪贴板'); }).catch(function() {
                     copyTextFallback(text);
                 });
             } else { copyTextFallback(text); }
@@ -1923,18 +1923,18 @@
             ta.select();
             document.execCommand('copy');
             document.body.removeChild(ta);
-            showToast('✅ 已复制到剪贴板');
+            showToast('? 已复制到剪贴板');
         }
 
         // ================================================================
         //  管理弹窗
         // ================================================================
         function openAdminModal(tab) {
-            if (!currentUser) { showToast('🔒 请先登录'); return; }
+            if (!currentUser) { showToast('?? 请先登录'); return; }
             // 权限检查
             if (tab === 'user' || tab === 'class') {
                 if (!canManageUsers(currentUser) && !canEditAllClasses(currentUser)) {
-                    showToast('🔒 您无权管理账号或班级');
+                    showToast('?? 您无权管理账号或班级');
                     return;
                 }
             }
@@ -1957,19 +1957,19 @@
             var tabsHtml = '';
             var tabs = [];
             if (canEdit || getUserRoleLevel(currentUser) >= 3) {
-                tabs.push({ key: 'student', label: '👨‍🎓 学生' });
-                tabs.push({ key: 'schedule', label: '📚 课表' });
-                tabs.push({ key: 'teacher', label: '👨‍🏫 教师' });
+                tabs.push({ key: 'student', label: '????? 学生' });
+                tabs.push({ key: 'schedule', label: '?? 课表' });
+                tabs.push({ key: 'teacher', label: '????? 教师' });
             }
             if (currentUser && getUserRoleLevel(currentUser) >= 3) {
-                tabs.push({ key: 'diner', label: '🍱 就餐' });
+                tabs.push({ key: 'diner', label: '?? 就餐' });
             }
             if (canManageUsers(currentUser) || canEditAllClasses(currentUser)) {
-                tabs.push({ key: 'class', label: '🏫 班级' });
-                tabs.push({ key: 'user', label: '👤 账号' });
+                tabs.push({ key: 'class', label: '?? 班级' });
+                tabs.push({ key: 'user', label: '?? 账号' });
             }
             if (tabs.length === 0) {
-                tabs.push({ key: 'student', label: '👨‍🎓 学生' });
+                tabs.push({ key: 'student', label: '????? 学生' });
             }
 
             for (var i = 0; i < tabs.length; i++) {
@@ -2008,7 +2008,7 @@
                     '" onchange="updateStudentName(' + i + ', this.value)"></td>' +
                     '<td><input type="checkbox" ' + isDiner + ' onchange="updateStudentDiner(' + i +
                     ', this.checked)"></td>' +
-                    '<td><button class="del-btn" onclick="deleteStudent(' + i + ')">✕</button></td>' +
+                    '<td><button class="del-btn" onclick="deleteStudent(' + i + ')">?</button></td>' +
                     '</tr>';
             }
             html += '</tbody></table></div>';
@@ -2016,10 +2016,10 @@
                 '<input type="text" id="newStudentName" placeholder="输入新学生姓名">' +
                 '<label style="display:flex;align-items:center;gap:4px;font-size:13px;color:#666;">' +
                 '<input type="checkbox" id="newStudentDiner" checked> 在校就餐</label>' +
-                '<button onclick="addStudent()">➕ 添加</button>' +
+                '<button onclick="addStudent()">? 添加</button>' +
                 '</div>' +
                 '<div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap;">' +
-                '<button onclick="batchAddStudents()" style="padding:6px 16px;border:1px solid #4A90D9;border-radius:6px;background:white;color:#4A90D9;font-size:13px;cursor:pointer;">📋 批量添加</button>' +
+                '<button onclick="batchAddStudents()" style="padding:6px 16px;border:1px solid #4A90D9;border-radius:6px;background:white;color:#4A90D9;font-size:13px;cursor:pointer;">?? 批量添加</button>' +
                 '</div>';
             return html;
         }
@@ -2035,7 +2035,7 @@
             saveClassData(data);
             renderAdminContent();
             renderSeats();
-            showToast('✅ 已添加：' + name);
+            showToast('? 已添加：' + name);
             input.value = '';
         }
 
@@ -2043,9 +2043,9 @@
             var names = prompt('请输入学生姓名，用逗号、顿号或空格分隔：\n例如：张三、李四、王五');
             if (names === null) return;
             names = names.trim();
-            if (names === '') { showToast('⚠️ 请输入姓名'); return; }
+            if (names === '') { showToast('?? 请输入姓名'); return; }
             var list = names.split(/[,，、\s\n]+/).filter(function(s) { return s.trim() !== ''; });
-            if (list.length === 0) { showToast('⚠️ 未识别到有效姓名'); return; }
+            if (list.length === 0) { showToast('?? 未识别到有效姓名'); return; }
             var eatDiner = confirm('这批学生是否都在校就餐？\n点击"确定"全部在校就餐，"取消"则全部不在校就餐');
             var data = getCurrentData();
             if (!data.diners) data.diners = {};
@@ -2057,7 +2057,7 @@
             saveClassData(data);
             renderAdminContent();
             renderSeats();
-            showToast('✅ 已添加 ' + list.length + ' 名学生');
+            showToast('? 已添加 ' + list.length + ' 名学生');
         }
 
         function deleteStudent(index) {
@@ -2075,7 +2075,7 @@
             saveClassData(data);
             renderAdminContent();
             renderSeats();
-            showToast('✅ 已删除');
+            showToast('? 已删除');
         }
 
         function updateStudentName(index, newName) {
@@ -2090,7 +2090,7 @@
                 data.students[index] = newName.trim();
                 saveClassData(data);
                 renderSeats();
-                showToast('✅ 已更新');
+                showToast('? 已更新');
             }
         }
 
@@ -2100,7 +2100,7 @@
             if (!data.diners) data.diners = {};
             data.diners[name] = checked;
             saveClassData(data);
-            showToast('✅ 已更新就餐状态');
+            showToast('? 已更新就餐状态');
         }
 
         // ================================================================
@@ -2127,10 +2127,10 @@
                         '" style="width:100%;padding:4px;border:1px solid #E5E7EB;border-radius:4px;font-size:12px;" data-row="' +
                         r + '" data-col="' + c + '" onchange="updateScheduleCell(' + r + ',' + c + ', this.value)"></td>';
                 }
-                html += '<td><button class="del-btn" onclick="deleteScheduleRow(' + r + ')">✕</button></td></tr>';
+                html += '<td><button class="del-btn" onclick="deleteScheduleRow(' + r + ')">?</button></td></tr>';
             }
             html += '</tbody></table></div>';
-            html += '<div class="admin-add-row"><button onclick="addScheduleRow()" style="padding:6px 16px;border:1px solid #4A90D9;border-radius:6px;background:white;color:#4A90D9;font-size:13px;cursor:pointer;">➕ 增加一节</button></div>';
+            html += '<div class="admin-add-row"><button onclick="addScheduleRow()" style="padding:6px 16px;border:1px solid #4A90D9;border-radius:6px;background:white;color:#4A90D9;font-size:13px;cursor:pointer;">? 增加一节</button></div>';
             return html;
         }
 
@@ -2148,7 +2148,7 @@
             saveClassData(data);
             renderAdminContent();
             renderSchedule();
-            showToast('✅ 已增加一节');
+            showToast('? 已增加一节');
         }
 
         function deleteScheduleRow(row) {
@@ -2158,7 +2158,7 @@
             saveClassData(data);
             renderAdminContent();
             renderSchedule();
-            showToast('✅ 已删除');
+            showToast('? 已删除');
         }
 
         // ================================================================
@@ -2172,12 +2172,12 @@
                     '" onchange="updateTeacherField(' + i + ',\'name\', this.value)"></td>' +
                     '<td><input type="text" value="' + teachers[i].role + '" data-index="' + i +
                     '" onchange="updateTeacherField(' + i + ',\'role\', this.value)"></td>' +
-                    '<td><button class="del-btn" onclick="deleteTeacher(' + i + ')">✕</button></td></tr>';
+                    '<td><button class="del-btn" onclick="deleteTeacher(' + i + ')">?</button></td></tr>';
             }
             html += '</tbody></table></div>';
             html += '<div class="admin-add-row"><input type="text" id="newTeacherName" placeholder="教师姓名" style="flex:1;">' +
                 '<input type="text" id="newTeacherRole" placeholder="学科/角色" style="flex:1;">' +
-                '<button onclick="addTeacher()">➕ 添加</button></div>';
+                '<button onclick="addTeacher()">? 添加</button></div>';
             return html;
         }
 
@@ -2192,7 +2192,7 @@
             saveClassData(data);
             renderAdminContent();
             renderTeachers();
-            showToast('✅ 已添加：' + name);
+            showToast('? 已添加：' + name);
             nameInput.value = '';
             roleInput.value = '';
         }
@@ -2204,7 +2204,7 @@
             saveClassData(data);
             renderAdminContent();
             renderTeachers();
-            showToast('✅ 已删除');
+            showToast('? 已删除');
         }
 
         function updateTeacherField(index, field, value) {
@@ -2244,19 +2244,19 @@
                     }
                 }
             }
-            html += '📊 <strong>' + getCurrentData().className + '</strong> 今日就餐统计（' + today + '）<br>';
-            html += '🍱 在校就餐人数：<strong>' + totalDiners + '</strong> 人 | ';
-            html += '✅ 正常就餐：<strong style="color:#28A745;">' + presentDiners + '</strong> 人 | ';
-            html += '⚠️ 停餐（请假/缺勤）：<strong style="color:#DC3545;">' + stopDiners + '</strong> 人';
+            html += '?? <strong>' + getCurrentData().className + '</strong> 今日就餐统计（' + today + '）<br>';
+            html += '?? 在校就餐人数：<strong>' + totalDiners + '</strong> 人 | ';
+            html += '? 正常就餐：<strong style="color:#28A745;">' + presentDiners + '</strong> 人 | ';
+            html += '?? 停餐（请假/缺勤）：<strong style="color:#DC3545;">' + stopDiners + '</strong> 人';
             html += '</div>';
 
             // 月统计
             var month = today.substring(0, 7);
             html += '<div class="stats-month-selector">' +
-                '<label style="font-size:13px;color:#666;">📅 月份：</label>' +
+                '<label style="font-size:13px;color:#666;">?? 月份：</label>' +
                 '<input type="month" id="dinerMonth" value="' + month + '">' +
-                '<button onclick="loadMonthlyDinerStats()">📊 统计</button>' +
-                '<button onclick="exportDinerReport()" style="background:#28A745;">📥 导出报账单</button>' +
+                '<button onclick="loadMonthlyDinerStats()">?? 统计</button>' +
+                '<button onclick="exportDinerReport()" style="background:#28A745;">?? 导出报账单</button>' +
                 '</div>';
             html += '<div id="monthlyDinerResult"><div style="color:#999;font-size:13px;padding:10px;text-align:center;">请点击"统计"查看月度数据</div></div>';
 
@@ -2304,7 +2304,7 @@
                 if (!isDiner) continue; // 不在校就餐的学生不显示
 
                 html += '<tr><td class="student-name">' + name + '</td>';
-                html += '<td class="diner-yes">✅</td>';
+                html += '<td class="diner-yes">?</td>';
 
                 var normalCount = 0,
                     stopCount = 0;
@@ -2322,10 +2322,10 @@
                         status = attendanceRecords[dateStr][currentClassKey][name];
                     }
                     if (status === 'leave' || status === 'absent') {
-                        html += '<td class="status-stop">⚠️</td>';
+                        html += '<td class="status-stop">??</td>';
                         stopCount++;
                     } else {
-                        html += '<td class="status-present">✅</td>';
+                        html += '<td class="status-present">?</td>';
                         normalCount++;
                     }
                 }
@@ -2336,7 +2336,7 @@
                 totalStop += stopCount;
             }
 
-            html += '<tr class="stats-total-row"><td colspan="2">📊 合计</td>';
+            html += '<tr class="stats-total-row"><td colspan="2">?? 合计</td>';
             var totalDays = 0;
             for (var d = 1; d <= daysInMonth; d++) {
                 var dayOfWeek = new Date(year, mon - 1, d).getDay();
@@ -2353,13 +2353,13 @@
 
             html += '</tbody></table></div>';
             html += '<div style="margin-top:10px;font-size:13px;color:#888;">' +
-                '✅ 正常就餐：<strong style="color:#28A745;">' + totalNormal + '</strong> 人次 | ' +
-                '⚠️ 停餐：<strong style="color:#DC3545;">' + totalStop + '</strong> 人次 | ' +
-                '📌 应就餐：<strong>' + (totalNormal + totalStop) + '</strong> 人次' +
+                '? 正常就餐：<strong style="color:#28A745;">' + totalNormal + '</strong> 人次 | ' +
+                '?? 停餐：<strong style="color:#DC3545;">' + totalStop + '</strong> 人次 | ' +
+                '?? 应就餐：<strong>' + (totalNormal + totalStop) + '</strong> 人次' +
                 '</div>';
 
             document.getElementById('monthlyDinerResult').innerHTML = html;
-            showToast('✅ 已加载 ' + month + ' 就餐统计');
+            showToast('? 已加载 ' + month + ' 就餐统计');
         }
 
         function exportDinerReport() {
@@ -2445,7 +2445,7 @@
             var className = getCurrentData().className || '班级';
             link.download = className + '_' + month + '_就餐报账单.csv';
             link.click();
-            showToast('✅ 导出成功！');
+            showToast('? 导出成功！');
         }
 
         // ================================================================
@@ -2472,14 +2472,14 @@
                 }
                 html += '<tr><td><strong>' + key + '</strong></td><td>' + cls.className + '</td><td>' + grade +
                     '</td><td>' + teacherName + '</td><td>' +
-                    '<button class="edit-btn" onclick="editClass(\'' + key + '\')">✏️</button>' +
-                    '<button class="del-btn" onclick="deleteClass(\'' + key + '\')">✕</button></td></tr>';
+                    '<button class="edit-btn" onclick="editClass(\'' + key + '\')">??</button>' +
+                    '<button class="del-btn" onclick="deleteClass(\'' + key + '\')">?</button></td></tr>';
             }
             html += '</tbody></table></div>';
             html += '<div class="admin-add-row">' +
                 '<input type="text" id="newClassKey" placeholder="班级编号 如:2024-501">' +
                 '<input type="text" id="newClassName" placeholder="班级名称 如:五年级(1)班">' +
-                '<button onclick="addClass()">🏫 创建班级</button>' +
+                '<button onclick="addClass()">?? 创建班级</button>' +
                 '</div>' +
                 '<div id="classCreateResult" style="margin-top:8px;font-size:13px;color:#666;"></div>';
             return html;
@@ -2490,11 +2490,11 @@
             var name = document.getElementById('newClassName').value.trim();
             if (!key) { showToast('请输入班级编号'); return; }
             if (!name) { showToast('请输入班级名称'); return; }
-            if (CLASS_DATA_LIST[key]) { showToast('⚠️ 该班级已存在'); return; }
+            if (CLASS_DATA_LIST[key]) { showToast('?? 该班级已存在'); return; }
 
             CLASS_DATA_LIST[key] = {
                 className: name,
-                classSub: '🏫 教室位置待设置',
+                classSub: '?? 教室位置待设置',
                 seatColumns: 8,
                 teachers: [],
                 schedule: [
@@ -2510,8 +2510,8 @@
             };
 
             saveAllDataToServer().then(function() {
-                showToast('✅ 班级 ' + name + ' 创建成功！');
-                document.getElementById('classCreateResult').innerHTML = '✅ 已创建：' + name + '（编号：' + key + '）';
+                showToast('? 班级 ' + name + ' 创建成功！');
+                document.getElementById('classCreateResult').innerHTML = '? 已创建：' + name + '（编号：' + key + '）';
                 document.getElementById('newClassKey').value = '';
                 document.getElementById('newClassName').value = '';
                 renderAdminClasses();
@@ -2531,7 +2531,7 @@
                 saveAllDataToServer().then(function() {
                     renderAdminClasses();
                     loadClassData();
-                    showToast('✅ 已更新');
+                    showToast('? 已更新');
                 });
             }
             var newSub = prompt('修改教室位置（当前：' + cls.classSub + '）：', cls.classSub);
@@ -2540,7 +2540,7 @@
                 saveAllDataToServer().then(function() {
                     renderAdminClasses();
                     loadClassData();
-                    showToast('✅ 已更新');
+                    showToast('? 已更新');
                 });
             }
         }
@@ -2555,7 +2555,7 @@
             saveAllDataToServer().then(function() {
                 renderAdminClasses();
                 loadClassData();
-                showToast('✅ 已删除');
+                showToast('? 已删除');
             });
         }
 
@@ -2574,9 +2574,9 @@
                 var user = USERS[u];
                 html += '<tr><td>' + u + '</td><td>' + user.name + '</td><td>' + user.role + '</td><td>' + (user.grade ||
                     '-') + '</td><td>' + (user.class || '全校') + '</td><td>' +
-                    '<button class="edit-btn" onclick="editUser(\'' + u + '\')">✏️</button>' +
-                    '<button class="edit-btn" onclick="resetUserPassword(\'' + u + '\')" style="color:#E67E22;">🔑</button>' +
-                    '<button class="del-btn" onclick="deleteUser(\'' + u + '\')">✕</button></td></tr>';
+                    '<button class="edit-btn" onclick="editUser(\'' + u + '\')">??</button>' +
+                    '<button class="edit-btn" onclick="resetUserPassword(\'' + u + '\')" style="color:#E67E22;">??</button>' +
+                    '<button class="del-btn" onclick="deleteUser(\'' + u + '\')">?</button></td></tr>';
             }
             html += '</tbody></table></div>';
             html += '<div class="admin-add-row">' +
@@ -2591,9 +2591,9 @@
                 '<input type="text" id="newUserGrade" placeholder="年级(年级主任填)" style="min-width:70px;">' +
                 '<input type="text" id="newUserClass" placeholder="班级编号" style="min-width:80px;">' +
                 '<input type="text" id="newUserPassword" placeholder="密码" value="123456" style="min-width:70px;">' +
-                '<button onclick="addUser()">➕ 添加</button>' +
+                '<button onclick="addUser()">? 添加</button>' +
                 '</div>' +
-                '<div style="margin-top:6px;font-size:12px;color:#999;">💡 年级主任填写"年级"（如：三年级），班主任填写"班级编号"（如：2024-301）</div>';
+                '<div style="margin-top:6px;font-size:12px;color:#999;">?? 年级主任填写"年级"（如：三年级），班主任填写"班级编号"（如：2024-301）</div>';
             return html;
         }
 
@@ -2607,7 +2607,7 @@
 
             if (!username) { showToast('请输入账号'); return; }
             if (!name) { showToast('请输入姓名'); return; }
-            if (USERS[username]) { showToast('⚠️ 账号已存在'); return; }
+            if (USERS[username]) { showToast('?? 账号已存在'); return; }
 
             var user = {
                 name: name,
@@ -2622,7 +2622,7 @@
 
             saveAllDataToServer().then(function() {
                 renderAdminUsers();
-                showToast('✅ 教师账号 ' + name + ' 创建成功！');
+                showToast('? 教师账号 ' + name + ' 创建成功！');
                 document.getElementById('newUserUsername').value = '';
                 document.getElementById('newUserName').value = '';
                 document.getElementById('newUserGrade').value = '';
@@ -2641,7 +2641,7 @@
                     if (currentUser && currentUser.username === username) {
                         document.getElementById('displayName').textContent = user.name;
                     }
-                    showToast('✅ 已更新');
+                    showToast('? 已更新');
                 });
             }
             var newRole = prompt('修改角色（当前：' + user.role + '）可选：班主任/年级主任/校委会/管理员/超级管理员：', user.role);
@@ -2653,7 +2653,7 @@
                     if (currentUser && currentUser.username === username) {
                         document.getElementById('displayRole').textContent = '· ' + user.role;
                     }
-                    showToast('✅ 已更新');
+                    showToast('? 已更新');
                 });
             }
             var newClass = prompt('修改关联班级（当前：' + (user.class || '无') + '）：', user.class || '');
@@ -2661,7 +2661,7 @@
                 user.class = newClass.trim() || null;
                 saveAllDataToServer().then(function() {
                     renderAdminUsers();
-                    showToast('✅ 已更新');
+                    showToast('? 已更新');
                 });
             }
             var newGrade = prompt('修改年级（当前：' + (user.grade || '无') + '）：', user.grade || '');
@@ -2669,7 +2669,7 @@
                 user.grade = newGrade.trim() || null;
                 saveAllDataToServer().then(function() {
                     renderAdminUsers();
-                    showToast('✅ 已更新');
+                    showToast('? 已更新');
                 });
             }
         }
@@ -2681,19 +2681,19 @@
             user.password = '123456';
             saveAllDataToServer().then(function() {
                 renderAdminUsers();
-                showToast('✅ 已重置 ' + user.name + ' 的密码为 123456');
+                showToast('? 已重置 ' + user.name + ' 的密码为 123456');
             });
         }
 
         function deleteUser(username) {
-            if (username === 'admin') { showToast('⚠️ 不能删除超级管理员'); return; }
+            if (username === 'admin') { showToast('?? 不能删除超级管理员'); return; }
             var user = USERS[username];
             if (!user) { showToast('用户不存在'); return; }
             if (!confirm('确认删除用户 ' + user.name + ' 吗？')) return;
             delete USERS[username];
             saveAllDataToServer().then(function() {
                 renderAdminUsers();
-                showToast('✅ 已删除');
+                showToast('? 已删除');
             });
         }
 
@@ -2716,9 +2716,9 @@
         function initLogin() {
     var html = '<option value="">-- 请选择 --</option>';
     var keys = Object.keys(USERS);
-    console.log('🔍 当前 USERS:', USERS);  // 调试日志
+    console.log('?? 当前 USERS:', USERS);  // 调试日志
     if (keys.length === 0) {
-        console.log('⚠️ USERS 为空，尝试从服务器加载');
+        console.log('?? USERS 为空，尝试从服务器加载');
         // 如果 USERS 为空，从服务器加载
         fetch('/api/data')
             .then(r => r.json())
@@ -2743,13 +2743,13 @@
             var username = document.getElementById('loginUserSelect').value;
             var password = document.getElementById('loginPassword').value;
             if (!username) {
-                document.getElementById('loginError').textContent = '⚠️ 请选择账号';
+                document.getElementById('loginError').textContent = '?? 请选择账号';
                 document.getElementById('loginError').classList.add('show');
                 return;
             }
             var user = USERS[username];
             if (!user || user.password !== password) {
-                document.getElementById('loginError').textContent = '❌ 密码错误，请重新输入';
+                document.getElementById('loginError').textContent = '? 密码错误，请重新输入';
                 document.getElementById('loginError').classList.add('show');
                 document.getElementById('loginPassword').value = '';
                 document.getElementById('loginPassword').focus();
@@ -2774,7 +2774,7 @@
 
             showUI();
             loadClassData();
-            showToast('👋 欢迎，' + user.name);
+            showToast('?? 欢迎，' + user.name);
         }
 
         function doLogout() {
@@ -2817,7 +2817,7 @@
                         if (Object.keys(CLASS_DATA_LIST).length === 0) {
                             CLASS_DATA_LIST['2024-301'] = {
                                 className: '三年级(1)班',
-                                classSub: '🏫 教学楼2层 201教室',
+                                classSub: '?? 教学楼2层 201教室',
                                 seatColumns: 8,
                                 teachers: [],
                                 schedule: [
@@ -2860,14 +2860,14 @@
 
                     var data = getCurrentData();
                     document.getElementById('className').textContent = data.className || '未知班级';
-                    document.getElementById('classSub').textContent = data.classSub || '🏫 扫码查看班级信息';
+                    document.getElementById('classSub').textContent = data.classSub || '?? 扫码查看班级信息';
 
                     renderTeachers();
                     renderSchedule();
                     renderSeats();
                     updateStats();
-                    console.log('✅ 当前班级: ' + currentClassKey);
-                    console.log('👤 当前用户: ' + (currentUser ? currentUser.name : '未登录'));
+                    console.log('? 当前班级: ' + currentClassKey);
+                    console.log('?? 当前用户: ' + (currentUser ? currentUser.name : '未登录'));
 
                     // 更新登录下拉列表
                     initLogin();
@@ -2943,11 +2943,11 @@
                             var data = CLASS_DATA_LIST[keys[0]];
                             document.getElementById('className').textContent = data.className || '未知班级';
                             document.getElementById('classSub').textContent = data.classSub ||
-                                '🏫 扫码查看班级信息';
+                                '?? 扫码查看班级信息';
                         }
                     }
-                    console.log('📋 系统已初始化');
-                    console.log('💡 超级管理员：admin / admin123');
+                    console.log('?? 系统已初始化');
+                    console.log('?? 超级管理员：admin / admin123');
                 });
         }
         init();
