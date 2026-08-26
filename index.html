@@ -376,7 +376,7 @@ function deepClone(obj) { return JSON.parse(JSON.stringify(obj)); }
 // ================================================================
 //  钉钉消息发送
 // ================================================================
-var BACKEND_URL = 'https://xiao-yuan-ke-tang-guan-li.onrender.com/send';
+var BACKEND_URL = '/send';
 
 function sendDingTalk(message, isEmergency) {
     console.log('===== 准备发送消息 =====');
