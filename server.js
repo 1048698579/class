@@ -9,8 +9,9 @@ const PORT = process.env.PORT || 3000;
 // ================================================================
 //  🔴 Supabase 配置（替换成你的）
 // ================================================================
-const SUPABASE_URL = 'https://你的项目ID.supabase.co';
-const SUPABASE_KEY = '你的anon public密钥';
+const SUPABASE_URL = 'https://dlgjlyygnqklpurlyybp.supabase.co/rest/v1/';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRsZ2pseXlnbnFrbHB1cmx5eWJwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc3NDQ1MjgsImV4cCI6MjEwMzMyMDUyOH0.R9V_oK4jLFWpGOCtH8Kk1dj-Ji39I-5NyDOETLuiBeI
+';
 
 // ================================================================
 //  CORS 配置
