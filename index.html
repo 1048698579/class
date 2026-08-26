@@ -1189,21 +1189,7 @@
         // ================================================================
         //  📌 全局状态
         // ================================================================
-        'admin': {
-    name: '超级管理员',
-    role: '超级管理员',
-    role_level: 5,              // 最高权限等级
-    grade: null,
-    class: null,
-    password: 'admin123',
-    permissions: {
-        can_manage_users: true,       // ✅ 可以管理所有账号
-        can_manage_all_classes: true, // ✅ 可以管理所有班级
-        can_manage_all_grades: true,  // ✅ 可以管理所有年级
-        can_view_all: true,           // ✅ 可以查看所有数据
-        can_comment_all: true         // ✅ 可以点评所有班级
-    }
-}
+        var USERS = {}
         var CLASS_DATA_LIST = {};
         var seatStatus = {};
         var teacherStatus = {};
@@ -2728,17 +2714,30 @@
         //  登录/退出
         // ================================================================
         function initLogin() {
-            var html = '<option value="">-- 请选择 --</option>';
-            var keys = Object.keys(USERS);
-            for (var i = 0; i < keys.length; i++) {
-                var key = keys[i];
-                var u = USERS[key];
-                var label = u.name + '（' + u.role + (u.class ? ' · ' + (CLASS_DATA_LIST[u.class] ? CLASS_DATA_LIST[u.class]
-                    .className : u.class) : '') + '）';
-                html += '<option value="' + key + '">' + label + '</option>';
-            }
-            document.getElementById('loginUserSelect').innerHTML = html;
-        }
+    var html = '<option value="">-- 请选择 --</option>';
+    var keys = Object.keys(USERS);
+    console.log('🔍 当前 USERS:', USERS);  // 调试日志
+    if (keys.length === 0) {
+        console.log('⚠️ USERS 为空，尝试从服务器加载');
+        // 如果 USERS 为空，从服务器加载
+        fetch('/api/data')
+            .then(r => r.json())
+            .then(result => {
+                if (result.success && result.data.users) {
+                    USERS = result.data.users;
+                    initLogin(); // 重新初始化
+                }
+            });
+        return;
+    }
+    for (var i = 0; i < keys.length; i++) {
+        var key = keys[i];
+        var u = USERS[key];
+        var label = u.name + '（' + u.role + (u.class ? ' · ' + (CLASS_DATA_LIST[u.class] ? CLASS_DATA_LIST[u.class].className : u.class) : '') + '）';
+        html += '<option value="' + key + '">' + label + '</option>';
+    }
+    document.getElementById('loginUserSelect').innerHTML = html;
+}
 
         function doLogin() {
             var username = document.getElementById('loginUserSelect').value;
