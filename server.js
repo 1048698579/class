@@ -5,7 +5,7 @@ const crypto = require('crypto');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// ÔÊÐíËùÓÐ¿çÓòÇëÇó£¨½â¾öCORSÎÊÌâ£©
+// å…è®¸æ‰€æœ‰è·¨åŸŸè¯·æ±‚ï¼ˆè§£å†³CORSé—®é¢˜ï¼‰
 app.use((req, res, next) => {
     res.header('Access-Control-Allow-Origin', '*');
     res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
@@ -19,24 +19,24 @@ app.use((req, res, next) => {
 
 app.use(express.json());
 
-// ¶¤¶¤»úÆ÷ÈËÅäÖÃ
+// é’‰é’‰æœºå™¨äººé…ç½®
 const DING_WEBHOOK = 'https://oapi.dingtalk.com/robot/send?access_token=efc6dd930c477c804acc351c3a4cc924b72539dfc3134dce62e9c94132a4dc4b';
 const DING_SECRET = 'SEC0d6e9d85a8adf73b7773fd3524192e70104e983d23ee3ee06c9ed4fe20608857';
 
-// ¼ÆËã¶¤¶¤¼ÓÇ©
+// è®¡ç®—é’‰é’‰åŠ ç­¾
 function sign(timestamp, secret) {
     const hmac = crypto.createHmac('sha256', secret);
     hmac.update(timestamp + '\n' + secret);
     return hmac.digest('base64');
 }
 
-// ½ÓÊÕÇ°¶ËÇëÇó£¬×ª·¢µ½¶¤¶¤
+// æŽ¥æ”¶å‰ç«¯è¯·æ±‚ï¼Œè½¬å‘åˆ°é’‰é’‰
 app.post('/send', async (req, res) => {
     try {
         const { message, isEmergency } = req.body;
         
-        console.log('ÊÕµ½ÏûÏ¢:', message);
-        console.log('ÊÇ·ñ½ô¼±:', isEmergency);
+        console.log('æ”¶åˆ°æ¶ˆæ¯:', message);
+        console.log('æ˜¯å¦ç´§æ€¥:', isEmergency);
 
         const timestamp = Date.now();
         const signValue = sign(timestamp, DING_SECRET);
@@ -45,7 +45,7 @@ app.post('/send', async (req, res) => {
         const data = {
             msgtype: 'markdown',
             markdown: {
-                title: isEmergency ? '?? ½ÌÑ§Òì³£Í¨±¨' : '?? ¿ÎÌÃµãÆÀÍ¨Öª',
+                title: isEmergency ? '?? æ•™å­¦å¼‚å¸¸é€šæŠ¥' : '?? è¯¾å ‚ç‚¹è¯„é€šçŸ¥',
                 text: message
             },
             at: {
@@ -57,18 +57,20 @@ app.post('/send', async (req, res) => {
             headers: { 'Content-Type': 'application/json' }
         });
 
-        console.log('¶¤¶¤ÏìÓ¦:', response.data);
+        console.log('é’‰é’‰å“åº”:', response.data);
         res.json({ success: true, data: response.data });
     } catch (error) {
-        console.error('·¢ËÍÊ§°Ü:', error.message);
+        console.error('å‘é€å¤±è´¥:', error.message);
         res.status(500).json({ success: false, error: error.message });
     }
 });
 
+const path = require('path');
+
 app.get('/', (req, res) => {
-    res.send('DingTalk Proxy Service is running!');
+    res.sendFile(path.join(__dirname, 'index.html'));
 });
 
 app.listen(PORT, () => {
-    console.log('?? ·þÎñÒÑÆô¶¯£¬¶Ë¿Ú:', PORT);
+    console.log('?? æœåŠ¡å·²å¯åŠ¨ï¼Œç«¯å£:', PORT);
 });
