@@ -2716,27 +2716,42 @@
         function initLogin() {
     var html = '<option value="">-- 请选择 --</option>';
     var keys = Object.keys(USERS);
-    console.log('?? 当前 USERS:', USERS);  // 调试日志
-    if (keys.length === 0) {
-        console.log('?? USERS 为空，尝试从服务器加载');
-        // 如果 USERS 为空，从服务器加载
-        fetch('/api/data')
-            .then(r => r.json())
-            .then(result => {
-                if (result.success && result.data.users) {
-                    USERS = result.data.users;
-                    initLogin(); // 重新初始化
-                }
-            });
-        return;
+    
+    // 修复：如果 USERS 不为空，直接渲染
+    if (keys.length > 0) {
+        for (var i = 0; i < keys.length; i++) {
+            var key = keys[i];
+            var u = USERS[key];
+            var classInfo = u.class && CLASS_DATA_LIST[u.class] ? CLASS_DATA_LIST[u.class].className : (u.class || '');
+            var label = u.name + '（' + u.role + (u.class ? ' · ' + classInfo : '') + '）';
+            html += '<option value="' + key + '">' + label + '</option>';
+        }
+        document.getElementById('loginUserSelect').innerHTML = html;
+    } 
+    // 修复：如果是空，改为先执行初始化默认数据，而不是无限循环 fetch
+    else {
+        console.warn('?? 未检测到 USERS 数据，正在初始化默认管理员...');
+        // 这里确保有一个 admin 账号可以使用，避免死循环
+        USERS['admin'] = {
+            name: '超级管理员',
+            role: '超级管理员',
+            role_level: 5,
+            grade: null,
+            class: null,
+            password: 'admin123',
+            permissions: {
+                can_manage_users: true,
+                can_manage_all_classes: true,
+                can_manage_all_grades: true,
+                can_view_all: true,
+                can_comment_all: true
+            }
+        };
+        saveAllDataToServer(); // 保存到服务器，这样下次直接就有数据了
+        html += '<option value="admin">超级管理员（超级管理员）</option>';
+        document.getElementById('loginUserSelect').innerHTML = html;
+        console.log('?? 已初始化并添加默认账号 admin');
     }
-    for (var i = 0; i < keys.length; i++) {
-        var key = keys[i];
-        var u = USERS[key];
-        var label = u.name + '（' + u.role + (u.class ? ' · ' + (CLASS_DATA_LIST[u.class] ? CLASS_DATA_LIST[u.class].className : u.class) : '') + '）';
-        html += '<option value="' + key + '">' + label + '</option>';
-    }
-    document.getElementById('loginUserSelect').innerHTML = html;
 }
 
         function doLogin() {
@@ -2928,28 +2943,67 @@
         //  初始化
         // ================================================================
         function init() {
-            // 先尝试从服务器加载数据
-            loadAllDataFromServer()
-                .then(function() {
-                    initLogin();
-
-                    // 尝试自动登录
-                    var loggedIn = autoLogin();
-                    if (!loggedIn) {
-                        document.getElementById('loginOverlay').style.display = 'flex';
-                        // 显示默认班级
-                        var keys = Object.keys(CLASS_DATA_LIST);
-                        if (keys.length > 0) {
-                            var data = CLASS_DATA_LIST[keys[0]];
-                            document.getElementById('className').textContent = data.className || '未知班级';
-                            document.getElementById('classSub').textContent = data.classSub ||
-                                '?? 扫码查看班级信息';
-                        }
+    // 1. 先尝试从服务器加载数据
+    loadAllDataFromServer()
+        .then(function() {
+            // 2. 加载完成后，检查并初始化默认数据（防止后端是空库）
+            if (Object.keys(CLASS_DATA_LIST).length === 0) {
+                CLASS_DATA_LIST['2024-301'] = {
+                    className: '三年级(1)班',
+                    classSub: '?? 教学楼2层 201教室',
+                    seatColumns: 8,
+                    teachers: [],
+                    schedule: [
+                        ['', '', '', '', ''],
+                        ['', '', '', '', ''],
+                        ['', '', '', '', ''],
+                        ['', '', '', '', ''],
+                        ['', '', '', '', ''],
+                        ['', '', '', '', '']
+                    ],
+                    students: [],
+                    diners: {}
+                };
+            }
+            if (Object.keys(USERS).length === 0) {
+                USERS['admin'] = {
+                    name: '超级管理员',
+                    role: '超级管理员',
+                    role_level: 5,
+                    grade: null,
+                    class: null,
+                    password: 'admin123',
+                    permissions: {
+                        can_manage_users: true,
+                        can_manage_all_classes: true,
+                        can_manage_all_grades: true,
+                        can_view_all: true,
+                        can_comment_all: true
                     }
-                    console.log('?? 系统已初始化');
-                    console.log('?? 超级管理员：admin / admin123');
-                });
-        }
+                };
+            }
+            // 3. 将初始化好的数据保存到服务器（如果服务器有数据则覆盖为最新）
+            saveAllDataToServer().then(function() {
+                
+                // 4. 初始化登录下拉列表（此时 USERS 一定有数据，不会触发死循环）
+                initLogin();
+
+                // 5. 尝试自动登录
+                var loggedIn = autoLogin();
+                if (!loggedIn) {
+                    document.getElementById('loginOverlay').style.display = 'flex';
+                    var keys = Object.keys(CLASS_DATA_LIST);
+                    if (keys.length > 0) {
+                        var data = CLASS_DATA_LIST[keys[0]];
+                        document.getElementById('className').textContent = data.className || '未知班级';
+                        document.getElementById('classSub').textContent = data.classSub || '?? 扫码查看班级信息';
+                    }
+                }
+                console.log('?? 系统已初始化');
+                console.log('?? 超级管理员：admin / admin123');
+            });
+        });
+}
         init();
     </script>
 </body>
