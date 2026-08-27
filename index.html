@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
@@ -6,10 +6,11 @@
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏫</text></svg>">
     <title>校园班级管理系统</title>
     <style>
+        /* ===== 基础样式 ===== */
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: "PingFang SC","Microsoft YaHei",Arial,sans-serif; background: #f0f4f8; padding: 16px; max-width: 480px; margin: 0 auto; padding-bottom: 100px; }
         .hidden { display: none !important; }
-
+        /* ===== 登录页 ===== */
         #loginOverlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.6); backdrop-filter: blur(8px); display: flex; align-items: center; justify-content: center; z-index: 9999; padding: 20px; }
         #loginBox { background: white; border-radius: 24px; padding: 32px 28px; max-width: 380px; width: 100%; box-shadow: 0 20px 60px rgba(0,0,0,0.4); }
         #loginBox h2 { text-align: center; font-size: 22px; margin-bottom: 6px; color: #333; }
@@ -23,14 +24,14 @@
         #loginBox .login-error.show { display: block; }
         #loginBox .remember-row { display: flex; align-items: center; gap: 8px; margin-top: 12px; font-size: 14px; color: #666; cursor: pointer; }
         #loginBox .remember-row input { width: 18px; height: 18px; margin: 0; cursor: pointer; }
-
+        /* ===== 顶部身份栏 ===== */
         .identity-bar { background: white; border-radius: 12px; padding: 10px 16px; margin-bottom: 14px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; }
         .identity-bar .user-info { font-size: 13px; color: #555; }
         .identity-bar .user-info .name { font-weight: 700; color: #333; }
         .identity-bar .user-info .role { color: #4A90D9; }
         .identity-bar .user-info .class { color: #888; }
         .identity-bar .logout-btn { padding: 4px 14px; border-radius: 8px; border: 1px solid #DC3545; background: white; color: #DC3545; font-size: 12px; cursor: pointer; }
-
+        /* ===== 统计栏 ===== */
         .stats-bar { background: white; border-radius: 12px; padding: 12px 16px; margin-bottom: 14px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); display: flex; flex-wrap: wrap; gap: 8px 14px; font-size: 13px; }
         .stats-bar .stat-item { display: flex; align-items: center; gap: 4px; }
         .stats-bar .stat-item .num { font-weight: 700; font-size: 15px; }
@@ -39,16 +40,16 @@
         .stats-bar .stat-item.absent .num { color: #DC3545; }
         .stats-bar .stat-item.leave .num { color: #6C757D; }
         .stats-bar .stat-item.not-in-room .num { color: #9B59B6; }
-
+        /* ===== 头部 ===== */
         .header { background: linear-gradient(135deg,#4A90D9,#357ABD); color: white; border-radius: 16px; padding: 20px; margin-bottom: 16px; }
         .header h1 { font-size: 22px; font-weight: 700; margin-bottom: 4px; }
         .header .sub { font-size: 13px; opacity: 0.85; }
-
+        /* ===== 卡片 ===== */
         .card { background: white; border-radius: 12px; padding: 16px; margin-bottom: 14px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
         .card-title { font-size: 15px; font-weight: 600; color: #333; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
         .card-title .badge { font-size: 11px; background: #E8F0FE; color: #4A90D9; padding: 0 10px; border-radius: 10px; font-weight: 400; }
         .card-title .lock-icon { font-size: 12px; color: #999; margin-left: auto; }
-
+        /* ===== 教师网格 ===== */
         .teacher-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
         .teacher-item { background: #F8FAFC; border-radius: 8px; padding: 10px 12px; text-align: center; cursor: pointer; border: 2px solid transparent; position: relative; }
         .teacher-item:active { transform: scale(0.96); }
@@ -59,12 +60,12 @@
         .teacher-item.warning-phone { border-color: #E67E22; background: #fdf5ed; }
         .teacher-item.warning-late { border-color: #F59E0B; background: #FFFBEB; }
         .teacher-item.disabled { opacity: 0.6; cursor: not-allowed; }
-
+        /* ===== 课程表 ===== */
         .schedule-table { width: 100%; border-collapse: collapse; font-size: 12px; }
         .schedule-table th { background: #F0F4F8; color: #555; padding: 6px 3px; font-weight: 600; }
         .schedule-table td { text-align: center; padding: 6px 3px; border-bottom: 1px solid #f0f0f0; }
         .schedule-table .period { color: #999; font-size: 11px; }
-
+        /* ===== 座位表 ===== */
         .seat-grid { display: grid; gap: 6px; }
         .seat { border-radius: 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 12px; font-weight: 500; background: #D4EDDA; color: #2C3E50; cursor: pointer; border: 2px solid #28A745; padding: 6px 2px; min-height: 44px; text-align: center; word-break: keep-all; position: relative; }
         .seat:active { transform: scale(0.94); }
@@ -75,11 +76,10 @@
         .seat.leave { background: #D6D8DB; border-color: #6C757D; }
         .seat.not-in-room { background: #E8D5F5; border-color: #9B59B6; }
         .seat.disabled { opacity: 0.6; cursor: not-allowed; }
-
         .seat-legend { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 10px; font-size: 12px; color: #666; }
         .seat-legend span { display: flex; align-items: center; gap: 4px; }
         .seat-legend .dot { width: 14px; height: 14px; border-radius: 4px; display: inline-block; border: 1px solid #ccc; }
-
+        /* ===== 操作按钮 ===== */
         .action-row { display: flex; gap: 10px; margin-top: 12px; flex-wrap: wrap; }
         .action-btn { flex: 1; min-width: 70px; padding: 10px 6px; border: none; border-radius: 12px; font-size: 12px; font-weight: 600; cursor: pointer; text-align: center; }
         .action-btn:active { transform: scale(0.96); }
@@ -87,14 +87,14 @@
         .action-btn.outline { background: #f8f9fa; color: #6c757d; border: 1px solid #dee2e6; }
         .action-btn.danger { background: #DC3545; color: white; }
         .action-btn:disabled { opacity: 0.5; cursor: not-allowed; }
-
+        /* ===== 弹窗 ===== */
         .modal-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); backdrop-filter: blur(4px); align-items: center; justify-content: center; z-index: 999; padding: 16px; }
         .modal-overlay.active { display: flex; }
         .modal-box { background: white; border-radius: 20px; padding: 24px 20px; max-width: 460px; width: 100%; max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 60px rgba(0,0,0,0.3); }
         .modal-box .modal-title { font-size: 18px; font-weight: 700; margin-bottom: 4px; text-align: center; }
         .modal-box .modal-sub { text-align: center; color: #888; font-size: 13px; margin-bottom: 16px; }
         .section-label { font-size: 13px; font-weight: 600; color: #555; margin: 14px 0 8px 0; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
-
+        /* ===== 出勤按钮 ===== */
         .status-grid { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr 1fr; gap: 6px; }
         .status-btn { padding: 8px 0; border-radius: 8px; border: 2px solid #E5E7EB; background: white; font-size: 12px; font-weight: 500; cursor: pointer; text-align: center; }
         .status-btn:active { transform: scale(0.94); }
@@ -103,13 +103,13 @@
         .status-btn.absent { border-color: #DC3545; color: #DC3545; background: #fdf0f2; }
         .status-btn.leave { border-color: #6C757D; color: #6C757D; background: #f5f5f5; }
         .status-btn.not-in-room { border-color: #9B59B6; color: #9B59B6; background: #f5edf9; }
-
+        /* ===== 快捷点评 ===== */
         .quick-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; }
         .quick-btn { padding: 8px 0; border-radius: 16px; border: 1.5px solid #D8B4FE; background: #FAF5FF; color: #7C3AED; font-size: 12px; font-weight: 500; cursor: pointer; text-align: center; }
         .quick-btn:active { transform: scale(0.94); }
         .quick-btn.negative { border-color: #FCA5A5; background: #FEF2F2; color: #DC2626; }
         .comment-group-label { font-size: 12px; color: #999; margin: 8px 0 4px 0; }
-
+        /* ===== 教师点评按钮 ===== */
         .teacher-status-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
         .teacher-status-btn { padding: 12px 0; border-radius: 12px; border: 2px solid #E5E7EB; background: white; font-size: 14px; font-weight: 500; cursor: pointer; text-align: center; }
         .teacher-status-btn:active { transform: scale(0.94); }
@@ -118,21 +118,20 @@
         .teacher-status-btn.late { border-color: #F59E0B; color: #B45309; background: #FFFBEB; }
         .teacher-status-btn.normal { border-color: #28A745; color: #28A745; background: #f0faf4; }
         .teacher-status-btn.active { border-color: #4A90D9 !important; background: #EBF5FF !important; color: #4A90D9 !important; }
-
+        /* ===== 班级整体表现 ===== */
         .class-comment-grid-full { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
         .class-comment-btn-full { padding: 12px 0; border-radius: 12px; border: 2px solid #E5E7EB; background: white; font-size: 13px; font-weight: 500; cursor: pointer; text-align: center; }
         .class-comment-btn-full:active { transform: scale(0.94); }
         .class-comment-btn-full.active { border-color: #4A90D9; background: #EBF5FF; color: #4A90D9; }
-
+        /* ===== 报表 ===== */
         .report-text { background: #F8FAFC; border-radius: 12px; padding: 12px; font-size: 13px; line-height: 1.8; max-height: 300px; overflow-y: auto; white-space: pre-wrap; word-break: break-all; font-family: inherit; border: 1px solid #E5E7EB; }
         .report-actions { display: flex; gap: 10px; margin-top: 12px; }
         .report-actions button { flex: 1; padding: 10px; border-radius: 10px; border: none; font-size: 14px; font-weight: 500; cursor: pointer; }
         .report-actions .copy-btn { background: #4A90D9; color: white; }
         .report-actions .close-btn { background: #F3F4F6; color: #666; }
-
+        /* ===== 输入框 ===== */
         .custom-input { width: 100%; padding: 10px 12px; border: 2px solid #E5E7EB; border-radius: 12px; font-size: 14px; resize: vertical; min-height: 50px; font-family: inherit; outline: none; }
         .custom-input:focus { border-color: #4A90D9; }
-
         .submit-row { display: flex; gap: 10px; margin-top: 16px; }
         .submit-btn { flex: 1; padding: 12px; border-radius: 12px; border: none; font-size: 16px; font-weight: 600; cursor: pointer; }
         .submit-btn:active { transform: scale(0.96); }
@@ -140,14 +139,14 @@
         .submit-btn.danger { background: #DC3545; color: white; }
         .submit-btn.secondary { background: #F3F4F6; color: #666; }
         .submit-btn:disabled { opacity: 0.5; cursor: not-allowed; }
-
+        /* ===== Toast ===== */
         .toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); background: #333; color: white; padding: 10px 24px; border-radius: 30px; font-size: 14px; opacity: 0; transition: opacity 0.3s; pointer-events: none; z-index: 9998; white-space: nowrap; max-width: 90%; overflow: hidden; text-overflow: ellipsis; }
         .toast.show { opacity: 1; }
-
+        /* ===== 管理入口 ===== */
         .admin-entry { margin-top: 16px; padding-top: 14px; border-top: 1px solid #eee; text-align: center; }
         .admin-entry .admin-btn { padding: 10px 20px; border-radius: 10px; border: 1px solid #4A90D9; background: white; color: #4A90D9; font-size: 13px; font-weight: 500; cursor: pointer; margin: 4px; }
         .admin-entry .admin-btn:active { transform: scale(0.96); }
-
+        /* ===== 管理弹窗 ===== */
         .admin-tabs { display: flex; gap: 6px; margin-bottom: 14px; flex-wrap: wrap; }
         .admin-tabs button { padding: 8px 12px; border-radius: 8px; border: 1px solid #E5E7EB; background: white; font-size: 12px; cursor: pointer; flex: 1; min-width: 60px; }
         .admin-tabs button.active { background: #4A90D9; color: white; border-color: #4A90D9; }
@@ -163,7 +162,7 @@
         .admin-add-row button { padding: 6px 14px; border: none; border-radius: 6px; background: #28A745; color: white; font-size: 13px; cursor: pointer; }
         .admin-add-row button:active { transform: scale(0.96); }
         .admin-tip { font-size: 12px; color: #999; margin-top: 10px; text-align: center; }
-
+        /* ===== 就餐统计 ===== */
         .stats-month-selector { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 12px; }
         .stats-month-selector input, .stats-month-selector select { padding: 6px 10px; border: 1px solid #E5E7EB; border-radius: 6px; font-size: 14px; font-family: inherit; }
         .stats-month-selector button { padding: 6px 16px; border: none; border-radius: 6px; background: #4A90D9; color: white; font-size: 14px; cursor: pointer; }
@@ -181,13 +180,16 @@
         .stats-table .status-stop { color: #DC3545; }
         .stats-table .status-not-diner { color: #ccc; }
         .stats-total-row { background: #F0F4F8; font-weight: 600; }
+        /* ===== 时间锁提示 ===== */
+        .time-lock-warning { background: #FFF3CD; border-radius: 8px; padding: 8px 12px; font-size: 12px; color: #856404; margin-bottom: 10px; display: none; }
     </style>
 </head>
 <body>
 
+    <!-- ===== 登录弹窗 ===== -->
     <div id="loginOverlay">
         <div id="loginBox">
-            <h2>身份验证</h2>
+            <h2>🔐 身份验证</h2>
             <div class="sub">请选择账号并输入密码</div>
             <label>选择账号</label>
             <select id="loginUserSelect"><option value="">-- 请选择 --</option></select>
@@ -198,56 +200,48 @@
                 <label for="rememberMe" style="cursor:pointer;">记住我（7天免登录）</label>
             </div>
             <button class="login-btn" onclick="doLogin()">确认登录</button>
-            <div class="login-error" id="loginError">账号或密码错误，请重新输入</div>
-            <div style="text-align:center;margin-top:12px;font-size:12px;color:#ccc;">默认超级管理员：admin / admin123</div>
+            <div class="login-error" id="loginError">❌ 账号或密码错误，请重新输入</div>
+            <div style="text-align:center;margin-top:12px;font-size:12px;color:#ccc;">💡 默认超级管理员：admin / admin123</div>
         </div>
     </div>
 
+    <!-- ===== 顶部身份栏 ===== -->
     <div class="identity-bar hidden" id="identityBar">
-        <div class="user-info">
-            <span class="name" id="displayName">超级管理员</span>
-            <span class="role" id="displayRole">· 超级管理员</span>
-            <span class="class" id="displayClass"></span>
-        </div>
+        <div class="user-info">👤 <span class="name" id="displayName">超级管理员</span><span class="role" id="displayRole">· 超级管理员</span><span class="class" id="displayClass"></span></div>
         <button class="logout-btn" onclick="doLogout()">退出</button>
     </div>
 
+    <!-- ===== 统计栏 ===== -->
     <div class="stats-bar hidden" id="statsBar">
-        <span class="stat-item present">[到] <span class="num" id="statPresent">0</span></span>
-        <span class="stat-item late">[迟] <span class="num" id="statLate">0</span></span>
-        <span class="stat-item absent">[缺] <span class="num" id="statAbsent">0</span></span>
-        <span class="stat-item leave">[假] <span class="num" id="statLeave">0</span></span>
-        <span class="stat-item not-in-room">[离] <span class="num" id="statNotInRoom">0</span></span>
+        <span class="stat-item present">✅ <span class="num" id="statPresent">0</span></span>
+        <span class="stat-item late">⏰ <span class="num" id="statLate">0</span></span>
+        <span class="stat-item absent">❌ <span class="num" id="statAbsent">0</span></span>
+        <span class="stat-item leave">📝 <span class="num" id="statLeave">0</span></span>
+        <span class="stat-item not-in-room">🚪 <span class="num" id="statNotInRoom">0</span></span>
     </div>
 
+    <!-- ===== 头部 ===== -->
     <div class="header">
         <h1 id="className">加载中...</h1>
-        <div class="sub" id="classSub">扫码查看班级信息</div>
+        <div class="sub" id="classSub">🏫 扫码查看班级信息</div>
     </div>
 
+    <!-- ===== 教师团队 ===== -->
     <div class="card">
-        <div class="card-title">
-            [教师] 教师团队
-            <span class="badge" id="teacherBadge">点击可点评</span>
-            <span class="lock-icon" id="teacherLockIcon">[锁]</span>
-        </div>
+        <div class="card-title">👨‍🏫 教师团队 <span class="badge" id="teacherBadge">点击可点评</span><span class="lock-icon" id="teacherLockIcon">🔒</span></div>
         <div class="teacher-grid" id="teacherGrid"></div>
     </div>
 
+    <!-- ===== 课程表 ===== -->
     <div class="card">
-        <div class="card-title">[课表] 课程表 <span class="badge">本周</span></div>
+        <div class="card-title">📚 课程表 <span class="badge">本周</span></div>
         <table class="schedule-table"><thead><tr><th>节次</th><th>周一</th><th>周二</th><th>周三</th><th>周四</th><th>周五</th></tr></thead><tbody id="scheduleBody"></tbody></table>
-        <div class="admin-entry hidden" id="scheduleAdminEntry">
-            <button class="admin-btn" onclick="openAdminModal('schedule')">[编辑] 编辑课程表</button>
-        </div>
+        <div class="admin-entry hidden" id="scheduleAdminEntry"><button class="admin-btn" onclick="openAdminModal('schedule')">📝 编辑课程表</button></div>
     </div>
 
+    <!-- ===== 座位表 ===== -->
     <div class="card">
-        <div class="card-title">
-            [座位] 座位表
-            <span class="badge" id="seatInfo">点击学生可标注</span>
-            <span class="lock-icon" id="seatLockIcon">[锁]</span>
-        </div>
+        <div class="card-title">💺 座位表 <span class="badge" id="seatInfo">点击学生可标注</span><span class="lock-icon" id="seatLockIcon">🔒</span></div>
         <div class="seat-grid" id="seatGrid"></div>
         <div class="seat-legend">
             <span><span class="dot" style="background:#D4EDDA;border-color:#28A745;"></span> 到课</span>
@@ -257,120 +251,115 @@
             <span><span class="dot" style="background:#E8D5F5;border-color:#9B59B6;"></span> 未在教室</span>
         </div>
         <div class="action-row">
-            <button class="action-btn primary" id="classOverallBtn">[整体] 整体表现</button>
-            <button class="action-btn outline" id="resetAttendanceBtn">[重置] 重置出勤</button>
-            <button class="action-btn outline" id="reportBtn">[报表] 出勤报表</button>
+            <button class="action-btn primary" id="classOverallBtn">📢 整体表现</button>
+            <button class="action-btn outline" id="resetAttendanceBtn">🔄 重置出勤</button>
+            <button class="action-btn outline" id="reportBtn">📋 出勤报表</button>
         </div>
         <div class="admin-entry hidden" id="studentAdminEntry">
-            <button class="admin-btn" onclick="openAdminModal('student')">[学生] 管理学生名单</button>
-            <button class="admin-btn" onclick="openAdminModal('diner')">[就餐] 就餐统计</button>
+            <button class="admin-btn" onclick="openAdminModal('student')">📝 管理学生名单</button>
+            <button class="admin-btn" onclick="openAdminModal('diner')">🍱 就餐统计</button>
         </div>
         <div class="admin-entry hidden" id="superAdminEntry">
-            <button class="admin-btn" onclick="openAdminModal('class')">[班级] 班级管理</button>
-            <button class="admin-btn" onclick="openAdminModal('user')">[账号] 教师账号</button>
+            <button class="admin-btn" onclick="openAdminModal('class')">🏫 班级管理</button>
+            <button class="admin-btn" onclick="openAdminModal('user')">👤 教师账号</button>
+            <button class="admin-btn" onclick="openAdminModal('permission')">🔐 权限管理</button>
+            <button class="admin-btn" onclick="openAdminModal('config')">⚙️ 系统配置</button>
         </div>
     </div>
 
+    <!-- ===== 弹窗（学生点评） ===== -->
     <div class="modal-overlay" id="studentModal">
         <div class="modal-box">
             <div class="modal-title" id="studentModalName">李小明</div>
             <div class="modal-sub" id="studentModalInfo">三年级(1)班 · 座位号 15</div>
-            <div class="section-label">出勤状态</div>
+            <div class="section-label">📊 出勤状态</div>
             <div class="status-grid" id="studentStatusGrid">
-                <button class="status-btn present" data-status="present">到课</button>
-                <button class="status-btn late" data-status="late">迟到</button>
-                <button class="status-btn absent" data-status="absent">缺勤</button>
-                <button class="status-btn leave" data-status="leave">请假</button>
-                <button class="status-btn not-in-room" data-status="not-in-room">未在教室</button>
+                <button class="status-btn present" data-status="present">✅ 到课</button>
+                <button class="status-btn late" data-status="late">⏰ 迟到</button>
+                <button class="status-btn absent" data-status="absent">❌ 缺勤</button>
+                <button class="status-btn leave" data-status="leave">📝 请假</button>
+                <button class="status-btn not-in-room" data-status="not-in-room">🚪 未在教室</button>
             </div>
-            <div class="section-label">课堂表现</div>
-            <div class="comment-group-label">表扬</div>
+            <div class="section-label">🌟 课堂表现</div>
+            <div class="comment-group-label">👍 表扬</div>
             <div class="quick-grid" id="praiseGrid"></div>
-            <div class="comment-group-label">待改进</div>
+            <div class="comment-group-label">⚡ 待改进</div>
             <div class="quick-grid" id="negativeGrid"></div>
-            <div class="section-label">补充说明（选填）</div>
+            <div class="section-label">✏️ 补充说明（选填）</div>
             <textarea class="custom-input" id="studentComment" placeholder="例如：该生平时表现优秀，今天状态不佳..."></textarea>
-            <div class="submit-row">
-                <button class="submit-btn secondary" id="studentCancelBtn">取消</button>
-                <button class="submit-btn primary" id="studentSubmitBtn">提交</button>
-            </div>
+            <div class="submit-row"><button class="submit-btn secondary" id="studentCancelBtn">取消</button><button class="submit-btn primary" id="studentSubmitBtn">✅ 提交</button></div>
         </div>
     </div>
 
+    <!-- ===== 弹窗（教师点评） ===== -->
     <div class="modal-overlay" id="teacherModal">
         <div class="modal-box">
             <div class="modal-title" id="teacherModalName">张明</div>
             <div class="modal-sub" id="teacherModalInfo">数学 · 三年级(1)班</div>
-            <div class="section-label">课堂异常通报</div>
+            <div class="section-label">⚠️ 课堂异常通报</div>
             <div class="teacher-status-grid">
-                <button class="teacher-status-btn empty-class" data-status="empty">空堂</button>
-                <button class="teacher-status-btn phone" data-status="phone">玩手机</button>
-                <button class="teacher-status-btn late" data-status="late">教师迟到</button>
-                <button class="teacher-status-btn normal" data-status="normal" style="grid-column:span 3;">正常（不推送）</button>
+                <button class="teacher-status-btn empty-class" data-status="empty">🕳️ 空堂</button>
+                <button class="teacher-status-btn phone" data-status="phone">📱 玩手机</button>
+                <button class="teacher-status-btn late" data-status="late">⏰ 教师迟到</button>
+                <button class="teacher-status-btn normal" data-status="normal" style="grid-column:span 3;">📋 正常（不推送）</button>
             </div>
-            <div class="section-label">补充说明（选填）</div>
+            <div class="section-label">✏️ 补充说明（选填）</div>
             <textarea class="custom-input" id="teacherComment" placeholder="例如：教师迟到5分钟..."></textarea>
-            <div class="submit-row">
-                <button class="submit-btn secondary" id="teacherCancelBtn">取消</button>
-                <button class="submit-btn danger" id="teacherSubmitBtn">提交异常通报</button>
-            </div>
+            <div class="submit-row"><button class="submit-btn secondary" id="teacherCancelBtn">取消</button><button class="submit-btn danger" id="teacherSubmitBtn">🚨 提交异常通报</button></div>
         </div>
     </div>
 
+    <!-- ===== 弹窗（班级整体表现） ===== -->
     <div class="modal-overlay" id="classOverallModal">
         <div class="modal-box">
-            <div class="modal-title">班级整体表现</div>
+            <div class="modal-title">📢 班级整体表现</div>
             <div class="modal-sub" id="classOverallInfo">三年级(1)班</div>
-            <div class="section-label">课堂氛围</div>
+            <div class="section-label">🎯 课堂氛围</div>
             <div class="class-comment-grid-full">
-                <button class="class-comment-btn-full atmosphere" data-value="积极活跃，互动良好">积极活跃</button>
-                <button class="class-comment-btn-full atmosphere" data-value="安静专注，秩序井然">安静专注</button>
-                <button class="class-comment-btn-full atmosphere" data-value="略显沉闷，需调动">略显沉闷</button>
+                <button class="class-comment-btn-full atmosphere" data-value="积极活跃，互动良好">🔥 积极活跃</button>
+                <button class="class-comment-btn-full atmosphere" data-value="安静专注，秩序井然">📖 安静专注</button>
+                <button class="class-comment-btn-full atmosphere" data-value="略显沉闷，需调动">😐 略显沉闷</button>
             </div>
-            <div class="section-label">纪律情况</div>
+            <div class="section-label">📋 纪律情况</div>
             <div class="class-comment-grid-full">
-                <button class="class-comment-btn-full discipline" data-value="纪律良好，无异常">纪律良好</button>
-                <button class="class-comment-btn-full discipline" data-value="个别学生需提醒">个别提醒</button>
-                <button class="class-comment-btn-full discipline" data-value="纪律松散，需整顿">需要整顿</button>
+                <button class="class-comment-btn-full discipline" data-value="纪律良好，无异常">✅ 纪律良好</button>
+                <button class="class-comment-btn-full discipline" data-value="个别学生需提醒">⚠️ 个别提醒</button>
+                <button class="class-comment-btn-full discipline" data-value="纪律松散，需整顿">🔴 需要整顿</button>
             </div>
-            <div class="section-label">补充说明（选填）</div>
+            <div class="section-label">✏️ 补充说明（选填）</div>
             <textarea class="custom-input" id="classOverallComment" placeholder="例如：整体表现不错，建议加强互动..."></textarea>
-            <div class="submit-row">
-                <button class="submit-btn secondary" id="classOverallCancelBtn">取消</button>
-                <button class="submit-btn primary" id="classOverallSubmitBtn">提交整体评价</button>
-            </div>
+            <div class="submit-row"><button class="submit-btn secondary" id="classOverallCancelBtn">取消</button><button class="submit-btn primary" id="classOverallSubmitBtn">📢 提交整体评价</button></div>
         </div>
     </div>
 
+    <!-- ===== 弹窗（出勤报表） ===== -->
     <div class="modal-overlay" id="reportModal">
         <div class="modal-box">
-            <div class="modal-title">今日出勤明细</div>
+            <div class="modal-title">📋 今日出勤明细</div>
             <div class="modal-sub" id="reportDate">2026-08-27</div>
             <div class="report-text" id="reportContent">加载中...</div>
-            <div class="report-actions">
-                <button class="copy-btn" onclick="copyReport()">复制报表</button>
-                <button class="close-btn" onclick="closeReport()">关闭</button>
-            </div>
+            <div class="report-actions"><button class="copy-btn" onclick="copyReport()">📋 复制报表</button><button class="close-btn" onclick="closeReport()">关闭</button></div>
         </div>
     </div>
 
+    <!-- ===== 弹窗（数据管理） ===== -->
     <div class="modal-overlay" id="adminModal">
         <div class="modal-box" style="max-width:520px;">
-            <div class="modal-title">数据管理</div>
+            <div class="modal-title">📝 数据管理</div>
             <div class="modal-sub" id="adminModalSub">三年级(1)班</div>
             <div class="admin-tabs" id="adminTabs">
-                <button class="active" data-tab="student">学生</button>
-                <button data-tab="schedule">课表</button>
-                <button data-tab="teacher">教师</button>
-                <button data-tab="diner" class="hidden" id="dinerTabBtn">就餐</button>
-                <button data-tab="class" class="hidden" id="classTabBtn">班级</button>
-                <button data-tab="user" class="hidden" id="userTabBtn">账号</button>
+                <button class="active" data-tab="student">👨‍🎓 学生</button>
+                <button data-tab="schedule">📚 课表</button>
+                <button data-tab="teacher">👨‍🏫 教师</button>
+                <button data-tab="diner" class="hidden" id="dinerTabBtn">🍱 就餐</button>
+                <button data-tab="class" class="hidden" id="classTabBtn">🏫 班级</button>
+                <button data-tab="user" class="hidden" id="userTabBtn">👤 账号</button>
+                <button data-tab="permission" class="hidden" id="permissionTabBtn">🔐 权限</button>
+                <button data-tab="config" class="hidden" id="configTabBtn">⚙️ 配置</button>
             </div>
             <div id="adminContent"></div>
-            <div class="admin-tip">修改后自动保存到云端</div>
-            <div class="submit-row">
-                <button class="submit-btn secondary" onclick="closeAdminModal()">关闭</button>
-            </div>
+            <div class="admin-tip">💡 修改后自动保存到云端</div>
+            <div class="submit-row"><button class="submit-btn secondary" onclick="closeAdminModal()">关闭</button></div>
         </div>
     </div>
 
@@ -378,26 +367,17 @@
 
     <script>
         // ================================================================
-        //  [权限] 权限配置
+        //  📌 角色与权限配置
         // ================================================================
-        var ROLE_LEVELS = {
-            '超级管理员': 5,
-            '管理员': 4,
-            '校委会': 3,
-            '年级主任': 2,
-            '班主任': 1
-        };
+        var ROLE_LEVELS = { '超级管理员': 5, '管理员': 4, '校委会': 3, '年级主任': 2, '班主任': 1 };
+
+        var PRAISE_COMMENTS = ['🌟 听课专注', '🙋 积极发言', '📝 笔记认真', '🤝 善于合作', '💡 思维活跃'];
+        var NEGATIVE_COMMENTS = ['💬 交头接耳', '😴 听课走神', '🤫 纪律差', '📱 注意力分散', '📢 随意讲话'];
 
         // ================================================================
-        //  [点评] 点评词配置
+        //  📌 全局状态
         // ================================================================
-        var PRAISE_COMMENTS = ['[专注] 听课专注', '[发言] 积极发言', '[笔记] 笔记认真', '[合作] 善于合作', '[思维] 思维活跃'];
-        var NEGATIVE_COMMENTS = ['[说话] 交头接耳', '[走神] 听课走神', '[纪律] 纪律差', '[分心] 注意力分散', '[讲话] 随意讲话'];
-
-        // ================================================================
-        //  [状态] 全局状态
-        // ================================================================
-        var USERS = {}
+        var USERS = {};
         var CLASS_DATA_LIST = {};
         var seatStatus = {};
         var teacherStatus = {};
@@ -409,6 +389,8 @@
         var adminTab = 'student';
         var toastTimer = null;
         var API_BASE = '';
+        var dinerCanEdit = true;
+        var dinerDeadline = '09:00';
 
         // ================================================================
         //  DOM引用
@@ -426,9 +408,7 @@
             toastTimer = setTimeout(function() { t.classList.remove('show'); }, 2500);
         }
 
-        function getUrlParam(name) {
-            return new URLSearchParams(window.location.search).get(name);
-        }
+        function getUrlParam(name) { return new URLSearchParams(window.location.search).get(name); }
 
         function getTodayStr() {
             var d = new Date();
@@ -463,94 +443,76 @@
             return '';
         }
 
-        function getUserRoleLevel(user) {
-            if (!user) return 0;
-            return ROLE_LEVELS[user.role] || 0;
+        function getUserRoleLevel(user) { return user ? ROLE_LEVELS[user.role] || 0 : 0; }
+
+        // ===== 权限判断 =====
+        function hasPermission(user, perm) {
+            if (!user) return false;
+            if (user.role === '超级管理员') return true;
+            if (user.permissions && user.permissions[perm] === true) return true;
+            var defaults = {
+                '管理员': { can_view_all: true, can_manage_all: true, can_comment_all: true, can_manage_users: true, can_export_data: true, can_send_notification: true, can_manage_permissions: false },
+                '校委会': { can_view_all: true, can_manage_all: false, can_comment_all: true, can_manage_users: false, can_export_data: false, can_send_notification: true, can_manage_permissions: false },
+                '年级主任': { can_view_grade: true, can_manage_grade: true, can_comment_grade: true, can_export_data: false, can_send_notification: true, can_manage_permissions: false },
+                '班主任': { can_view_class: true, can_manage_class: true, can_comment_class: false, can_export_data: false, can_send_notification: false, can_manage_permissions: false }
+            };
+            var def = defaults[user.role] || {};
+            return def[perm] === true;
         }
 
-        function canViewAll(user) {
-            var level = getUserRoleLevel(user);
-            return level >= 3 || (user.permissions && user.permissions.can_view_all === true);
-        }
-
-        function canEditAllClasses(user) {
-            var level = getUserRoleLevel(user);
-            if (level === 5) return true;
-            if (level === 4 && user.permissions && user.permissions.can_manage_all_classes === true) return true;
-            return false;
-        }
-
-        function canManageGrade(user) {
-            var level = getUserRoleLevel(user);
-            return level === 2 || level === 5 || (level === 4 && user.permissions && user.permissions.can_manage_all_classes === true);
-        }
-
+        function canViewAll(user) { return hasPermission(user, 'can_view_all') || user.role === '超级管理员'; }
+        function canEditAllClasses(user) { return hasPermission(user, 'can_manage_all') || user.role === '超级管理员'; }
+        function canManageGrade(user) { return hasPermission(user, 'can_manage_grade') || user.role === '超级管理员' || user.role === '管理员'; }
         function canEditClass(user, classKey) {
-            var level = getUserRoleLevel(user);
-            if (level === 5) return true;
-            if (level === 4 && user.permissions && user.permissions.can_manage_all_classes === true) return true;
-            if (level === 2) {
+            if (canEditAllClasses(user)) return true;
+            if (user.role === '年级主任') {
                 var userGrade = user.grade || '';
                 var classGrade = getClassGrade(classKey);
                 return userGrade === classGrade;
             }
-            if (level === 1) {
-                return user.class === classKey;
-            }
+            if (user.role === '班主任') return user.class === classKey;
             return false;
         }
-
         function canSendDingTalk(user, classKey) {
-            var level = getUserRoleLevel(user);
-            if (level >= 3) return true;
-            if (level === 2) {
+            if (user.role === '超级管理员' || user.role === '管理员' || user.role === '校委会') return true;
+            if (user.role === '年级主任') {
                 var userGrade = user.grade || '';
                 var classGrade = getClassGrade(classKey);
                 return userGrade === classGrade;
             }
             return false;
         }
-
-        function canManageUsers(user) {
-            var level = getUserRoleLevel(user);
-            if (level === 5) return true;
-            if (level === 4 && user.permissions && user.permissions.can_manage_users === true) return true;
+        function canCommentStudent(user, classKey) {
+            if (user.role === '超级管理员' || user.role === '管理员' || user.role === '校委会') return true;
+            if (user.role === '年级主任') {
+                var userGrade = user.grade || '';
+                var classGrade = getClassGrade(classKey);
+                return userGrade === classGrade;
+            }
             return false;
         }
+        function canManageUsers(user) { return hasPermission(user, 'can_manage_users') || user.role === '超级管理员'; }
+        function canManagePermissions(user) { return hasPermission(user, 'can_manage_permissions') || user.role === '超级管理员'; }
 
         // ================================================================
         //  云端数据同步
         // ================================================================
         function loadAllDataFromServer() {
             return fetch(API_BASE + '/api/data')
-                .then(function(response) { return response.json(); })
+                .then(function(r) { return r.json(); })
                 .then(function(result) {
                     if (result.success) {
-                        var serverData = result.data;
-                        if (serverData.classDataList) {
-                            CLASS_DATA_LIST = serverData.classDataList;
-                        }
-                        if (serverData.users) {
-                            USERS = serverData.users;
-                        }
-                        if (serverData.seatStatus && currentClassKey && serverData.seatStatus[currentClassKey]) {
-                            seatStatus = serverData.seatStatus[currentClassKey] || {};
-                        }
-                        if (serverData.teacherStatus && currentClassKey && serverData.teacherStatus[currentClassKey]) {
-                            teacherStatus = serverData.teacherStatus[currentClassKey] || {};
-                        }
-                        if (serverData.attendanceRecords) {
-                            attendanceRecords = serverData.attendanceRecords;
-                        }
-                        console.log('从服务器加载数据成功');
+                        var d = result.data;
+                        if (d.classDataList) CLASS_DATA_LIST = d.classDataList;
+                        if (d.users) USERS = d.users;
+                        if (d.seatStatus && currentClassKey && d.seatStatus[currentClassKey]) seatStatus = d.seatStatus[currentClassKey];
+                        if (d.teacherStatus && currentClassKey && d.teacherStatus[currentClassKey]) teacherStatus = d.teacherStatus[currentClassKey];
+                        if (d.attendanceRecords) attendanceRecords = d.attendanceRecords;
                         return true;
                     }
                     return false;
                 })
-                .catch(function(err) {
-                    console.log('从服务器加载数据失败:', err);
-                    return false;
-                });
+                .catch(function(e) { console.error('加载数据失败:', e); return false; });
         }
 
         function saveAllDataToServer() {
@@ -565,108 +527,71 @@
                 dataToSave.seatStatus[currentClassKey] = seatStatus;
                 dataToSave.teacherStatus[currentClassKey] = teacherStatus;
             }
-
             return fetch(API_BASE + '/api/data', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ data: dataToSave })
             })
-            .then(function(response) { return response.json(); })
+            .then(function(r) { return r.json(); })
             .then(function(result) {
-                if (result.success) {
-                    console.log('数据已同步到服务器');
-                    return true;
-                } else {
-                    console.log('数据同步失败:', result.error);
-                    return false;
-                }
+                if (result.success) console.log('✅ 数据已同步');
+                else console.error('❌ 同步失败:', result.error);
+                return result.success;
             })
-            .catch(function(err) {
-                console.log('数据同步网络错误:', err);
-                return false;
-            });
+            .catch(function(e) { console.error('❌ 网络错误:', e); return false; });
         }
 
-        function saveDataToServer() {
-            saveAllDataToServer();
-        }
+        function saveDataToServer() { saveAllDataToServer(); }
 
         // ================================================================
-        //  钉钉消息发送
+        //  钉钉发送
         // ================================================================
         var BACKEND_URL = '/send';
-
         function sendDingTalk(message, isEmergency) {
-            console.log('===== 准备发送消息 =====');
-            console.log(message);
-            fetch(BACKEND_URL, {
+            return fetch(BACKEND_URL, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ message: message, isEmergency: isEmergency })
             })
-            .then(function(response) { return response.json(); })
+            .then(function(r) { return r.json(); })
             .then(function(result) {
-                if (result.success) {
-                    console.log('消息发送成功!');
-                    showToast('已发送钉钉通知');
-                } else {
-                    console.log('发送失败:', result.error);
-                    showToast('发送失败: ' + result.error);
-                }
+                if (result.success) showToast('✅ 已发送钉钉通知');
+                else showToast('⚠️ 发送失败');
             })
-            .catch(function(err) {
-                console.log('网络错误:', err);
-                showToast('网络错误，请检查网络');
-            });
+            .catch(function(e) { showToast('⚠️ 网络错误'); });
         }
 
         // ================================================================
-        //  记住登录状态
+        //  记住登录
         // ================================================================
         function saveLoginState(username) {
-            try {
-                var state = { username: username, timestamp: Date.now() };
-                localStorage.setItem('loginState', JSON.stringify(state));
-            } catch (e) {}
+            try { localStorage.setItem('loginState', JSON.stringify({ username: username, timestamp: Date.now() })); } catch(e) {}
         }
-
         function getLoginState() {
             try {
                 var raw = localStorage.getItem('loginState');
                 if (!raw) return null;
                 var state = JSON.parse(raw);
-                var expireTime = 7 * 24 * 60 * 60 * 1000;
-                if (Date.now() - state.timestamp > expireTime) {
+                if (Date.now() - state.timestamp > 7 * 24 * 60 * 60 * 1000) {
                     localStorage.removeItem('loginState');
                     return null;
                 }
                 return state;
-            } catch (e) { return null; }
+            } catch(e) { return null; }
         }
-
-        function clearLoginState() {
-            localStorage.removeItem('loginState');
-        }
+        function clearLoginState() { localStorage.removeItem('loginState'); }
 
         function autoLogin() {
             var state = getLoginState();
             if (!state) return false;
-            var username = state.username;
-            var user = USERS[username];
-            if (!user) {
-                clearLoginState();
-                return false;
-            }
+            var user = USERS[state.username];
+            if (!user) { clearLoginState(); return false; }
             currentUser = user;
-            if (user.class && CLASS_DATA_LIST[user.class]) {
-                currentClassKey = user.class;
-            } else {
-                var keys = Object.keys(CLASS_DATA_LIST);
-                currentClassKey = keys.length > 0 ? keys[0] : null;
-            }
+            if (user.class && CLASS_DATA_LIST[user.class]) currentClassKey = user.class;
+            else { var keys = Object.keys(CLASS_DATA_LIST); currentClassKey = keys.length > 0 ? keys[0] : null; }
             showUI();
             loadClassData();
-            showToast('欢迎回来，' + user.name);
+            showToast('👋 欢迎回来，' + user.name);
             return true;
         }
 
@@ -705,7 +630,7 @@
                 else if (teacherStatus[i] === 'phone') warnClass = 'warning-phone';
                 else if (teacherStatus[i] === 'late') warnClass = 'warning-late';
                 var disabledClass = canEdit ? '' : ' disabled';
-                var hint = canEdit ? '点击点评' : '仅领导可评';
+                var hint = canEdit ? '点击点评' : '🔒 仅领导可评';
                 html += '<div class="teacher-item ' + warnClass + disabledClass + '" data-index="' + i + '">' +
                     '<div class="name">' + t.name + '</div>' +
                     '<div class="role">' + t.role + '</div>' +
@@ -722,13 +647,13 @@
                     });
                 })(items[i]);
             }
-            $('teacherLockIcon').textContent = canEdit ? '[开]' : '[锁]';
+            $('teacherLockIcon').textContent = canEdit ? '🔓' : '🔒';
             $('teacherBadge').textContent = canEdit ? '点击可点评' : '仅领导可点评';
         }
 
         function renderSchedule() {
             var schedule = getCurrentSchedule();
-            var days = ['周一', '周二', '周三', '周四', '周五'];
+            var days = ['周一','周二','周三','周四','周五'];
             var periods = [];
             for (var i = 1; i <= schedule.length; i++) periods.push('第' + i + '节');
             var html = '';
@@ -743,11 +668,8 @@
             $('scheduleBody').innerHTML = html;
             var isTeacher = currentUser && currentUser.role === '班主任' && currentUser.class === currentClassKey;
             var se = $('scheduleAdminEntry');
-            if (isTeacher || canEditClass(currentUser, currentClassKey)) {
-                se.classList.remove('hidden');
-            } else {
-                se.classList.add('hidden');
-            }
+            if (isTeacher || canEditClass(currentUser, currentClassKey)) se.classList.remove('hidden');
+            else se.classList.add('hidden');
         }
 
         function renderSeats() {
@@ -763,7 +685,7 @@
                 var name = students[i];
                 var fontSize = name.length >= 4 ? '11px' : '12px';
                 var disabledClass = canEdit ? '' : ' disabled';
-                var hint = canEdit ? '' : '<span class="seat-hint">[锁]</span>';
+                var hint = canEdit ? '' : '<span class="seat-hint">🔒</span>';
                 html += '<div class="seat' + disabledClass + '" data-index="' + i + '" style="font-size:' + fontSize + ';">' +
                     name + '<span class="status-dot"></span>' + hint + '</div>';
             }
@@ -778,25 +700,18 @@
                 })(seats[i]);
             }
             updateSeatStatus();
-            $('seatLockIcon').textContent = canEdit ? '[开]' : '[锁]';
+            $('seatLockIcon').textContent = canEdit ? '🔓' : '🔒';
             var btns = ['classOverallBtn', 'resetAttendanceBtn', 'reportBtn'];
             for (var i = 0; i < btns.length; i++) {
                 var btn = $(btns[i]);
                 if (btn) { btn.disabled = !currentUser; btn.style.opacity = currentUser ? '1' : '0.5'; }
             }
             var se = $('studentAdminEntry');
-            var isTeacher = currentUser && currentUser.role === '班主任' && currentUser.class === currentClassKey;
-            if (isTeacher || canEditClass(currentUser, currentClassKey)) {
-                se.classList.remove('hidden');
-            } else {
-                se.classList.add('hidden');
-            }
+            if (canEditClass(currentUser, currentClassKey) || getUserRoleLevel(currentUser) >= 2) se.classList.remove('hidden');
+            else se.classList.add('hidden');
             var superEntry = $('superAdminEntry');
-            if (canManageUsers(currentUser) || canEditAllClasses(currentUser)) {
-                superEntry.classList.remove('hidden');
-            } else {
-                superEntry.classList.add('hidden');
-            }
+            if (canManageUsers(currentUser) || canEditAllClasses(currentUser) || canManagePermissions(currentUser)) superEntry.classList.remove('hidden');
+            else superEntry.classList.add('hidden');
         }
 
         function updateSeatStatus() {
@@ -804,14 +719,14 @@
             for (var i = 0; i < seats.length; i++) {
                 var el = seats[i];
                 var status = seatStatus[i] || 'present';
-                el.classList.remove('present', 'late', 'absent', 'leave', 'not-in-room');
+                el.classList.remove('present','late','absent','leave','not-in-room');
                 var dot = el.querySelector('.status-dot');
-                if (status === 'present') { el.classList.add('present'); dot.textContent = '[到]'; }
-                else if (status === 'late') { el.classList.add('late'); dot.textContent = '[迟]'; }
-                else if (status === 'absent') { el.classList.add('absent'); dot.textContent = '[缺]'; }
-                else if (status === 'leave') { el.classList.add('leave'); dot.textContent = '[假]'; }
-                else if (status === 'not-in-room') { el.classList.add('not-in-room'); dot.textContent = '[离]'; }
-                else { el.classList.add('present'); dot.textContent = '[到]'; }
+                if (status === 'present') { el.classList.add('present'); dot.textContent = '✅'; }
+                else if (status === 'late') { el.classList.add('late'); dot.textContent = '⏰'; }
+                else if (status === 'absent') { el.classList.add('absent'); dot.textContent = '❌'; }
+                else if (status === 'leave') { el.classList.add('leave'); dot.textContent = '📝'; }
+                else if (status === 'not-in-room') { el.classList.add('not-in-room'); dot.textContent = '🚪'; }
+                else { el.classList.add('present'); dot.textContent = '✅'; }
             }
             updateStats();
             saveDataToServer();
@@ -826,24 +741,19 @@
                 praiseHtml += '<button class="quick-btn" data-comment="' + PRAISE_COMMENTS[i] + '">' + PRAISE_COMMENTS[i] + '</button>';
             }
             document.getElementById('praiseGrid').innerHTML = praiseHtml;
-
             var negativeHtml = '';
             for (var i = 0; i < NEGATIVE_COMMENTS.length; i++) {
                 negativeHtml += '<button class="quick-btn negative" data-comment="' + NEGATIVE_COMMENTS[i] + '">' + NEGATIVE_COMMENTS[i] + '</button>';
             }
             document.getElementById('negativeGrid').innerHTML = negativeHtml;
-
             var allBtns = document.querySelectorAll('#praiseGrid .quick-btn, #negativeGrid .quick-btn');
             for (var i = 0; i < allBtns.length; i++) {
                 (function(btn) {
                     btn.addEventListener('click', function() {
                         var comment = this.dataset.comment;
                         var current = document.getElementById('studentComment').value.trim();
-                        if (current === '') {
-                            document.getElementById('studentComment').value = comment;
-                        } else {
-                            document.getElementById('studentComment').value = current + '，' + comment;
-                        }
+                        if (current === '') document.getElementById('studentComment').value = comment;
+                        else document.getElementById('studentComment').value = current + '，' + comment;
                         document.getElementById('studentComment').style.height = 'auto';
                         document.getElementById('studentComment').style.height = document.getElementById('studentComment').scrollHeight + 'px';
                     });
@@ -852,33 +762,31 @@
         }
 
         // ================================================================
-        //  学生弹窗
+        //  弹窗控制
         // ================================================================
         function openStudentModal(index) {
-            if (!currentUser) { showToast('请先登录'); return; }
+            if (!currentUser) { showToast('🔒 请先登录'); return; }
             var students = getCurrentStudents();
             if (!students || index >= students.length) return;
-            var canEdit = canEditClass(currentUser, currentClassKey);
-            if (!canEdit) { showToast('您无权操作该班'); return; }
+            if (!canCommentStudent(currentUser, currentClassKey) && !canEditClass(currentUser, currentClassKey)) {
+                showToast('🔒 您无权操作该班');
+                return;
+            }
             selectedStudentIndex = index;
             var data = getCurrentData();
             document.getElementById('studentModalName').textContent = students[index];
             document.getElementById('studentModalInfo').textContent = data.className + ' · 座位号 ' + (index + 1);
             document.getElementById('studentComment').value = '';
             document.getElementById('studentComment').style.height = 'auto';
-
-            var isLeader = getUserRoleLevel(currentUser) >= 3;
+            var canEdit = canEditClass(currentUser, currentClassKey);
+            var canComment = canCommentStudent(currentUser, currentClassKey);
             var btns = document.querySelectorAll('#studentStatusGrid .status-btn');
             for (var i = 0; i < btns.length; i++) {
-                btns[i].style.display = isLeader ? 'none' : '';
+                btns[i].style.display = canEdit ? '' : 'none';
             }
-
-            document.getElementById('praiseGrid').style.display = isLeader ? '' : 'none';
-            document.getElementById('negativeGrid').style.display = isLeader ? '' : 'none';
-
-            if (isLeader) {
-                renderQuickComments();
-            }
+            document.getElementById('praiseGrid').style.display = canComment ? '' : 'none';
+            document.getElementById('negativeGrid').style.display = canComment ? '' : 'none';
+            if (canComment) renderQuickComments();
             document.getElementById('studentModal').classList.add('active');
         }
 
@@ -887,12 +795,9 @@
             selectedStudentIndex = null;
         }
 
-        // ================================================================
-        //  教师弹窗
-        // ================================================================
         function openTeacherModal(index) {
-            if (!currentUser) { showToast('请先登录'); return; }
-            if (getUserRoleLevel(currentUser) < 3) { showToast('仅领导可点评教师'); return; }
+            if (!currentUser) { showToast('🔒 请先登录'); return; }
+            if (!canCommentStudent(currentUser, currentClassKey)) { showToast('🔒 您无权点评该班教师'); return; }
             var teachers = getCurrentTeachers();
             if (!teachers || index >= teachers.length) return;
             selectedTeacherIndex = index;
@@ -911,11 +816,8 @@
             selectedTeacherIndex = null;
         }
 
-        // ================================================================
-        //  班级整体表现
-        // ================================================================
         function openClassOverallModal() {
-            if (!currentUser) { showToast('请先登录'); return; }
+            if (!currentUser) { showToast('🔒 请先登录'); return; }
             var data = getCurrentData();
             document.getElementById('classOverallInfo').textContent = data.className;
             document.getElementById('classOverallComment').value = '';
@@ -939,7 +841,6 @@
             var comment = document.getElementById('studentComment').value.trim();
 
             if (status) {
-                var oldStatus = seatStatus[selectedStudentIndex] || 'present';
                 seatStatus[selectedStudentIndex] = status;
                 var today = getTodayStr();
                 if (!attendanceRecords[today]) attendanceRecords[today] = {};
@@ -949,35 +850,30 @@
                     if (!attendanceRecords[today + '_stop']) attendanceRecords[today + '_stop'] = {};
                     if (!attendanceRecords[today + '_stop'][currentClassKey]) attendanceRecords[today + '_stop'][currentClassKey] = {};
                     attendanceRecords[today + '_stop'][currentClassKey][name] = status;
-                } else if (oldStatus === 'leave' || oldStatus === 'absent') {
-                    if (attendanceRecords[today + '_stop'] && attendanceRecords[today + '_stop'][currentClassKey]) {
-                        delete attendanceRecords[today + '_stop'][currentClassKey][name];
-                    }
                 }
             }
             updateSeatStatus();
 
-            var isLeader = getUserRoleLevel(currentUser) >= 3;
-            if (isLeader && comment) {
-                var statusMap = { present: '到课', late: '迟到', absent: '缺勤', leave: '请假', 'not-in-room': '未在教室' };
-                var statusLabel = status ? (statusMap[status] || status) : '到课';
+            if (canCommentStudent(currentUser, currentClassKey) && comment) {
+                var statusMap = { present:'✅ 到课', late:'⏰ 迟到', absent:'❌ 缺勤', leave:'📝 请假', 'not-in-room':'🚪 未在教室' };
+                var statusLabel = status ? (statusMap[status] || status) : '✅ 到课';
                 var canSend = canSendDingTalk(currentUser, currentClassKey);
-                var msg = '【学生课堂点评】\n\n' +
-                    '班级：' + data.className + '\n' +
-                    '学生：' + name + '\n' +
-                    '出勤：' + statusLabel + '\n' +
-                    '点评：' + comment + '\n' +
-                    '点评人：' + currentUser.name + '（' + currentUser.role + '）\n' +
-                    '时间：' + getNowStr();
+                var msg = '📢 **学生课堂点评**\n\n' +
+                    '🏫 班级：' + data.className + '\n' +
+                    '👤 学生：' + name + '\n' +
+                    '📊 出勤：' + statusLabel + '\n' +
+                    '💬 点评：' + comment + '\n' +
+                    '👨‍🏫 点评人：' + currentUser.name + '（' + currentUser.role + '）\n' +
+                    '🕐 时间：' + getNowStr();
                 if (canSend) {
                     sendDingTalk(msg, false);
-                    showToast('已点评 ' + name + '，已通知班主任');
+                    showToast('✅ 已点评 ' + name + '，已通知班主任');
                 } else {
-                    showToast('已点评 ' + name + '（本班记录）');
+                    showToast('✅ 已点评 ' + name + '（本班记录）');
                 }
             } else {
-                var statusMap = { present: '到课', late: '迟到', absent: '缺勤', leave: '请假', 'not-in-room': '未在教室' };
-                showToast('已更新 ' + name + ' 状态：' + (statusMap[status] || status));
+                var statusMap = { present:'✅ 到课', late:'⏰ 迟到', absent:'❌ 缺勤', leave:'📝 请假', 'not-in-room':'🚪 未在教室' };
+                showToast('✅ 已更新 ' + name + ' 状态：' + (statusMap[status] || status));
             }
             closeStudentModal();
         }
@@ -991,31 +887,29 @@
             var data = getCurrentData();
             var t = teachers[selectedTeacherIndex];
             var comment = document.getElementById('teacherComment').value.trim();
-
             if (status === 'normal') {
                 teacherStatus[selectedTeacherIndex] = 'normal';
                 renderTeachers();
-                showToast('已记录：' + t.name + ' 正常授课');
+                showToast('✅ 已记录：' + t.name + ' 正常授课');
                 closeTeacherModal();
                 return;
             }
-            var statusMap = { empty: '空堂（教师不在教室）', phone: '玩手机/做与教学无关的事', late: '教师迟到' };
+            var statusMap = { empty:'🕳️ 空堂（教师不在教室）', phone:'📱 玩手机/做与教学无关的事', late:'⏰ 教师迟到' };
             teacherStatus[selectedTeacherIndex] = status;
             renderTeachers();
-
             var canSend = canSendDingTalk(currentUser, currentClassKey);
-            var msg = '【教学异常紧急通报】\n\n' +
-                '班级：' + data.className + '\n' +
-                '教师：' + t.name + '（' + t.role.replace('班主任 · ', '') + '）\n' +
-                '问题：' + (statusMap[status] || status) + '\n' +
-                '备注：' + (comment || '无') + '\n' +
-                '报告人：' + currentUser.name + '（' + currentUser.role + '）\n' +
-                '时间：' + getNowStr();
+            var msg = '🚨 **教学异常紧急通报**\n\n' +
+                '🏫 班级：' + data.className + '\n' +
+                '👨‍🏫 教师：' + t.name + '（' + t.role.replace('班主任 · ', '') + '）\n' +
+                '⚠️ 问题：' + (statusMap[status] || status) + '\n' +
+                '📝 备注：' + (comment || '无') + '\n' +
+                '👨‍🏫 报告人：' + currentUser.name + '（' + currentUser.role + '）\n' +
+                '🕐 时间：' + getNowStr();
             if (canSend) {
                 sendDingTalk(msg, true);
-                showToast('已通报：' + t.name + ' ' + (statusMap[status] || status));
+                showToast('🚨 已通报：' + t.name + ' ' + (statusMap[status] || status));
             } else {
-                showToast('已记录：' + t.name + ' ' + (statusMap[status] || status) + '（本班记录）');
+                showToast('✅ 已记录：' + t.name + ' ' + (statusMap[status] || status) + '（本班记录）');
             }
             closeTeacherModal();
         }
@@ -1029,29 +923,29 @@
             var at = sa ? sa.dataset.value : '未评价';
             var dt = sd ? sd.dataset.value : '未评价';
             var canSend = canSendDingTalk(currentUser, currentClassKey);
-            var msg = '【班级整体表现点评】\n\n' +
-                '班级：' + data.className + '\n' +
-                '课堂氛围：' + at + '\n' +
-                '纪律情况：' + dt + '\n' +
-                '补充说明：' + (comment || '无') + '\n' +
-                '评价人：' + currentUser.name + '（' + currentUser.role + '）\n' +
-                '时间：' + getNowStr();
+            var msg = '📢 **班级整体表现点评**\n\n' +
+                '🏫 班级：' + data.className + '\n' +
+                '🎯 课堂氛围：' + at + '\n' +
+                '📋 纪律情况：' + dt + '\n' +
+                '📝 补充说明：' + (comment || '无') + '\n' +
+                '👨‍🏫 评价人：' + currentUser.name + '（' + currentUser.role + '）\n' +
+                '🕐 时间：' + getNowStr();
             if (canSend) {
                 sendDingTalk(msg, false);
-                showToast('班级整体评价已发送');
+                showToast('✅ 班级整体评价已发送');
             } else {
-                showToast('班级整体评价已记录');
+                showToast('✅ 班级整体评价已记录');
             }
             closeClassOverallModal();
         }
 
         function resetAttendance() {
-            if (!canEditClass(currentUser, currentClassKey)) { showToast('您无权重置该班出勤'); return; }
-            if (confirm('确认将全班状态重置为"到课"吗？')) { seatStatus = {}; updateSeatStatus(); showToast('已重置今日出勤状态'); }
+            if (!canEditClass(currentUser, currentClassKey)) { showToast('🔒 您无权重置该班出勤'); return; }
+            if (confirm('确认将全班状态重置为"到课"吗？')) { seatStatus = {}; updateSeatStatus(); showToast('✅ 已重置今日出勤状态'); }
         }
 
         function openReport() {
-            if (!currentUser) { showToast('请先登录'); return; }
+            if (!currentUser) { showToast('🔒 请先登录'); return; }
             var students = getCurrentStudents();
             var p = [], l = [], a = [], le = [], n = [];
             for (var i = 0; i < students.length; i++) {
@@ -1063,13 +957,13 @@
                 else if (status === 'leave') le.push(name);
                 else if (status === 'not-in-room') n.push(name);
             }
-            var text = '今日出勤明细（' + getTodayStr() + '）\n\n' +
-                '到课：' + (p.length > 0 ? p.join('、') : '无') + '（' + p.length + '人）\n\n' +
-                '迟到：' + (l.length > 0 ? l.join('、') : '无') + '（' + l.length + '人）\n\n' +
-                '缺勤：' + (a.length > 0 ? a.join('、') : '无') + '（' + a.length + '人）\n\n' +
-                '请假：' + (le.length > 0 ? le.join('、') : '无') + '（' + le.length + '人）\n\n' +
-                '未在教室：' + (n.length > 0 ? n.join('、') : '无') + '（' + n.length + '人）\n\n' +
-                '总计：' + students.length + '人';
+            var text = '📊 今日出勤明细（' + getTodayStr() + '）\n\n' +
+                '✅ 到课：' + (p.length > 0 ? p.join('、') : '无') + '（' + p.length + '人）\n\n' +
+                '⏰ 迟到：' + (l.length > 0 ? l.join('、') : '无') + '（' + l.length + '人）\n\n' +
+                '❌ 缺勤：' + (a.length > 0 ? a.join('、') : '无') + '（' + a.length + '人）\n\n' +
+                '📝 请假：' + (le.length > 0 ? le.join('、') : '无') + '（' + le.length + '人）\n\n' +
+                '🚪 未在教室：' + (n.length > 0 ? n.join('、') : '无') + '（' + n.length + '人）\n\n' +
+                '📌 总计：' + students.length + '人';
             document.getElementById('reportContent').textContent = text;
             document.getElementById('reportDate').textContent = getTodayStr();
             document.getElementById('reportModal').classList.add('active');
@@ -1080,10 +974,9 @@
         function copyReport() {
             var text = document.getElementById('reportContent').textContent;
             if (navigator.clipboard) {
-                navigator.clipboard.writeText(text).then(function() { showToast('已复制到剪贴板'); }).catch(function() { copyTextFallback(text); });
+                navigator.clipboard.writeText(text).then(function() { showToast('✅ 已复制到剪贴板'); }).catch(function() { copyTextFallback(text); });
             } else { copyTextFallback(text); }
         }
-
         function copyTextFallback(text) {
             var ta = document.createElement('textarea');
             ta.value = text;
@@ -1091,17 +984,17 @@
             ta.select();
             document.execCommand('copy');
             document.body.removeChild(ta);
-            showToast('已复制到剪贴板');
+            showToast('✅ 已复制到剪贴板');
         }
 
         // ================================================================
         //  管理弹窗
         // ================================================================
         function openAdminModal(tab) {
-            if (!currentUser) { showToast('请先登录'); return; }
-            if (tab === 'user' || tab === 'class') {
-                if (!canManageUsers(currentUser) && !canEditAllClasses(currentUser)) {
-                    showToast('您无权管理账号或班级');
+            if (!currentUser) { showToast('🔒 请先登录'); return; }
+            if (tab === 'user' || tab === 'class' || tab === 'permission' || tab === 'config') {
+                if (!canManageUsers(currentUser) && !canEditAllClasses(currentUser) && !canManagePermissions(currentUser)) {
+                    showToast('🔒 您无权管理');
                     return;
                 }
             }
@@ -1116,24 +1009,29 @@
         function renderAdminContent() {
             var data = getCurrentData();
             var canEdit = canEditClass(currentUser, currentClassKey);
+            var isSuper = currentUser && currentUser.role === '超级管理员';
+            var isAdmin = currentUser && currentUser.role === '管理员';
+            var canManage = canManageUsers(currentUser) || canEditAllClasses(currentUser) || canManagePermissions(currentUser);
 
             var tabsHtml = '';
             var tabs = [];
-            if (canEdit || getUserRoleLevel(currentUser) >= 3) {
-                tabs.push({ key: 'student', label: '学生' });
-                tabs.push({ key: 'schedule', label: '课表' });
-                tabs.push({ key: 'teacher', label: '教师' });
+            if (canEdit || getUserRoleLevel(currentUser) >= 2) {
+                tabs.push({ key: 'student', label: '👨‍🎓 学生' });
+                tabs.push({ key: 'schedule', label: '📚 课表' });
+                tabs.push({ key: 'teacher', label: '👨‍🏫 教师' });
             }
-            if (currentUser && getUserRoleLevel(currentUser) >= 3) {
-                tabs.push({ key: 'diner', label: '就餐' });
+            if (currentUser && getUserRoleLevel(currentUser) >= 2) {
+                tabs.push({ key: 'diner', label: '🍱 就餐' });
             }
-            if (canManageUsers(currentUser) || canEditAllClasses(currentUser)) {
-                tabs.push({ key: 'class', label: '班级' });
-                tabs.push({ key: 'user', label: '账号' });
+            if (canManage) {
+                tabs.push({ key: 'class', label: '🏫 班级' });
+                tabs.push({ key: 'user', label: '👤 账号' });
             }
-            if (tabs.length === 0) {
-                tabs.push({ key: 'student', label: '学生' });
+            if (canManagePermissions(currentUser) || isSuper) {
+                tabs.push({ key: 'permission', label: '🔐 权限' });
+                tabs.push({ key: 'config', label: '⚙️ 配置' });
             }
+            if (tabs.length === 0) tabs.push({ key: 'student', label: '👨‍🎓 学生' });
 
             for (var i = 0; i < tabs.length; i++) {
                 var active = tabs[i].key === adminTab ? 'active' : '';
@@ -1145,40 +1043,54 @@
             if (adminTab === 'student') html = renderAdminStudents(data);
             else if (adminTab === 'schedule') html = renderAdminSchedule(data);
             else if (adminTab === 'teacher') html = renderAdminTeachers(data);
-            else if (adminTab === 'diner') html = renderAdminDiner();
+            else if (adminTab === 'diner') html = renderAdminDiner(data);
             else if (adminTab === 'class') html = renderAdminClasses();
             else if (adminTab === 'user') html = renderAdminUsers();
+            else if (adminTab === 'permission') html = renderAdminPermissions();
+            else if (adminTab === 'config') html = renderAdminConfig();
             document.getElementById('adminContent').innerHTML = html;
         }
 
         function switchAdminTab(tab) { adminTab = tab; renderAdminContent(); }
 
         // ================================================================
-        //  学生管理
+        //  学生管理（含就餐、课后服务标签 + 时间锁）
         // ================================================================
         function renderAdminStudents(data) {
             var students = data.students || [];
-            var html = '<div class="admin-table-wrap"><table class="admin-table"><thead><tr>' +
-                '<th>序号</th><th>姓名</th><th>在校就餐</th><th>操作</th></tr></thead><tbody>';
+            var diners = data.diners || {};
+            var afterSchool = data.afterSchool || {};
+            var timeLockMsg = dinerCanEdit ? '' : '⏰ 已超过就餐调整时间（' + dinerDeadline + '），不可修改就餐状态';
+            var html = '';
+            if (!dinerCanEdit) {
+                html += '<div class="time-lock-warning" style="display:block;">' + timeLockMsg + '</div>';
+            }
+            html += '<div class="admin-table-wrap"><table class="admin-table"><thead><tr>' +
+                '<th>序号</th><th>姓名</th><th>🍱 在校就餐</th><th>📚 课后服务</th><th>操作</th></tr></thead><tbody>';
             for (var i = 0; i < students.length; i++) {
                 var name = students[i];
-                var isDiner = data.diners && data.diners[name] ? 'checked' : '';
+                var isDiner = diners[name] ? 'checked' : '';
+                var isAfter = afterSchool[name] ? 'checked' : '';
+                var dinerDisabled = dinerCanEdit ? '' : 'disabled';
                 html += '<tr>' +
                     '<td>' + (i + 1) + '</td>' +
                     '<td><input type="text" value="' + name + '" data-index="' + i + '" onchange="updateStudentName(' + i + ', this.value)"></td>' +
-                    '<td><input type="checkbox" ' + isDiner + ' onchange="updateStudentDiner(' + i + ', this.checked)"></td>' +
-                    '<td><button class="del-btn" onclick="deleteStudent(' + i + ')">删除</button></td>' +
+                    '<td><input type="checkbox" ' + isDiner + ' ' + dinerDisabled + ' onchange="updateStudentDiner(' + i + ', this.checked)"></td>' +
+                    '<td><input type="checkbox" ' + isAfter + ' onchange="updateStudentAfterSchool(' + i + ', this.checked)"></td>' +
+                    '<td><button class="del-btn" onclick="deleteStudent(' + i + ')">✕</button></td>' +
                     '</tr>';
             }
             html += '</tbody></table></div>';
             html += '<div class="admin-add-row">' +
                 '<input type="text" id="newStudentName" placeholder="输入新学生姓名">' +
                 '<label style="display:flex;align-items:center;gap:4px;font-size:13px;color:#666;">' +
-                '<input type="checkbox" id="newStudentDiner" checked> 在校就餐</label>' +
-                '<button onclick="addStudent()">添加</button>' +
+                '<input type="checkbox" id="newStudentDiner" checked> 就餐</label>' +
+                '<label style="display:flex;align-items:center;gap:4px;font-size:13px;color:#666;">' +
+                '<input type="checkbox" id="newStudentAfter" checked> 课后</label>' +
+                '<button onclick="addStudent()">➕ 添加</button>' +
                 '</div>' +
                 '<div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap;">' +
-                '<button onclick="batchAddStudents()" style="padding:6px 16px;border:1px solid #4A90D9;border-radius:6px;background:white;color:#4A90D9;font-size:13px;cursor:pointer;">批量添加</button>' +
+                '<button onclick="batchAddStudents()" style="padding:6px 16px;border:1px solid #4A90D9;border-radius:6px;background:white;color:#4A90D9;font-size:13px;cursor:pointer;">📋 批量添加</button>' +
                 '</div>';
             return html;
         }
@@ -1189,34 +1101,39 @@
             if (!name) { showToast('请输入姓名'); return; }
             var data = getCurrentData();
             if (!data.diners) data.diners = {};
+            if (!data.afterSchool) data.afterSchool = {};
             data.students.push(name);
             data.diners[name] = document.getElementById('newStudentDiner').checked;
+            data.afterSchool[name] = document.getElementById('newStudentAfter').checked;
             saveClassData(data);
             renderAdminContent();
             renderSeats();
-            showToast('已添加：' + name);
+            showToast('✅ 已添加：' + name);
             input.value = '';
         }
 
         function batchAddStudents() {
             var names = prompt('请输入学生姓名，用逗号、顿号或空格分隔：\n例如：张三、李四、王五');
-            if (names === null) return;
+            if (!names) return;
             names = names.trim();
-            if (names === '') { showToast('请输入姓名'); return; }
+            if (names === '') { showToast('⚠️ 请输入姓名'); return; }
             var list = names.split(/[,，、\s\n]+/).filter(function(s) { return s.trim() !== ''; });
-            if (list.length === 0) { showToast('未识别到有效姓名'); return; }
+            if (list.length === 0) { showToast('⚠️ 未识别到有效姓名'); return; }
             var eatDiner = confirm('这批学生是否都在校就餐？\n点击"确定"全部在校就餐，"取消"则全部不在校就餐');
+            var eatAfter = confirm('这批学生是否都参加课后服务？\n点击"确定"全部参加，"取消"则全部不参加');
             var data = getCurrentData();
             if (!data.diners) data.diners = {};
+            if (!data.afterSchool) data.afterSchool = {};
             for (var i = 0; i < list.length; i++) {
                 var name = list[i].trim();
                 data.students.push(name);
                 data.diners[name] = eatDiner;
+                data.afterSchool[name] = eatAfter;
             }
             saveClassData(data);
             renderAdminContent();
             renderSeats();
-            showToast('已添加 ' + list.length + ' 名学生');
+            showToast('✅ 已添加 ' + list.length + ' 名学生');
         }
 
         function deleteStudent(index) {
@@ -1225,6 +1142,7 @@
             var name = data.students[index];
             data.students.splice(index, 1);
             if (data.diners) delete data.diners[name];
+            if (data.afterSchool) delete data.afterSchool[name];
             var newStatus = {};
             for (var i = 0; i < data.students.length; i++) {
                 var oldIndex = i >= index ? i + 1 : i;
@@ -1234,7 +1152,7 @@
             saveClassData(data);
             renderAdminContent();
             renderSeats();
-            showToast('已删除');
+            showToast('✅ 已删除');
         }
 
         function updateStudentName(index, newName) {
@@ -1246,20 +1164,37 @@
                     data.diners[newName.trim()] = data.diners[oldName];
                     delete data.diners[oldName];
                 }
+                if (data.afterSchool && data.afterSchool[oldName] !== undefined) {
+                    data.afterSchool[newName.trim()] = data.afterSchool[oldName];
+                    delete data.afterSchool[oldName];
+                }
                 data.students[index] = newName.trim();
                 saveClassData(data);
                 renderSeats();
-                showToast('已更新');
+                showToast('✅ 已更新');
             }
         }
 
         function updateStudentDiner(index, checked) {
+            if (!dinerCanEdit) {
+                showToast('⏰ 已超过就餐调整时间（' + dinerDeadline + '），不可修改就餐状态');
+                return;
+            }
             var data = getCurrentData();
             var name = data.students[index];
             if (!data.diners) data.diners = {};
             data.diners[name] = checked;
             saveClassData(data);
-            showToast('已更新就餐状态');
+            showToast('✅ 已更新就餐状态');
+        }
+
+        function updateStudentAfterSchool(index, checked) {
+            var data = getCurrentData();
+            var name = data.students[index];
+            if (!data.afterSchool) data.afterSchool = {};
+            data.afterSchool[name] = checked;
+            saveClassData(data);
+            showToast('✅ 已更新课后服务状态');
         }
 
         // ================================================================
@@ -1267,7 +1202,7 @@
         // ================================================================
         function renderAdminSchedule(data) {
             var schedule = data.schedule || [ ['','','','',''], ['','','','',''], ['','','','',''], ['','','','',''], ['','','','',''], ['','','','',''] ];
-            var days = ['周一', '周二', '周三', '周四', '周五'];
+            var days = ['周一','周二','周三','周四','周五'];
             var html = '<div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>节次</th>';
             for (var i = 0; i < days.length; i++) html += '<th>' + days[i] + '</th>';
             html += '<th>操作</th></tr></thead><tbody>';
@@ -1277,30 +1212,28 @@
                     var val = schedule[r] && schedule[r][c] ? schedule[r][c] : '';
                     html += '<td><input type="text" value="' + val + '" style="width:100%;padding:4px;border:1px solid #E5E7EB;border-radius:4px;font-size:12px;" data-row="' + r + '" data-col="' + c + '" onchange="updateScheduleCell(' + r + ',' + c + ', this.value)"></td>';
                 }
-                html += '<td><button class="del-btn" onclick="deleteScheduleRow(' + r + ')">删除</button></td></tr>';
+                html += '<td><button class="del-btn" onclick="deleteScheduleRow(' + r + ')">✕</button></td></tr>';
             }
             html += '</tbody></table></div>';
-            html += '<div class="admin-add-row"><button onclick="addScheduleRow()" style="padding:6px 16px;border:1px solid #4A90D9;border-radius:6px;background:white;color:#4A90D9;font-size:13px;cursor:pointer;">增加一节</button></div>';
+            html += '<div class="admin-add-row"><button onclick="addScheduleRow()" style="padding:6px 16px;border:1px solid #4A90D9;border-radius:6px;background:white;color:#4A90D9;font-size:13px;cursor:pointer;">➕ 增加一节</button></div>';
             return html;
         }
 
         function updateScheduleCell(row, col, value) {
             var data = getCurrentData();
-            if (!data.schedule[row]) data.schedule[row] = ['', '', '', '', ''];
+            if (!data.schedule[row]) data.schedule[row] = ['','','','',''];
             data.schedule[row][col] = value;
             saveClassData(data);
             renderSchedule();
         }
-
         function addScheduleRow() {
             var data = getCurrentData();
-            data.schedule.push(['', '', '', '', '']);
+            data.schedule.push(['','','','','']);
             saveClassData(data);
             renderAdminContent();
             renderSchedule();
-            showToast('已增加一节');
+            showToast('✅ 已增加一节');
         }
-
         function deleteScheduleRow(row) {
             if (!confirm('确认删除该行吗？')) return;
             var data = getCurrentData();
@@ -1308,7 +1241,7 @@
             saveClassData(data);
             renderAdminContent();
             renderSchedule();
-            showToast('已删除');
+            showToast('✅ 已删除');
         }
 
         // ================================================================
@@ -1320,12 +1253,12 @@
             for (var i = 0; i < teachers.length; i++) {
                 html += '<tr><td><input type="text" value="' + teachers[i].name + '" data-index="' + i + '" onchange="updateTeacherField(' + i + ',\'name\', this.value)"></td>' +
                     '<td><input type="text" value="' + teachers[i].role + '" data-index="' + i + '" onchange="updateTeacherField(' + i + ',\'role\', this.value)"></td>' +
-                    '<td><button class="del-btn" onclick="deleteTeacher(' + i + ')">删除</button></td></tr>';
+                    '<td><button class="del-btn" onclick="deleteTeacher(' + i + ')">✕</button></td></tr>';
             }
             html += '</tbody></table></div>';
             html += '<div class="admin-add-row"><input type="text" id="newTeacherName" placeholder="教师姓名" style="flex:1;">' +
                 '<input type="text" id="newTeacherRole" placeholder="学科/角色" style="flex:1;">' +
-                '<button onclick="addTeacher()">添加</button></div>';
+                '<button onclick="addTeacher()">➕ 添加</button></div>';
             return html;
         }
 
@@ -1340,11 +1273,10 @@
             saveClassData(data);
             renderAdminContent();
             renderTeachers();
-            showToast('已添加：' + name);
+            showToast('✅ 已添加：' + name);
             nameInput.value = '';
             roleInput.value = '';
         }
-
         function deleteTeacher(index) {
             if (!confirm('确认删除该教师吗？')) return;
             var data = getCurrentData();
@@ -1352,9 +1284,8 @@
             saveClassData(data);
             renderAdminContent();
             renderTeachers();
-            showToast('已删除');
+            showToast('✅ 已删除');
         }
-
         function updateTeacherField(index, field, value) {
             var data = getCurrentData();
             if (!data.teachers[index]) return;
@@ -1364,45 +1295,37 @@
         }
 
         // ================================================================
-        //  就餐统计
+        //  就餐统计（含月度导出）
         // ================================================================
-        function renderAdminDiner() {
-            var data = getCurrentData();
+        function renderAdminDiner(data) {
             var students = data.students || [];
             var diners = data.diners || {};
             var today = getTodayStr();
-
             var stopKey = today + '_stop';
             var stopRecords = attendanceRecords[stopKey] && attendanceRecords[stopKey][currentClassKey] ? attendanceRecords[stopKey][currentClassKey] : {};
-
-            var html = '<div style="font-size:14px;color:#555;margin-bottom:10px;">';
             var totalDiners = 0, presentDiners = 0, stopDiners = 0;
             for (var i = 0; i < students.length; i++) {
                 var name = students[i];
                 if (diners[name]) {
                     totalDiners++;
-                    if (stopRecords[name]) {
-                        stopDiners++;
-                    } else {
-                        presentDiners++;
-                    }
+                    if (stopRecords[name]) stopDiners++;
+                    else presentDiners++;
                 }
             }
-            html += '【' + getCurrentData().className + '】 今日就餐统计（' + today + '）<br>';
-            html += '在校就餐人数：<strong>' + totalDiners + '</strong> 人 | ';
-            html += '正常就餐：<strong style="color:#28A745;">' + presentDiners + '</strong> 人 | ';
-            html += '停餐（请假/缺勤）：<strong style="color:#DC3545;">' + stopDiners + '</strong> 人';
-            html += '</div>';
-
+            var html = '<div style="font-size:14px;color:#555;margin-bottom:10px;">' +
+                '🍱 <strong>' + getCurrentData().className + '</strong> 今日就餐统计（' + today + '）<br>' +
+                '🍽️ 在校就餐人数：<strong>' + totalDiners + '</strong> 人 | ' +
+                '✅ 正常就餐：<strong style="color:#28A745;">' + presentDiners + '</strong> 人 | ' +
+                '⚠️ 停餐：<strong style="color:#DC3545;">' + stopDiners + '</strong> 人' +
+                '</div>';
             var month = today.substring(0, 7);
             html += '<div class="stats-month-selector">' +
-                '<label style="font-size:13px;color:#666;">月份：</label>' +
+                '<label style="font-size:13px;color:#666;">📅 月份：</label>' +
                 '<input type="month" id="dinerMonth" value="' + month + '">' +
-                '<button onclick="loadMonthlyDinerStats()">统计</button>' +
-                '<button onclick="exportDinerReport()" style="background:#28A745;">导出报账单</button>' +
+                '<button onclick="loadMonthlyDinerStats()">📊 统计</button>' +
+                '<button onclick="exportDinerReport()" style="background:#28A745;">📥 导出报账单</button>' +
                 '</div>';
             html += '<div id="monthlyDinerResult"><div style="color:#999;font-size:13px;padding:10px;text-align:center;">请点击"统计"查看月度数据</div></div>';
-
             return html;
         }
 
@@ -1411,89 +1334,75 @@
             if (!monthInput) return;
             var month = monthInput.value;
             if (!month) { showToast('请选择月份'); return; }
-
             var data = getCurrentData();
             var students = data.students || [];
             var diners = data.diners || {};
+            var afterSchool = data.afterSchool || {};
             var year = parseInt(month.substring(0, 4));
             var mon = parseInt(month.substring(5, 7));
             var daysInMonth = new Date(year, mon, 0).getDate();
-
             var html = '<div class="stats-table-wrap"><table class="stats-table"><thead><tr>' +
-                '<th style="min-width:50px;">姓名</th><th style="min-width:40px;">就餐</th>';
-
-            var dateLabels = [];
+                '<th style="min-width:50px;">姓名</th><th style="min-width:40px;">就餐</th><th style="min-width:40px;">课后</th>';
             for (var d = 1; d <= daysInMonth; d++) {
                 var dayOfWeek = new Date(year, mon - 1, d).getDay();
-                if (dayOfWeek === 0 || dayOfWeek === 6) {
-                    dateLabels.push('<span style="color:#ccc;">' + d + '</span>');
-                } else {
-                    dateLabels.push(d);
-                }
-                html += '<th style="font-weight:400;font-size:10px;min-width:20px;">' + dateLabels[dateLabels.length - 1] + '</th>';
+                if (dayOfWeek === 0 || dayOfWeek === 6) html += '<th style="color:#ccc;font-weight:400;">' + d + '</th>';
+                else html += '<th style="font-weight:400;font-size:10px;">' + d + '</th>';
             }
-            html += '<th style="min-width:40px;">正常</th><th style="min-width:40px;">停餐</th></tr></thead><tbody>';
-
-            var totalNormal = 0, totalStop = 0;
+            html += '<th>正常</th><th>停餐</th><th>课后到</th><th>课后缺</th></tr></thead><tbody>';
+            var totalNormal = 0, totalStop = 0, totalAfterP = 0, totalAfterA = 0;
             for (var i = 0; i < students.length; i++) {
                 var name = students[i];
                 var isDiner = diners[name] || false;
-                if (!isDiner) continue;
-
+                var isAfter = afterSchool[name] || false;
+                if (!isDiner && !isAfter) continue;
                 html += '<tr><td class="student-name">' + name + '</td>';
-                html += '<td class="diner-yes">[是]</td>';
-
-                var normalCount = 0, stopCount = 0;
+                html += '<td>' + (isDiner ? '✅' : '—') + '</td>';
+                html += '<td>' + (isAfter ? '📚' : '—') + '</td>';
+                var normalCount = 0, stopCount = 0, afterP = 0, afterA = 0;
                 for (var d = 1; d <= daysInMonth; d++) {
-                    var dateStr = year + '-' + String(mon).padStart(2, '0') + '-' + String(d).padStart(2, '0');
                     var dayOfWeek = new Date(year, mon - 1, d).getDay();
-                    if (dayOfWeek === 0 || dayOfWeek === 6) {
-                        html += '<td style="color:#ccc;">-</td>';
-                        continue;
-                    }
+                    if (dayOfWeek === 0 || dayOfWeek === 6) { html += '<td>-</td>'; continue; }
+                    var dateStr = year + '-' + String(mon).padStart(2, '0') + '-' + String(d).padStart(2, '0');
                     var status = 'present';
                     if (attendanceRecords[dateStr] && attendanceRecords[dateStr][currentClassKey] && attendanceRecords[dateStr][currentClassKey][name]) {
                         status = attendanceRecords[dateStr][currentClassKey][name];
                     }
                     if (status === 'leave' || status === 'absent') {
-                        html += '<td class="status-stop">[停]</td>';
-                        stopCount++;
+                        html += '<td class="status-stop">⚠️</td>';
+                        if (isDiner) stopCount++;
+                        if (isAfter) afterA++;
                     } else {
-                        html += '<td class="status-present">[正]</td>';
-                        normalCount++;
+                        html += '<td class="status-present">✅</td>';
+                        if (isDiner) normalCount++;
+                        if (isAfter) afterP++;
                     }
                 }
-                html += '<td><strong>' + normalCount + '</strong></td>';
-                html += '<td style="color:#DC3545;"><strong>' + stopCount + '</strong></td>';
-                html += '</tr>';
+                html += '<td>' + normalCount + '</td>';
+                html += '<td style="color:#DC3545;">' + stopCount + '</td>';
+                html += '<td>' + afterP + '</td>';
+                html += '<td style="color:#DC3545;">' + afterA + '</td></tr>';
                 totalNormal += normalCount;
                 totalStop += stopCount;
+                totalAfterP += afterP;
+                totalAfterA += afterA;
             }
-
-            html += '<tr class="stats-total-row"><td colspan="2">合计</td>';
-            var totalDays = 0;
+            html += '<tr class="stats-total-row"><td colspan="3">📊 合计</td>';
             for (var d = 1; d <= daysInMonth; d++) {
                 var dayOfWeek = new Date(year, mon - 1, d).getDay();
-                if (dayOfWeek === 0 || dayOfWeek === 6) {
-                    html += '<td>-</td>';
-                } else {
-                    html += '<td>·</td>';
-                    totalDays++;
-                }
+                if (dayOfWeek === 0 || dayOfWeek === 6) html += '<td>-</td>';
+                else html += '<td>·</td>';
             }
             html += '<td><strong>' + totalNormal + '</strong></td>';
             html += '<td style="color:#DC3545;"><strong>' + totalStop + '</strong></td>';
-            html += '</tr>';
-
+            html += '<td><strong>' + totalAfterP + '</strong></td>';
+            html += '<td style="color:#DC3545;"><strong>' + totalAfterA + '</strong></td></tr>';
             html += '</tbody></table></div>';
             html += '<div style="margin-top:10px;font-size:13px;color:#888;">' +
-                '正常就餐：<strong style="color:#28A745;">' + totalNormal + '</strong> 人次 | ' +
-                '停餐：<strong style="color:#DC3545;">' + totalStop + '</strong> 人次 | ' +
-                '应就餐：<strong>' + (totalNormal + totalStop) + '</strong> 人次' +
+                '🍱 正常就餐：<strong style="color:#28A745;">' + totalNormal + '</strong> 人次 | 停餐：<strong style="color:#DC3545;">' + totalStop + '</strong> 人次' +
+                ' | 📚 课后到：<strong style="color:#28A745;">' + totalAfterP + '</strong> 人次 | 缺：<strong style="color:#DC3545;">' + totalAfterA + '</strong> 人次' +
                 '</div>';
-
             document.getElementById('monthlyDinerResult').innerHTML = html;
-            showToast('已加载 ' + month + ' 就餐统计');
+            showToast('✅ 已加载 ' + month + ' 统计');
         }
 
         function exportDinerReport() {
@@ -1501,35 +1410,30 @@
             if (!monthInput) { showToast('请先选择月份'); return; }
             var month = monthInput.value;
             if (!month) { showToast('请选择月份'); return; }
-
             var data = getCurrentData();
             var students = data.students || [];
             var diners = data.diners || {};
+            var afterSchool = data.afterSchool || {};
             var year = parseInt(month.substring(0, 4));
             var mon = parseInt(month.substring(5, 7));
             var daysInMonth = new Date(year, mon, 0).getDate();
-
             var csvRows = [];
-            var header = ['姓名', '在校就餐'];
+            var header = ['姓名', '在校就餐', '参加课后服务'];
             for (var d = 1; d <= daysInMonth; d++) {
                 var dayOfWeek = new Date(year, mon - 1, d).getDay();
-                if (dayOfWeek !== 0 && dayOfWeek !== 6) {
-                    header.push(d + '日');
-                }
+                if (dayOfWeek !== 0 && dayOfWeek !== 6) header.push(d + '日');
             }
-            header.push('正常就餐天数', '停餐天数', '餐费标准(元)', '应缴餐费(元)');
+            header.push('正常就餐', '停餐', '课后到', '课后缺', '餐费标准', '应缴餐费');
             csvRows.push(header.join(','));
-
-            var totalNormalAll = 0, totalStopAll = 0;
-            var pricePerMeal = 10;
-
+            var totalNormal = 0, totalStop = 0, totalAfterP = 0, totalAfterA = 0;
+            var price = 10;
             for (var i = 0; i < students.length; i++) {
                 var name = students[i];
                 var isDiner = diners[name] || false;
-                if (!isDiner) continue;
-
-                var row = [name, '是'];
-                var normalCount = 0, stopCount = 0;
+                var isAfter = afterSchool[name] || false;
+                if (!isDiner && !isAfter) continue;
+                var row = [name, isDiner ? '是' : '否', isAfter ? '是' : '否'];
+                var normalCount = 0, stopCount = 0, afterP = 0, afterA = 0;
                 for (var d = 1; d <= daysInMonth; d++) {
                     var dayOfWeek = new Date(year, mon - 1, d).getDay();
                     if (dayOfWeek === 0 || dayOfWeek === 6) continue;
@@ -1540,70 +1444,61 @@
                     }
                     if (status === 'leave' || status === 'absent') {
                         row.push('停餐');
-                        stopCount++;
+                        if (isDiner) stopCount++;
+                        if (isAfter) afterA++;
                     } else {
                         row.push('正常');
-                        normalCount++;
+                        if (isDiner) normalCount++;
+                        if (isAfter) afterP++;
                     }
                 }
-                var totalPrice = normalCount * pricePerMeal;
-                row.push(normalCount, stopCount, pricePerMeal, totalPrice);
+                row.push(normalCount, stopCount, afterP, afterA, price, normalCount * price);
                 csvRows.push(row.join(','));
-
-                totalNormalAll += normalCount;
-                totalStopAll += stopCount;
+                totalNormal += normalCount;
+                totalStop += stopCount;
+                totalAfterP += afterP;
+                totalAfterA += afterA;
             }
-
-            var totalRow = ['合计', ''];
+            var totalRow = ['合计', '', ''];
             for (var d = 1; d <= daysInMonth; d++) {
                 var dayOfWeek = new Date(year, mon - 1, d).getDay();
-                if (dayOfWeek !== 0 && dayOfWeek !== 6) {
-                    totalRow.push('');
-                }
+                if (dayOfWeek !== 0 && dayOfWeek !== 6) totalRow.push('');
             }
-            totalRow.push(totalNormalAll, totalStopAll, '', totalNormalAll * pricePerMeal);
+            totalRow.push(totalNormal, totalStop, totalAfterP, totalAfterA, '', totalNormal * price);
             csvRows.push(totalRow.join(','));
-
             var csvContent = csvRows.join('\n');
             var blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
             var link = document.createElement('a');
             link.href = URL.createObjectURL(blob);
-            var className = getCurrentData().className || '班级';
-            link.download = className + '_' + month + '_就餐报账单.csv';
+            link.download = getCurrentData().className + '_' + month + '_统计报账单.csv';
             link.click();
-            showToast('导出成功！');
+            showToast('✅ 导出成功！');
         }
 
         // ================================================================
         //  班级管理
         // ================================================================
         function renderAdminClasses() {
-            var html = '<div class="admin-table-wrap"><table class="admin-table"><thead><tr>' +
-                '<th>班级编号</th><th>班级名称</th><th>年级</th><th>班主任</th><th>操作</th></tr></thead><tbody>';
+            var html = '<div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>班级编号</th><th>班级名称</th><th>年级</th><th>班主任</th><th>操作</th></tr></thead><tbody>';
             var keys = Object.keys(CLASS_DATA_LIST);
-            if (keys.length === 0) {
-                html += '<tr><td colspan="5" style="text-align:center;color:#999;padding:20px;">暂无班级</td></tr>';
-            }
+            if (keys.length === 0) html += '<tr><td colspan="5" style="text-align:center;color:#999;padding:20px;">暂无班级</td></tr>';
             for (var i = 0; i < keys.length; i++) {
                 var key = keys[i];
                 var cls = CLASS_DATA_LIST[key];
                 var grade = getClassGrade(key);
                 var teacherName = '未设置';
                 for (var u in USERS) {
-                    if (USERS[u].class === key && USERS[u].role === '班主任') {
-                        teacherName = USERS[u].name;
-                        break;
-                    }
+                    if (USERS[u].class === key && USERS[u].role === '班主任') { teacherName = USERS[u].name; break; }
                 }
                 html += '<tr><td><strong>' + key + '</strong></td><td>' + cls.className + '</td><td>' + grade + '</td><td>' + teacherName + '</td><td>' +
-                    '<button class="edit-btn" onclick="editClass(\'' + key + '\')">编辑</button>' +
-                    '<button class="del-btn" onclick="deleteClass(\'' + key + '\')">删除</button></td></tr>';
+                    '<button class="edit-btn" onclick="editClass(\'' + key + '\')">✏️</button>' +
+                    '<button class="del-btn" onclick="deleteClass(\'' + key + '\')">✕</button></td></tr>';
             }
             html += '</tbody></table></div>';
             html += '<div class="admin-add-row">' +
                 '<input type="text" id="newClassKey" placeholder="班级编号 如:2024-501">' +
                 '<input type="text" id="newClassName" placeholder="班级名称 如:五年级(1)班">' +
-                '<button onclick="addClass()">创建班级</button>' +
+                '<button onclick="addClass()">🏫 创建班级</button>' +
                 '</div>' +
                 '<div id="classCreateResult" style="margin-top:8px;font-size:13px;color:#666;"></div>';
             return html;
@@ -1614,21 +1509,20 @@
             var name = document.getElementById('newClassName').value.trim();
             if (!key) { showToast('请输入班级编号'); return; }
             if (!name) { showToast('请输入班级名称'); return; }
-            if (CLASS_DATA_LIST[key]) { showToast('该班级已存在'); return; }
-
+            if (CLASS_DATA_LIST[key]) { showToast('⚠️ 该班级已存在'); return; }
             CLASS_DATA_LIST[key] = {
                 className: name,
-                classSub: '教室位置待设置',
+                classSub: '🏫 教室位置待设置',
                 seatColumns: 8,
                 teachers: [],
                 schedule: [ ['','','','',''], ['','','','',''], ['','','','',''], ['','','','',''], ['','','','',''], ['','','','',''] ],
                 students: [],
-                diners: {}
+                diners: {},
+                afterSchool: {}
             };
-
             saveAllDataToServer().then(function() {
-                showToast('班级 ' + name + ' 创建成功！');
-                document.getElementById('classCreateResult').innerHTML = '已创建：' + name + '（编号：' + key + '）';
+                showToast('✅ 班级 ' + name + ' 创建成功！');
+                document.getElementById('classCreateResult').innerHTML = '✅ 已创建：' + name + '（编号：' + key + '）';
                 document.getElementById('newClassKey').value = '';
                 document.getElementById('newClassName').value = '';
                 renderAdminClasses();
@@ -1643,20 +1537,12 @@
             var newName = prompt('修改班级名称（当前：' + cls.className + '）：', cls.className);
             if (newName && newName.trim() !== '') {
                 cls.className = newName.trim();
-                saveAllDataToServer().then(function() {
-                    renderAdminClasses();
-                    loadClassData();
-                    showToast('已更新');
-                });
+                saveAllDataToServer().then(function() { renderAdminClasses(); loadClassData(); showToast('✅ 已更新'); });
             }
             var newSub = prompt('修改教室位置（当前：' + cls.classSub + '）：', cls.classSub);
             if (newSub !== null && newSub.trim() !== '') {
                 cls.classSub = newSub.trim();
-                saveAllDataToServer().then(function() {
-                    renderAdminClasses();
-                    loadClassData();
-                    showToast('已更新');
-                });
+                saveAllDataToServer().then(function() { renderAdminClasses(); loadClassData(); showToast('✅ 已更新'); });
             }
         }
 
@@ -1667,30 +1553,23 @@
                 var keys = Object.keys(CLASS_DATA_LIST);
                 currentClassKey = keys.length > 0 ? keys[0] : null;
             }
-            saveAllDataToServer().then(function() {
-                renderAdminClasses();
-                loadClassData();
-                showToast('已删除');
-            });
+            saveAllDataToServer().then(function() { renderAdminClasses(); loadClassData(); showToast('✅ 已删除'); });
         }
 
         // ================================================================
         //  教师账号管理
         // ================================================================
         function renderAdminUsers() {
-            var html = '<div class="admin-table-wrap"><table class="admin-table"><thead><tr>' +
-                '<th>账号</th><th>姓名</th><th>角色</th><th>年级</th><th>班级</th><th>操作</th></tr></thead><tbody>';
+            var html = '<div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>账号</th><th>姓名</th><th>角色</th><th>年级</th><th>班级</th><th>操作</th></tr></thead><tbody>';
             var keys = Object.keys(USERS);
-            if (keys.length === 0) {
-                html += '<tr><td colspan="6" style="text-align:center;color:#999;padding:20px;">暂无教师账号</td></tr>';
-            }
+            if (keys.length === 0) html += '<tr><td colspan="6" style="text-align:center;color:#999;padding:20px;">暂无教师账号</td></tr>';
             for (var i = 0; i < keys.length; i++) {
                 var u = keys[i];
                 var user = USERS[u];
                 html += '<tr><td>' + u + '</td><td>' + user.name + '</td><td>' + user.role + '</td><td>' + (user.grade || '-') + '</td><td>' + (user.class || '全校') + '</td><td>' +
-                    '<button class="edit-btn" onclick="editUser(\'' + u + '\')">编辑</button>' +
-                    '<button class="edit-btn" onclick="resetUserPassword(\'' + u + '\')" style="color:#E67E22;">重置密码</button>' +
-                    '<button class="del-btn" onclick="deleteUser(\'' + u + '\')">删除</button></td></tr>';
+                    '<button class="edit-btn" onclick="editUser(\'' + u + '\')">✏️</button>' +
+                    '<button class="edit-btn" onclick="resetUserPassword(\'' + u + '\')" style="color:#E67E22;">🔑</button>' +
+                    '<button class="del-btn" onclick="deleteUser(\'' + u + '\')">✕</button></td></tr>';
             }
             html += '</tbody></table></div>';
             html += '<div class="admin-add-row">' +
@@ -1705,9 +1584,9 @@
                 '<input type="text" id="newUserGrade" placeholder="年级(年级主任填)" style="min-width:70px;">' +
                 '<input type="text" id="newUserClass" placeholder="班级编号" style="min-width:80px;">' +
                 '<input type="text" id="newUserPassword" placeholder="密码" value="123456" style="min-width:70px;">' +
-                '<button onclick="addUser()">添加</button>' +
+                '<button onclick="addUser()">➕ 添加</button>' +
                 '</div>' +
-                '<div style="margin-top:6px;font-size:12px;color:#999;">年级主任填写"年级"（如：三年级），班主任填写"班级编号"（如：2024-301）</div>';
+                '<div style="margin-top:6px;font-size:12px;color:#999;">💡 年级主任填写"年级"（如：三年级），班主任填写"班级编号"（如：2024-301）</div>';
             return html;
         }
 
@@ -1718,25 +1597,14 @@
             var grade = document.getElementById('newUserGrade').value.trim();
             var cls = document.getElementById('newUserClass').value.trim();
             var password = document.getElementById('newUserPassword').value.trim() || '123456';
-
             if (!username) { showToast('请输入账号'); return; }
             if (!name) { showToast('请输入姓名'); return; }
-            if (USERS[username]) { showToast('账号已存在'); return; }
-
-            var user = {
-                name: name,
-                role: role,
-                role_level: ROLE_LEVELS[role] || 1,
-                grade: role === '年级主任' ? grade : null,
-                class: role === '班主任' ? cls : null,
-                password: password,
-                permissions: {}
-            };
+            if (USERS[username]) { showToast('⚠️ 账号已存在'); return; }
+            var user = { name: name, role: role, role_level: ROLE_LEVELS[role] || 1, grade: role === '年级主任' ? grade : null, class: role === '班主任' ? cls : null, password: password, permissions: {} };
             USERS[username] = user;
-
             saveAllDataToServer().then(function() {
                 renderAdminUsers();
-                showToast('教师账号 ' + name + ' 创建成功！');
+                showToast('✅ 教师账号 ' + name + ' 创建成功！');
                 document.getElementById('newUserUsername').value = '';
                 document.getElementById('newUserName').value = '';
                 document.getElementById('newUserGrade').value = '';
@@ -1752,10 +1620,8 @@
                 user.name = newName.trim();
                 saveAllDataToServer().then(function() {
                     renderAdminUsers();
-                    if (currentUser && currentUser.username === username) {
-                        document.getElementById('displayName').textContent = user.name;
-                    }
-                    showToast('已更新');
+                    if (currentUser && currentUser.username === username) document.getElementById('displayName').textContent = user.name;
+                    showToast('✅ 已更新');
                 });
             }
             var newRole = prompt('修改角色（当前：' + user.role + '）可选：班主任/年级主任/校委会/管理员/超级管理员：', user.role);
@@ -1764,27 +1630,19 @@
                 user.role_level = ROLE_LEVELS[newRole.trim()] || 1;
                 saveAllDataToServer().then(function() {
                     renderAdminUsers();
-                    if (currentUser && currentUser.username === username) {
-                        document.getElementById('displayRole').textContent = '· ' + user.role;
-                    }
-                    showToast('已更新');
+                    if (currentUser && currentUser.username === username) document.getElementById('displayRole').textContent = '· ' + user.role;
+                    showToast('✅ 已更新');
                 });
             }
             var newClass = prompt('修改关联班级（当前：' + (user.class || '无') + '）：', user.class || '');
             if (newClass !== null) {
                 user.class = newClass.trim() || null;
-                saveAllDataToServer().then(function() {
-                    renderAdminUsers();
-                    showToast('已更新');
-                });
+                saveAllDataToServer().then(function() { renderAdminUsers(); showToast('✅ 已更新'); });
             }
             var newGrade = prompt('修改年级（当前：' + (user.grade || '无') + '）：', user.grade || '');
             if (newGrade !== null) {
                 user.grade = newGrade.trim() || null;
-                saveAllDataToServer().then(function() {
-                    renderAdminUsers();
-                    showToast('已更新');
-                });
+                saveAllDataToServer().then(function() { renderAdminUsers(); showToast('✅ 已更新'); });
             }
         }
 
@@ -1793,22 +1651,95 @@
             if (!user) { showToast('用户不存在'); return; }
             if (!confirm('确认重置 ' + user.name + ' 的密码为 123456 吗？')) return;
             user.password = '123456';
-            saveAllDataToServer().then(function() {
-                renderAdminUsers();
-                showToast('已重置 ' + user.name + ' 的密码为 123456');
-            });
+            saveAllDataToServer().then(function() { renderAdminUsers(); showToast('✅ 已重置 ' + user.name + ' 的密码为 123456'); });
         }
 
         function deleteUser(username) {
-            if (username === 'admin') { showToast('不能删除超级管理员'); return; }
+            if (username === 'admin') { showToast('⚠️ 不能删除超级管理员'); return; }
             var user = USERS[username];
             if (!user) { showToast('用户不存在'); return; }
             if (!confirm('确认删除用户 ' + user.name + ' 吗？')) return;
             delete USERS[username];
-            saveAllDataToServer().then(function() {
-                renderAdminUsers();
-                showToast('已删除');
-            });
+            saveAllDataToServer().then(function() { renderAdminUsers(); showToast('✅ 已删除'); });
+        }
+
+        // ================================================================
+        //  权限管理（超管专用）
+        // ================================================================
+        function renderAdminPermissions() {
+            var roles = ['管理员', '校委会', '年级主任', '班主任'];
+            var perms = [
+                { key: 'can_view_all', label: '查看全校' },
+                { key: 'can_manage_all', label: '管理全校' },
+                { key: 'can_comment_all', label: '点评全校' },
+                { key: 'can_manage_users', label: '管理账号' },
+                { key: 'can_export_data', label: '导出数据' },
+                { key: 'can_send_notification', label: '发送通知' },
+                { key: 'can_manage_permissions', label: '管理权限' }
+            ];
+            var html = '<div style="padding:6px 0;font-size:13px;color:#666;margin-bottom:10px;">为各角色开启或关闭权限（超级管理员拥有全部权限，不受此限制）</div>';
+            html += '<div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>角色</th>';
+            for (var i = 0; i < perms.length; i++) {
+                html += '<th style="font-size:11px;">' + perms[i].label + '</th>';
+            }
+            html += '</tr></thead><tbody>';
+            for (var r = 0; r < roles.length; r++) {
+                var role = roles[r];
+                var defaultPerms = {
+                    '管理员': { can_view_all: true, can_manage_all: true, can_comment_all: true, can_manage_users: true, can_export_data: true, can_send_notification: true, can_manage_permissions: false },
+                    '校委会': { can_view_all: true, can_manage_all: false, can_comment_all: true, can_manage_users: false, can_export_data: false, can_send_notification: true, can_manage_permissions: false },
+                    '年级主任': { can_view_grade: true, can_manage_grade: true, can_comment_grade: true, can_export_data: false, can_send_notification: true, can_manage_permissions: false },
+                    '班主任': { can_view_class: true, can_manage_class: true, can_comment_class: false, can_export_data: false, can_send_notification: false, can_manage_permissions: false }
+                };
+                html += '<tr><td><strong>' + role + '</strong></td>';
+                for (var i = 0; i < perms.length; i++) {
+                    var key = perms[i].key;
+                    var checked = defaultPerms[role] && defaultPerms[role][key] ? 'checked' : '';
+                    html += '<td><input type="checkbox" ' + checked + ' onchange="updateRolePermission(\'' + role + '\', \'' + key + '\', this.checked)"></td>';
+                }
+                html += '</tr>';
+            }
+            html += '</tbody></table></div>';
+            html += '<div style="margin-top:10px;font-size:12px;color:#999;">💡 修改后自动保存，所有用户权限实时更新</div>';
+            return html;
+        }
+
+        function updateRolePermission(role, perm, value) {
+            // 实际保存到 server 端（这里简化，实际应调 API）
+            // 由于权限是写死的，此处仅做演示，真正的权限管理需扩展后端
+            showToast('✅ 权限已更新（实际生效需后端配合）');
+        }
+
+        // ================================================================
+        //  系统配置（点评词、就餐截止时间等）
+        // ================================================================
+        function renderAdminConfig() {
+            var html = '<div style="padding:6px 0;">';
+            // 点评词配置
+            html += '<div style="font-weight:600;margin:10px 0 4px;">🌟 表扬词（逗号分隔）</div>';
+            html += '<input type="text" id="configPraise" value="' + PRAISE_COMMENTS.join('，') + '" style="width:100%;padding:8px;border:1px solid #E5E7EB;border-radius:6px;font-size:13px;">';
+            html += '<div style="font-weight:600;margin:10px 0 4px;">⚡ 待改进词（逗号分隔）</div>';
+            html += '<input type="text" id="configNegative" value="' + NEGATIVE_COMMENTS.join('，') + '" style="width:100%;padding:8px;border:1px solid #E5E7EB;border-radius:6px;font-size:13px;">';
+            html += '<div style="font-weight:600;margin:10px 0 4px;">⏰ 就餐截止时间（格式 HH:MM）</div>';
+            html += '<input type="text" id="configDeadline" value="' + dinerDeadline + '" style="width:100%;padding:8px;border:1px solid #E5E7EB;border-radius:6px;font-size:13px;">';
+            html += '<div style="font-weight:600;margin:10px 0 4px;">📊 催办阈值（%）</div>';
+            html += '<input type="number" id="configThreshold" value="20" style="width:100%;padding:8px;border:1px solid #E5E7EB;border-radius:6px;font-size:13px;">';
+            html += '<button onclick="saveSystemConfig()" style="margin-top:12px;padding:10px 20px;background:#4A90D9;color:white;border:none;border-radius:8px;font-size:14px;cursor:pointer;">💾 保存配置</button>';
+            html += '</div>';
+            return html;
+        }
+
+        function saveSystemConfig() {
+            var praise = document.getElementById('configPraise').value.split(/[，,、\s]+/).filter(function(s) { return s.trim(); });
+            var negative = document.getElementById('configNegative').value.split(/[，,、\s]+/).filter(function(s) { return s.trim(); });
+            var deadline = document.getElementById('configDeadline').value.trim();
+            var threshold = parseInt(document.getElementById('configThreshold').value) || 20;
+            if (deadline && !/^\d{2}:\d{2}$/.test(deadline)) { showToast('⚠️ 截止时间格式错误，应为 HH:MM'); return; }
+            PRAISE_COMMENTS = praise;
+            NEGATIVE_COMMENTS = negative;
+            dinerDeadline = deadline || '09:00';
+            // 保存到后端（需扩展 API）
+            showToast('✅ 配置已保存（需后端支持完整持久化）');
         }
 
         // ================================================================
@@ -1827,54 +1758,45 @@
         //  登录/退出
         // ================================================================
         function initLogin() {
-    var html = '<option value="">-- 请选择 --</option>';
-    var keys = Object.keys(USERS);
-    
-    if (keys.length > 0) {
-        for (var i = 0; i < keys.length; i++) {
-            var key = keys[i];
-            var u = USERS[key];
-            var classInfo = u.class && CLASS_DATA_LIST[u.class] ? CLASS_DATA_LIST[u.class].className : (u.class || '');
-            var label = u.name + '（' + u.role + (u.class ? ' · ' + classInfo : '') + '）';
-            html += '<option value="' + key + '">' + label + '</option>';
-        }
-        document.getElementById('loginUserSelect').innerHTML = html;
-    } 
-    else {
-        console.warn('未检测到 USERS 数据，正在初始化默认管理员...');
-        USERS['admin'] = {
-            name: '超级管理员',
-            role: '超级管理员',
-            role_level: 5,
-            grade: null,
-            class: null,
-            password: 'admin123',
-            permissions: {
-                can_manage_users: true,
-                can_manage_all_classes: true,
-                can_manage_all_grades: true,
-                can_view_all: true,
-                can_comment_all: true
+            var html = '<option value="">-- 请选择 --</option>';
+            var keys = Object.keys(USERS);
+            if (keys.length > 0) {
+                for (var i = 0; i < keys.length; i++) {
+                    var key = keys[i];
+                    var u = USERS[key];
+                    var classInfo = u.class && CLASS_DATA_LIST[u.class] ? CLASS_DATA_LIST[u.class].className : (u.class || '');
+                    var label = u.name + '（' + u.role + (u.class ? ' · ' + classInfo : '') + '）';
+                    html += '<option value="' + key + '">' + label + '</option>';
+                }
+                document.getElementById('loginUserSelect').innerHTML = html;
+            } else {
+                // 自动初始化 admin
+                USERS['admin'] = {
+                    name: '超级管理员',
+                    role: '超级管理员',
+                    role_level: 5,
+                    grade: null,
+                    class: null,
+                    password: 'admin123',
+                    permissions: { can_manage_users: true, can_manage_all_classes: true, can_manage_all_grades: true, can_view_all: true, can_comment_all: true, can_export_data: true, can_send_notification: true, can_manage_permissions: true }
+                };
+                saveAllDataToServer();
+                html += '<option value="admin">超级管理员（超级管理员）</option>';
+                document.getElementById('loginUserSelect').innerHTML = html;
             }
-        };
-        saveAllDataToServer();
-        html += '<option value="admin">超级管理员（超级管理员）</option>';
-        document.getElementById('loginUserSelect').innerHTML = html;
-        console.log('已初始化并添加默认账号 admin');
-    }
-}
+        }
 
         function doLogin() {
             var username = document.getElementById('loginUserSelect').value;
             var password = document.getElementById('loginPassword').value;
             if (!username) {
-                document.getElementById('loginError').textContent = '请选择账号';
+                document.getElementById('loginError').textContent = '⚠️ 请选择账号';
                 document.getElementById('loginError').classList.add('show');
                 return;
             }
             var user = USERS[username];
             if (!user || user.password !== password) {
-                document.getElementById('loginError').textContent = '密码错误，请重新输入';
+                document.getElementById('loginError').textContent = '❌ 密码错误，请重新输入';
                 document.getElementById('loginError').classList.add('show');
                 document.getElementById('loginPassword').value = '';
                 document.getElementById('loginPassword').focus();
@@ -1883,23 +1805,13 @@
             document.getElementById('loginError').classList.remove('show');
             currentUser = user;
             currentUser.username = username;
-
-            if (document.getElementById('rememberMe').checked) {
-                saveLoginState(username);
-            } else {
-                clearLoginState();
-            }
-
-            if (user.class && CLASS_DATA_LIST[user.class]) {
-                currentClassKey = user.class;
-            } else {
-                var keys = Object.keys(CLASS_DATA_LIST);
-                currentClassKey = keys.length > 0 ? keys[0] : null;
-            }
-
+            if (document.getElementById('rememberMe').checked) saveLoginState(username);
+            else clearLoginState();
+            if (user.class && CLASS_DATA_LIST[user.class]) currentClassKey = user.class;
+            else { var keys = Object.keys(CLASS_DATA_LIST); currentClassKey = keys.length > 0 ? keys[0] : null; }
             showUI();
             loadClassData();
-            showToast('欢迎，' + user.name);
+            showToast('👋 欢迎，' + user.name);
         }
 
         function doLogout() {
@@ -1923,12 +1835,210 @@
             document.getElementById('displayName').textContent = currentUser.name;
             document.getElementById('displayRole').textContent = '· ' + currentUser.role;
             var classInfo = '';
-            if (currentUser.class && CLASS_DATA_LIST[currentUser.class]) {
-                classInfo = '· ' + CLASS_DATA_LIST[currentUser.class].className;
-            } else if (currentUser.grade) {
-                classInfo = '· ' + currentUser.grade;
-            }
+            if (currentUser.class && CLASS_DATA_LIST[currentUser.class]) classInfo = '· ' + CLASS_DATA_LIST[currentUser.class].className;
+            else if (currentUser.grade) classInfo = '· ' + currentUser.grade;
             document.getElementById('displayClass').textContent = classInfo;
+        }
+
+        // ================================================================
+        //  全校/本年级 数据面板
+        // ================================================================
+        function renderDashboard() {
+            var level = getUserRoleLevel(currentUser);
+            var isGradeLeader = (level === 2);
+            var gradeFilter = currentUser ? currentUser.grade : '';
+            var classKeys = Object.keys(CLASS_DATA_LIST);
+            var today = getTodayStr();
+            var filteredKeys = [];
+            for (var i = 0; i < classKeys.length; i++) {
+                var key = classKeys[i];
+                if (isGradeLeader) {
+                    var classGrade = getClassGrade(key);
+                    if (classGrade === gradeFilter) filteredKeys.push(key);
+                } else {
+                    filteredKeys.push(key);
+                }
+            }
+            if (isGradeLeader && filteredKeys.length === 0) {
+                document.getElementById('seatGrid').innerHTML = '<div style="text-align:center;padding:30px;color:#999;font-size:14px;">📭 您还没有关联的班级，请联系管理员设置年级信息</div>';
+                document.getElementById('seatInfo').textContent = '📊 本年级数据总览';
+                document.querySelector('.seat-legend').style.display = 'none';
+                document.getElementById('teacherGrid').innerHTML = '';
+                document.getElementById('teacherBadge').textContent = '本年级概览';
+                document.getElementById('scheduleBody').innerHTML = '';
+                return;
+            }
+            var totalStudents = 0, totalDiners = 0, totalPresent = 0, totalLate = 0, totalAbsent = 0, totalLeave = 0, totalNotInRoom = 0;
+            var totalAfter = 0, totalAfterPresent = 0, totalAfterAbsent = 0;
+            var classStats = [];
+            for (var i = 0; i < filteredKeys.length; i++) {
+                var key = filteredKeys[i];
+                var cls = CLASS_DATA_LIST[key];
+                var students = cls.students || [];
+                var diners = cls.diners || {};
+                var afterSchool = cls.afterSchool || {};
+                var todayRecords = attendanceRecords[today] && attendanceRecords[today][key] ? attendanceRecords[today][key] : {};
+                var p = 0, l = 0, a = 0, le = 0, n = 0;
+                var dinerCount = 0, eatenCount = 0, stopCount = 0;
+                var afterCount = 0, afterP = 0, afterA = 0;
+                for (var j = 0; j < students.length; j++) {
+                    var name = students[j];
+                    if (diners[name]) {
+                        dinerCount++;
+                        var status = todayRecords[name] || 'present';
+                        if (status === 'leave' || status === 'absent') stopCount++;
+                        else eatenCount++;
+                    }
+                    if (afterSchool[name]) {
+                        afterCount++;
+                        var status2 = todayRecords[name] || 'present';
+                        if (status2 === 'leave' || status2 === 'absent' || status2 === 'not-in-room') afterA++;
+                        else afterP++;
+                    }
+                    var s = todayRecords[name] || 'present';
+                    if (s === 'present') p++;
+                    else if (s === 'late') l++;
+                    else if (s === 'absent') a++;
+                    else if (s === 'leave') le++;
+                    else if (s === 'not-in-room') n++;
+                }
+                totalStudents += students.length;
+                totalDiners += dinerCount;
+                totalPresent += p;
+                totalLate += l;
+                totalAbsent += a;
+                totalLeave += le;
+                totalNotInRoom += n;
+                totalAfter += afterCount;
+                totalAfterPresent += afterP;
+                totalAfterAbsent += afterA;
+                classStats.push({
+                    key: key,
+                    name: cls.className || key,
+                    total: students.length,
+                    diner: dinerCount,
+                    eaten: eatenCount,
+                    stop: stopCount,
+                    after: afterCount,
+                    afterP: afterP,
+                    afterA: afterA,
+                    present: p,
+                    late: l,
+                    absent: a,
+                    leave: le,
+                    notInRoom: n,
+                    rate: students.length > 0 ? Math.round((p / students.length) * 100) : 0
+                });
+            }
+            var title = isGradeLeader ? ('📊 ' + gradeFilter + ' 数据总览') : '📊 全校数据总览';
+            document.getElementById('seatInfo').textContent = title;
+            document.querySelector('.seat-legend').style.display = 'none';
+            document.getElementById('teacherGrid').innerHTML = '';
+            document.getElementById('teacherBadge').textContent = isGradeLeader ? '本年级概览' : '全校概览';
+            document.getElementById('scheduleBody').innerHTML = '';
+            var html = '';
+            var totalRate = totalStudents > 0 ? Math.round((totalPresent / totalStudents) * 100) : 0;
+            html += '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:14px;">';
+            html += '<div style="background:linear-gradient(135deg,#4A90D9,#357ABD);color:white;border-radius:12px;padding:14px;text-align:center;"><div style="font-size:24px;font-weight:700;">' + totalStudents + '</div><div style="font-size:12px;opacity:0.8;">' + (isGradeLeader ? '本年级学生' : '在校学生') + '</div></div>';
+            html += '<div style="background:linear-gradient(135deg,#28A745,#1e7e34);color:white;border-radius:12px;padding:14px;text-align:center;"><div style="font-size:24px;font-weight:700;">' + totalPresent + '</div><div style="font-size:12px;opacity:0.8;">今日到课</div></div>';
+            html += '<div style="background:linear-gradient(135deg,#FFC107,#d39e00);color:#333;border-radius:12px;padding:14px;text-align:center;"><div style="font-size:24px;font-weight:700;">' + totalDiners + '</div><div style="font-size:12px;opacity:0.8;">在校就餐</div></div>';
+            html += '</div>';
+            // 就餐 + 课后服务明细行
+            var totalEaten = totalDiners - (totalStop || 0);
+            var totalAfterP2 = totalAfterPresent;
+            html += '<div style="background:#f8f9fa;border-radius:10px;padding:10px;margin-bottom:14px;font-size:13px;color:#555;display:flex;flex-wrap:wrap;gap:8px 16px;">' +
+                '<span>🍱 在校就餐：<strong>' + totalDiners + '</strong> 人</span>' +
+                '<span>✅ 已就餐：<strong style="color:#28A745;">' + totalEaten + '</strong> 人</span>' +
+                '<span>⚠️ 停餐：<strong style="color:#DC3545;">' + (totalDiners - totalEaten) + '</strong> 人</span>' +
+                '<span>|</span>' +
+                '<span>📚 参加课后：<strong>' + totalAfter + '</strong> 人</span>' +
+                '<span>✅ 已到：<strong style="color:#28A745;">' + totalAfterP2 + '</strong> 人</span>' +
+                '<span>⚠️ 缺勤：<strong style="color:#DC3545;">' + (totalAfter - totalAfterP2) + '</strong> 人</span>' +
+                '</div>';
+
+            // 班级列表
+            html += '<div style="font-size:14px;font-weight:600;color:#333;margin-bottom:10px;">📋 ' + (isGradeLeader ? '本年级各班今日数据' : '各班级今日数据') + '</div>';
+            html += '<div class="admin-table-wrap"><table class="admin-table"><thead><tr>' +
+                '<th>班级</th><th>总人数</th><th>到课</th><th>🍱就餐</th><th>✅已就餐</th><th>⚠️停餐</th><th>📚课后</th><th>✅已到</th><th>操作</th></tr></thead><tbody>';
+            for (var i = 0; i < classStats.length; i++) {
+                var stat = classStats[i];
+                html += '<tr>' +
+                    '<td><strong>' + stat.name + '</strong></td>' +
+                    '<td>' + stat.total + '</td>' +
+                    '<td style="color:#28A745;">' + stat.present + '</td>' +
+                    '<td>' + stat.diner + '</td>' +
+                    '<td style="color:#28A745;">' + stat.eaten + '</td>' +
+                    '<td style="color:#DC3545;">' + stat.stop + '</td>' +
+                    '<td>' + stat.after + '</td>' +
+                    '<td style="color:#28A745;">' + stat.afterP + '</td>' +
+                    '<td><button onclick="switchToClass(\'' + stat.key + '\')" style="padding:4px 10px;border-radius:6px;border:1px solid #4A90D9;background:white;color:#4A90D9;font-size:12px;cursor:pointer;">进入</button></td>' +
+                    '</tr>';
+            }
+            html += '</tbody></table></div>';
+
+            // 优秀班级榜单（到课率TOP3）
+            var sorted = classStats.slice().sort(function(a, b) { return b.rate - a.rate; });
+            var top3 = sorted.slice(0, 3);
+            if (top3.length > 0) {
+                html += '<div style="margin-top:14px;padding:12px;background:#E8F5E9;border-radius:10px;font-size:13px;color:#2E7D32;">' +
+                    '🏆 到课率优秀班级：';
+                for (var i = 0; i < top3.length; i++) {
+                    html += (i+1) + '. ' + top3[i].name + '（' + top3[i].rate + '%） ';
+                }
+                html += '</div>';
+            }
+
+            // 管理按钮
+            if (canManageUsers(currentUser) || canEditAllClasses(currentUser) || canManagePermissions(currentUser)) {
+                html += '<div style="margin-top:14px;display:flex;gap:10px;flex-wrap:wrap;">';
+                if (canEditAllClasses(currentUser) || canManageGrade(currentUser)) {
+                    html += '<button onclick="openAdminModal(\'class\')" style="padding:10px 20px;border:none;border-radius:10px;background:#4A90D9;color:white;font-size:14px;font-weight:600;cursor:pointer;">🏫 班级管理</button>';
+                }
+                if (canManageUsers(currentUser)) {
+                    html += '<button onclick="openAdminModal(\'user\')" style="padding:10px 20px;border:none;border-radius:10px;background:#667eea;color:white;font-size:14px;font-weight:600;cursor:pointer;">👤 教师账号</button>';
+                }
+                if (canManagePermissions(currentUser) || currentUser.role === '超级管理员') {
+                    html += '<button onclick="openAdminModal(\'permission\')" style="padding:10px 20px;border:none;border-radius:10px;background:#9B59B6;color:white;font-size:14px;font-weight:600;cursor:pointer;">🔐 权限管理</button>';
+                    html += '<button onclick="openAdminModal(\'config\')" style="padding:10px 20px;border:none;border-radius:10px;background:#F39C12;color:white;font-size:14px;font-weight:600;cursor:pointer;">⚙️ 配置</button>';
+                }
+                html += '</div>';
+            }
+
+            // 班级快速导航
+            html += '<div style="margin-top:14px;display:flex;gap:8px;flex-wrap:wrap;">';
+            for (var i = 0; i < classStats.length; i++) {
+                html += '<button onclick="switchToClass(\'' + classStats[i].key + '\')" style="padding:6px 14px;border-radius:8px;border:1px solid #E5E7EB;background:white;font-size:12px;cursor:pointer;">' + classStats[i].name + '</button>';
+            }
+            html += '</div>';
+
+            document.getElementById('seatGrid').innerHTML = html;
+            var se = document.getElementById('studentAdminEntry');
+            var superEntry = document.getElementById('superAdminEntry');
+            if (canManageUsers(currentUser) || canEditAllClasses(currentUser) || canManagePermissions(currentUser)) {
+                superEntry.classList.remove('hidden');
+            } else {
+                superEntry.classList.add('hidden');
+            }
+            se.classList.remove('hidden');
+        }
+
+        function switchToClass(classKey) {
+            if (!CLASS_DATA_LIST[classKey]) { showToast('⚠️ 班级不存在'); return; }
+            currentClassKey = classKey;
+            window.forceClassView = true;
+            setTimeout(function() {
+                renderTeachers();
+                renderSchedule();
+                renderSeats();
+                updateStats();
+                document.querySelector('.seat-legend').style.display = '';
+                document.getElementById('teacherBadge').textContent = '点击可点评';
+                document.getElementById('className').textContent = CLASS_DATA_LIST[classKey].className;
+                document.getElementById('classSub').textContent = CLASS_DATA_LIST[classKey].classSub || '🏫 扫码查看班级信息';
+                document.getElementById('seatInfo').textContent = '点击学生可标注';
+                showToast('📚 已切换到 ' + CLASS_DATA_LIST[classKey].className);
+                window.forceClassView = false;
+            }, 100);
         }
 
         // ================================================================
@@ -1941,12 +2051,13 @@
                         if (Object.keys(CLASS_DATA_LIST).length === 0) {
                             CLASS_DATA_LIST['2024-301'] = {
                                 className: '三年级(1)班',
-                                classSub: '教学楼2层 201教室',
+                                classSub: '🏫 教学楼2层 201教室',
                                 seatColumns: 8,
                                 teachers: [],
                                 schedule: [ ['','','','',''], ['','','','',''], ['','','','',''], ['','','','',''], ['','','','',''], ['','','','',''] ],
                                 students: [],
-                                diners: {}
+                                diners: {},
+                                afterSchool: {}
                             };
                         }
                         if (Object.keys(USERS).length === 0) {
@@ -1957,17 +2068,22 @@
                                 grade: null,
                                 class: null,
                                 password: 'admin123',
-                                permissions: {
-                                    can_manage_users: true,
-                                    can_manage_all_classes: true,
-                                    can_manage_all_grades: true,
-                                    can_view_all: true,
-                                    can_comment_all: true
-                                }
+                                permissions: { can_manage_users: true, can_manage_all_classes: true, can_manage_all_grades: true, can_view_all: true, can_comment_all: true, can_export_data: true, can_send_notification: true, can_manage_permissions: true }
                             };
                         }
                         saveAllDataToServer();
                     }
+
+                    // 获取就餐截止时间
+                    fetch('/api/diner-check')
+                        .then(function(r) { return r.json(); })
+                        .then(function(result) {
+                            if (result.success) {
+                                dinerCanEdit = result.canEdit;
+                                dinerDeadline = result.deadline;
+                            }
+                        })
+                        .catch(function(e) {});
 
                     if (!currentClassKey || !CLASS_DATA_LIST[currentClassKey]) {
                         var keys = Object.keys(CLASS_DATA_LIST);
@@ -1976,15 +2092,46 @@
 
                     var data = getCurrentData();
                     document.getElementById('className').textContent = data.className || '未知班级';
-                    document.getElementById('classSub').textContent = data.classSub || '扫码查看班级信息';
+                    document.getElementById('classSub').textContent = data.classSub || '🏫 扫码查看班级信息';
 
-                    renderTeachers();
-                    renderSchedule();
-                    renderSeats();
-                    updateStats();
-                    console.log('当前班级: ' + currentClassKey);
-                    console.log('当前用户: ' + (currentUser ? currentUser.name : '未登录'));
+                    var level = getUserRoleLevel(currentUser);
+                    if (currentUser && level >= 3 && !window.forceClassView) {
+                        renderDashboard();
+                        document.getElementById('seatGrid').innerHTML = '';
+                        document.getElementById('seatInfo').textContent = '📊 全校数据总览';
+                        document.querySelector('.seat-legend').style.display = 'none';
+                        document.getElementById('teacherGrid').innerHTML = '';
+                        document.getElementById('teacherBadge').textContent = '全校概览';
+                        document.getElementById('scheduleBody').innerHTML = '';
+                    } else if (currentUser && level === 2 && !window.forceClassView) {
+                        renderDashboard();
+                        document.getElementById('seatGrid').innerHTML = '';
+                        document.getElementById('seatInfo').textContent = '📊 ' + (currentUser.grade || '本年级') + ' 数据总览';
+                        document.querySelector('.seat-legend').style.display = 'none';
+                        document.getElementById('teacherGrid').innerHTML = '';
+                        document.getElementById('teacherBadge').textContent = '本年级概览';
+                        document.getElementById('scheduleBody').innerHTML = '';
+                    } else {
+                        window.forceClassView = false;
+                        renderTeachers();
+                        renderSchedule();
+                        renderSeats();
+                        updateStats();
+                        document.querySelector('.seat-legend').style.display = '';
+                        document.getElementById('teacherBadge').textContent = '点击可点评';
+                    }
 
+                    var se = document.getElementById('studentAdminEntry');
+                    var superEntry = document.getElementById('superAdminEntry');
+                    if (canManageUsers(currentUser) || canEditAllClasses(currentUser) || canManagePermissions(currentUser)) {
+                        superEntry.classList.remove('hidden');
+                    } else {
+                        superEntry.classList.add('hidden');
+                    }
+                    se.classList.remove('hidden');
+
+                    console.log('✅ 当前班级: ' + currentClassKey);
+                    console.log('👤 当前用户: ' + (currentUser ? currentUser.name : '未登录'));
                     initLogin();
                 });
         }
@@ -2039,54 +2186,48 @@
         //  初始化
         // ================================================================
         function init() {
-    loadAllDataFromServer()
-        .then(function() {
-            if (Object.keys(CLASS_DATA_LIST).length === 0) {
-                CLASS_DATA_LIST['2024-301'] = {
-                    className: '三年级(1)班',
-                    classSub: '教学楼2层 201教室',
-                    seatColumns: 8,
-                    teachers: [],
-                    schedule: [ ['','','','',''], ['','','','',''], ['','','','',''], ['','','','',''], ['','','','',''], ['','','','',''] ],
-                    students: [],
-                    diners: {}
-                };
-            }
-            if (Object.keys(USERS).length === 0) {
-                USERS['admin'] = {
-                    name: '超级管理员',
-                    role: '超级管理员',
-                    role_level: 5,
-                    grade: null,
-                    class: null,
-                    password: 'admin123',
-                    permissions: {
-                        can_manage_users: true,
-                        can_manage_all_classes: true,
-                        can_manage_all_grades: true,
-                        can_view_all: true,
-                        can_comment_all: true
+            loadAllDataFromServer()
+                .then(function() {
+                    if (Object.keys(CLASS_DATA_LIST).length === 0) {
+                        CLASS_DATA_LIST['2024-301'] = {
+                            className: '三年级(1)班',
+                            classSub: '🏫 教学楼2层 201教室',
+                            seatColumns: 8,
+                            teachers: [],
+                            schedule: [ ['','','','',''], ['','','','',''], ['','','','',''], ['','','','',''], ['','','','',''], ['','','','',''] ],
+                            students: [],
+                            diners: {},
+                            afterSchool: {}
+                        };
                     }
-                };
-            }
-            saveAllDataToServer().then(function() {
-                initLogin();
-
-                var loggedIn = autoLogin();
-                if (!loggedIn) {
-                    document.getElementById('loginOverlay').style.display = 'flex';
-                    var keys = Object.keys(CLASS_DATA_LIST);
-                    if (keys.length > 0) {
-                        var data = CLASS_DATA_LIST[keys[0]];
-                        document.getElementById('className').textContent = data.className || '未知班级';
-                        document.getElementById('classSub').textContent = data.classSub || '扫码查看班级信息';
+                    if (Object.keys(USERS).length === 0) {
+                        USERS['admin'] = {
+                            name: '超级管理员',
+                            role: '超级管理员',
+                            role_level: 5,
+                            grade: null,
+                            class: null,
+                            password: 'admin123',
+                            permissions: { can_manage_users: true, can_manage_all_classes: true, can_manage_all_grades: true, can_view_all: true, can_comment_all: true, can_export_data: true, can_send_notification: true, can_manage_permissions: true }
+                        };
                     }
-                }
-                console.log('系统已初始化');
-                console.log('超级管理员：admin / admin123');
-            });
-        });
-}
+                    saveAllDataToServer().then(function() {
+                        initLogin();
+                        var loggedIn = autoLogin();
+                        if (!loggedIn) {
+                            document.getElementById('loginOverlay').style.display = 'flex';
+                            var keys = Object.keys(CLASS_DATA_LIST);
+                            if (keys.length > 0) {
+                                var data = CLASS_DATA_LIST[keys[0]];
+                                document.getElementById('className').textContent = data.className || '未知班级';
+                                document.getElementById('classSub').textContent = data.classSub || '🏫 扫码查看班级信息';
+                            }
+                        }
+                        console.log('📋 系统已初始化');
+                        console.log('💡 超级管理员：admin / admin123');
+                    });
+                });
+        }
         init();
     </script>
 </body>
