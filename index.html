@@ -1843,185 +1843,181 @@
         // ================================================================
         //  全校/本年级 数据面板
         // ================================================================
-        function renderDashboard() {
-            var level = getUserRoleLevel(currentUser);
-            var isGradeLeader = (level === 2);
-            var gradeFilter = currentUser ? currentUser.grade : '';
-            var classKeys = Object.keys(CLASS_DATA_LIST);
-            var today = getTodayStr();
-            var filteredKeys = [];
-            for (var i = 0; i < classKeys.length; i++) {
-                var key = classKeys[i];
-                if (isGradeLeader) {
-                    var classGrade = getClassGrade(key);
-                    if (classGrade === gradeFilter) filteredKeys.push(key);
-                } else {
-                    filteredKeys.push(key);
-                }
-            }
-            if (isGradeLeader && filteredKeys.length === 0) {
-                document.getElementById('seatGrid').innerHTML = '<div style="text-align:center;padding:30px;color:#999;font-size:14px;">📭 您还没有关联的班级，请联系管理员设置年级信息</div>';
-                document.getElementById('seatInfo').textContent = '📊 本年级数据总览';
-                document.querySelector('.seat-legend').style.display = 'none';
-                document.getElementById('teacherGrid').innerHTML = '';
-                document.getElementById('teacherBadge').textContent = '本年级概览';
-                document.getElementById('scheduleBody').innerHTML = '';
-                return;
-            }
-            var totalStudents = 0, totalDiners = 0, totalPresent = 0, totalLate = 0, totalAbsent = 0, totalLeave = 0, totalNotInRoom = 0;
-var totalAfter = 0, totalAfterPresent = 0, totalAfterAbsent = 0;
-var totalStop = 0;  // ← 加上这一行
-            var classStats = [];
-            for (var i = 0; i < filteredKeys.length; i++) {
-                var key = filteredKeys[i];
-                var cls = CLASS_DATA_LIST[key];
-                var students = cls.students || [];
-                var diners = cls.diners || {};
-                var afterSchool = cls.afterSchool || {};
-                var todayRecords = attendanceRecords[today] && attendanceRecords[today][key] ? attendanceRecords[today][key] : {};
-                var p = 0, l = 0, a = 0, le = 0, n = 0;
-                var dinerCount = 0, eatenCount = 0, stopCount = 0;
-                var afterCount = 0, afterP = 0, afterA = 0;
-                for (var j = 0; j < students.length; j++) {
-                    var name = students[j];
-                    if (diners[name]) {
-                        dinerCount++;
-                        var status = todayRecords[name] || 'present';
-                        if (status === 'leave' || status === 'absent') stopCount++;
-                        else eatenCount++;
-                    }
-                    if (afterSchool[name]) {
-                        afterCount++;
-                        var status2 = todayRecords[name] || 'present';
-                        if (status2 === 'leave' || status2 === 'absent' || status2 === 'not-in-room') afterA++;
-                        else afterP++;
-                    }
-                    var s = todayRecords[name] || 'present';
-                    if (s === 'present') p++;
-                    else if (s === 'late') l++;
-                    else if (s === 'absent') a++;
-                    else if (s === 'leave') le++;
-                    else if (s === 'not-in-room') n++;
-                }
-                totalStudents += students.length;
-                totalDiners += dinerCount;
-                totalPresent += p;
-                totalLate += l;
-                totalAbsent += a;
-                totalLeave += le;
-                totalNotInRoom += n;
-                totalAfter += afterCount;
-                totalAfterPresent += afterP;
-                totalAfterAbsent += afterA;
-                classStats.push({
-                    key: key,
-                    name: cls.className || key,
-                    total: students.length,
-                    diner: dinerCount,
-                    eaten: eatenCount,
-                    stop: stopCount,
-                    after: afterCount,
-                    afterP: afterP,
-                    afterA: afterA,
-                    present: p,
-                    late: l,
-                    absent: a,
-                    leave: le,
-                    notInRoom: n,
-                    rate: students.length > 0 ? Math.round((p / students.length) * 100) : 0
-                });
-            }
-            var title = isGradeLeader ? ('📊 ' + gradeFilter + ' 数据总览') : '📊 全校数据总览';
-            document.getElementById('seatInfo').textContent = title;
-            document.querySelector('.seat-legend').style.display = 'none';
-            document.getElementById('teacherGrid').innerHTML = '';
-            document.getElementById('teacherBadge').textContent = isGradeLeader ? '本年级概览' : '全校概览';
-            document.getElementById('scheduleBody').innerHTML = '';
-            var html = '';
-            var totalRate = totalStudents > 0 ? Math.round((totalPresent / totalStudents) * 100) : 0;
-            html += '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:14px;">';
-            html += '<div style="background:linear-gradient(135deg,#4A90D9,#357ABD);color:white;border-radius:12px;padding:14px;text-align:center;"><div style="font-size:24px;font-weight:700;">' + totalStudents + '</div><div style="font-size:12px;opacity:0.8;">' + (isGradeLeader ? '本年级学生' : '在校学生') + '</div></div>';
-            html += '<div style="background:linear-gradient(135deg,#28A745,#1e7e34);color:white;border-radius:12px;padding:14px;text-align:center;"><div style="font-size:24px;font-weight:700;">' + totalPresent + '</div><div style="font-size:12px;opacity:0.8;">今日到课</div></div>';
-            html += '<div style="background:linear-gradient(135deg,#FFC107,#d39e00);color:#333;border-radius:12px;padding:14px;text-align:center;"><div style="font-size:24px;font-weight:700;">' + totalDiners + '</div><div style="font-size:12px;opacity:0.8;">在校就餐</div></div>';
-            html += '</div>';
-            // 就餐 + 课后服务明细行
-            var totalEaten = totalDiners - (totalStop || 0);
-            var totalAfterP2 = totalAfterPresent;
-            html += '<div style="background:#f8f9fa;border-radius:10px;padding:10px;margin-bottom:14px;font-size:13px;color:#555;display:flex;flex-wrap:wrap;gap:8px 16px;">' +
-                '<span>🍱 在校就餐：<strong>' + totalDiners + '</strong> 人</span>' +
-                '<span>✅ 已就餐：<strong style="color:#28A745;">' + totalEaten + '</strong> 人</span>' +
-                '<span>⚠️ 停餐：<strong style="color:#DC3545;">' + (totalDiners - totalEaten) + '</strong> 人</span>' +
-                '<span>|</span>' +
-                '<span>📚 参加课后：<strong>' + totalAfter + '</strong> 人</span>' +
-                '<span>✅ 已到：<strong style="color:#28A745;">' + totalAfterP2 + '</strong> 人</span>' +
-                '<span>⚠️ 缺勤：<strong style="color:#DC3545;">' + (totalAfter - totalAfterP2) + '</strong> 人</span>' +
-                '</div>';
-
-            // 班级列表
-            html += '<div style="font-size:14px;font-weight:600;color:#333;margin-bottom:10px;">📋 ' + (isGradeLeader ? '本年级各班今日数据' : '各班级今日数据') + '</div>';
-            html += '<div class="admin-table-wrap"><table class="admin-table"><thead><tr>' +
-                '<th>班级</th><th>总人数</th><th>到课</th><th>🍱就餐</th><th>✅已就餐</th><th>⚠️停餐</th><th>📚课后</th><th>✅已到</th><th>操作</th></tr></thead><tbody>';
-            for (var i = 0; i < classStats.length; i++) {
-                var stat = classStats[i];
-                html += '<tr>' +
-                    '<td><strong>' + stat.name + '</strong></td>' +
-                    '<td>' + stat.total + '</td>' +
-                    '<td style="color:#28A745;">' + stat.present + '</td>' +
-                    '<td>' + stat.diner + '</td>' +
-                    '<td style="color:#28A745;">' + stat.eaten + '</td>' +
-                    '<td style="color:#DC3545;">' + stat.stop + '</td>' +
-                    '<td>' + stat.after + '</td>' +
-                    '<td style="color:#28A745;">' + stat.afterP + '</td>' +
-                    '<td><button onclick="switchToClass(\'' + stat.key + '\')" style="padding:4px 10px;border-radius:6px;border:1px solid #4A90D9;background:white;color:#4A90D9;font-size:12px;cursor:pointer;">进入</button></td>' +
-                    '</tr>';
-            }
-            html += '</tbody></table></div>';
-
-            // 优秀班级榜单（到课率TOP3）
-            var sorted = classStats.slice().sort(function(a, b) { return b.rate - a.rate; });
-            var top3 = sorted.slice(0, 3);
-            if (top3.length > 0) {
-                html += '<div style="margin-top:14px;padding:12px;background:#E8F5E9;border-radius:10px;font-size:13px;color:#2E7D32;">' +
-                    '🏆 到课率优秀班级：';
-                for (var i = 0; i < top3.length; i++) {
-                    html += (i+1) + '. ' + top3[i].name + '（' + top3[i].rate + '%） ';
-                }
-                html += '</div>';
-            }
-
-            // 管理按钮
-            if (canManageUsers(currentUser) || canEditAllClasses(currentUser) || canManagePermissions(currentUser)) {
-                html += '<div style="margin-top:14px;display:flex;gap:10px;flex-wrap:wrap;">';
-                if (canEditAllClasses(currentUser) || canManageGrade(currentUser)) {
-                    html += '<button onclick="openAdminModal(\'class\')" style="padding:10px 20px;border:none;border-radius:10px;background:#4A90D9;color:white;font-size:14px;font-weight:600;cursor:pointer;">🏫 班级管理</button>';
-                }
-                if (canManageUsers(currentUser)) {
-                    html += '<button onclick="openAdminModal(\'user\')" style="padding:10px 20px;border:none;border-radius:10px;background:#667eea;color:white;font-size:14px;font-weight:600;cursor:pointer;">👤 教师账号</button>';
-                }
-                if (canManagePermissions(currentUser) || currentUser.role === '超级管理员') {
-                    html += '<button onclick="openAdminModal(\'permission\')" style="padding:10px 20px;border:none;border-radius:10px;background:#9B59B6;color:white;font-size:14px;font-weight:600;cursor:pointer;">🔐 权限管理</button>';
-                    html += '<button onclick="openAdminModal(\'config\')" style="padding:10px 20px;border:none;border-radius:10px;background:#F39C12;color:white;font-size:14px;font-weight:600;cursor:pointer;">⚙️ 配置</button>';
-                }
-                html += '</div>';
-            }
-
-            // 班级快速导航
-            html += '<div style="margin-top:14px;display:flex;gap:8px;flex-wrap:wrap;">';
-            for (var i = 0; i < classStats.length; i++) {
-                html += '<button onclick="switchToClass(\'' + classStats[i].key + '\')" style="padding:6px 14px;border-radius:8px;border:1px solid #E5E7EB;background:white;font-size:12px;cursor:pointer;">' + classStats[i].name + '</button>';
-            }
-            html += '</div>';
-
-            document.getElementById('seatGrid').innerHTML = html;
-            var se = document.getElementById('studentAdminEntry');
-            var superEntry = document.getElementById('superAdminEntry');
-            if (canManageUsers(currentUser) || canEditAllClasses(currentUser) || canManagePermissions(currentUser)) {
-                superEntry.classList.remove('hidden');
-            } else {
-                superEntry.classList.add('hidden');
-            }
-            se.classList.remove('hidden');
+      function renderDashboard() {
+    var level = getUserRoleLevel(currentUser);
+    var isGradeLeader = (level === 2);
+    var gradeFilter = currentUser ? currentUser.grade : '';
+    var classKeys = Object.keys(CLASS_DATA_LIST);
+    var today = getTodayStr();
+    var filteredKeys = [];
+    for (var i = 0; i < classKeys.length; i++) {
+        var key = classKeys[i];
+        if (isGradeLeader) {
+            var classGrade = getClassGrade(key);
+            if (classGrade === gradeFilter) filteredKeys.push(key);
+        } else {
+            filteredKeys.push(key);
         }
+    }
+    if (isGradeLeader && filteredKeys.length === 0) {
+        document.getElementById('seatGrid').innerHTML = '<div style="text-align:center;padding:30px;color:#999;font-size:14px;">📭 您还没有关联的班级，请联系管理员设置年级信息</div>';
+        document.getElementById('seatInfo').textContent = '📊 本年级数据总览';
+        document.querySelector('.seat-legend').style.display = 'none';
+        document.getElementById('teacherGrid').innerHTML = '';
+        document.getElementById('teacherBadge').textContent = '本年级概览';
+        document.getElementById('scheduleBody').innerHTML = '';
+        return;
+    }
+    var totalStudents = 0, totalDiners = 0, totalPresent = 0, totalLate = 0, totalAbsent = 0, totalLeave = 0, totalNotInRoom = 0;
+    var totalAfter = 0, totalAfterPresent = 0, totalAfterAbsent = 0;
+    var totalStop = 0;  // ✅ 关键修复
+    var classStats = [];
+    for (var i = 0; i < filteredKeys.length; i++) {
+        var key = filteredKeys[i];
+        var cls = CLASS_DATA_LIST[key];
+        var students = cls.students || [];
+        var diners = cls.diners || {};
+        var afterSchool = cls.afterSchool || {};
+        var todayRecords = attendanceRecords[today] && attendanceRecords[today][key] ? attendanceRecords[today][key] : {};
+        var p = 0, l = 0, a = 0, le = 0, n = 0;
+        var dinerCount = 0, eatenCount = 0, stopCount = 0;
+        var afterCount = 0, afterP = 0, afterA = 0;
+        for (var j = 0; j < students.length; j++) {
+            var name = students[j];
+            if (diners[name]) {
+                dinerCount++;
+                var status = todayRecords[name] || 'present';
+                if (status === 'leave' || status === 'absent') stopCount++;
+                else eatenCount++;
+            }
+            if (afterSchool[name]) {
+                afterCount++;
+                var status2 = todayRecords[name] || 'present';
+                if (status2 === 'leave' || status2 === 'absent' || status2 === 'not-in-room') afterA++;
+                else afterP++;
+            }
+            var s = todayRecords[name] || 'present';
+            if (s === 'present') p++;
+            else if (s === 'late') l++;
+            else if (s === 'absent') a++;
+            else if (s === 'leave') le++;
+            else if (s === 'not-in-room') n++;
+        }
+        totalStudents += students.length;
+        totalDiners += dinerCount;
+        totalPresent += p;
+        totalLate += l;
+        totalAbsent += a;
+        totalLeave += le;
+        totalNotInRoom += n;
+        totalAfter += afterCount;
+        totalAfterPresent += afterP;
+        totalAfterAbsent += afterA;
+        totalStop += stopCount;
+        classStats.push({
+            key: key,
+            name: cls.className || key,
+            total: students.length,
+            diner: dinerCount,
+            eaten: eatenCount,
+            stop: stopCount,
+            after: afterCount,
+            afterP: afterP,
+            afterA: afterA,
+            present: p,
+            late: l,
+            absent: a,
+            leave: le,
+            notInRoom: n,
+            rate: students.length > 0 ? Math.round((p / students.length) * 100) : 0
+        });
+    }
+    var title = isGradeLeader ? ('📊 ' + gradeFilter + ' 数据总览') : '📊 全校数据总览';
+    document.getElementById('seatInfo').textContent = title;
+    document.querySelector('.seat-legend').style.display = 'none';
+    document.getElementById('teacherGrid').innerHTML = '';
+    document.getElementById('teacherBadge').textContent = isGradeLeader ? '本年级概览' : '全校概览';
+    document.getElementById('scheduleBody').innerHTML = '';
+    var html = '';
+    var totalRate = totalStudents > 0 ? Math.round((totalPresent / totalStudents) * 100) : 0;
+    html += '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:14px;">';
+    html += '<div style="background:linear-gradient(135deg,#4A90D9,#357ABD);color:white;border-radius:12px;padding:14px;text-align:center;"><div style="font-size:24px;font-weight:700;">' + totalStudents + '</div><div style="font-size:12px;opacity:0.8;">' + (isGradeLeader ? '本年级学生' : '在校学生') + '</div></div>';
+    html += '<div style="background:linear-gradient(135deg,#28A745,#1e7e34);color:white;border-radius:12px;padding:14px;text-align:center;"><div style="font-size:24px;font-weight:700;">' + totalPresent + '</div><div style="font-size:12px;opacity:0.8;">今日到课</div></div>';
+    html += '<div style="background:linear-gradient(135deg,#FFC107,#d39e00);color:#333;border-radius:12px;padding:14px;text-align:center;"><div style="font-size:24px;font-weight:700;">' + totalDiners + '</div><div style="font-size:12px;opacity:0.8;">在校就餐</div></div>';
+    html += '</div>';
+    var totalEaten = totalDiners - totalStop;
+    var totalAfterP2 = totalAfterPresent;
+    html += '<div style="background:#f8f9fa;border-radius:10px;padding:10px;margin-bottom:14px;font-size:13px;color:#555;display:flex;flex-wrap:wrap;gap:8px 16px;">' +
+        '<span>🍱 在校就餐：<strong>' + totalDiners + '</strong> 人</span>' +
+        '<span>✅ 已就餐：<strong style="color:#28A745;">' + totalEaten + '</strong> 人</span>' +
+        '<span>⚠️ 停餐：<strong style="color:#DC3545;">' + totalStop + '</strong> 人</span>' +
+        '<span>|</span>' +
+        '<span>📚 参加课后：<strong>' + totalAfter + '</strong> 人</span>' +
+        '<span>✅ 已到：<strong style="color:#28A745;">' + totalAfterP2 + '</strong> 人</span>' +
+        '<span>⚠️ 缺勤：<strong style="color:#DC3545;">' + (totalAfter - totalAfterP2) + '</strong> 人</span>' +
+        '</div>';
+
+    html += '<div style="font-size:14px;font-weight:600;color:#333;margin-bottom:10px;">📋 ' + (isGradeLeader ? '本年级各班今日数据' : '各班级今日数据') + '</div>';
+    html += '<div class="admin-table-wrap"><table class="admin-table"><thead><tr>' +
+        '<th>班级</th><th>总人数</th><th>到课</th><th>🍱就餐</th><th>✅已就餐</th><th>⚠️停餐</th><th>📚课后</th><th>✅已到</th><th>操作</th></tr></thead><tbody>';
+    for (var i = 0; i < classStats.length; i++) {
+        var stat = classStats[i];
+        html += '<tr>' +
+            '<td><strong>' + stat.name + '</strong></td>' +
+            '<td>' + stat.total + '</td>' +
+            '<td style="color:#28A745;">' + stat.present + '</td>' +
+            '<td>' + stat.diner + '</td>' +
+            '<td style="color:#28A745;">' + stat.eaten + '</td>' +
+            '<td style="color:#DC3545;">' + stat.stop + '</td>' +
+            '<td>' + stat.after + '</td>' +
+            '<td style="color:#28A745;">' + stat.afterP + '</td>' +
+            '<td><button onclick="switchToClass(\'' + stat.key + '\')" style="padding:4px 10px;border-radius:6px;border:1px solid #4A90D9;background:white;color:#4A90D9;font-size:12px;cursor:pointer;">进入</button></td>' +
+            '</tr>';
+    }
+    html += '</tbody></table></div>';
+
+    var sorted = classStats.slice().sort(function(a, b) { return b.rate - a.rate; });
+    var top3 = sorted.slice(0, 3);
+    if (top3.length > 0) {
+        html += '<div style="margin-top:14px;padding:12px;background:#E8F5E9;border-radius:10px;font-size:13px;color:#2E7D32;">' +
+            '🏆 到课率优秀班级：';
+        for (var i = 0; i < top3.length; i++) {
+            html += (i+1) + '. ' + top3[i].name + '（' + top3[i].rate + '%） ';
+        }
+        html += '</div>';
+    }
+
+    if (canManageUsers(currentUser) || canEditAllClasses(currentUser) || canManagePermissions(currentUser)) {
+        html += '<div style="margin-top:14px;display:flex;gap:10px;flex-wrap:wrap;">';
+        if (canEditAllClasses(currentUser) || canManageGrade(currentUser)) {
+            html += '<button onclick="openAdminModal(\'class\')" style="padding:10px 20px;border:none;border-radius:10px;background:#4A90D9;color:white;font-size:14px;font-weight:600;cursor:pointer;">🏫 班级管理</button>';
+        }
+        if (canManageUsers(currentUser)) {
+            html += '<button onclick="openAdminModal(\'user\')" style="padding:10px 20px;border:none;border-radius:10px;background:#667eea;color:white;font-size:14px;font-weight:600;cursor:pointer;">👤 教师账号</button>';
+        }
+        if (canManagePermissions(currentUser) || currentUser.role === '超级管理员') {
+            html += '<button onclick="openAdminModal(\'permission\')" style="padding:10px 20px;border:none;border-radius:10px;background:#9B59B6;color:white;font-size:14px;font-weight:600;cursor:pointer;">🔐 权限管理</button>';
+            html += '<button onclick="openAdminModal(\'config\')" style="padding:10px 20px;border:none;border-radius:10px;background:#F39C12;color:white;font-size:14px;font-weight:600;cursor:pointer;">⚙️ 配置</button>';
+        }
+        html += '</div>';
+    }
+
+    html += '<div style="margin-top:14px;display:flex;gap:8px;flex-wrap:wrap;">';
+    for (var i = 0; i < classStats.length; i++) {
+        html += '<button onclick="switchToClass(\'' + classStats[i].key + '\')" style="padding:6px 14px;border-radius:8px;border:1px solid #E5E7EB;background:white;font-size:12px;cursor:pointer;">' + classStats[i].name + '</button>';
+    }
+    html += '</div>';
+
+    document.getElementById('seatGrid').innerHTML = html;
+    var se = document.getElementById('studentAdminEntry');
+    var superEntry = document.getElementById('superAdminEntry');
+    if (canManageUsers(currentUser) || canEditAllClasses(currentUser) || canManagePermissions(currentUser)) {
+        superEntry.classList.remove('hidden');
+    } else {
+        superEntry.classList.add('hidden');
+    }
+    se.classList.remove('hidden');
+}
 
         function switchToClass(classKey) {
             if (!CLASS_DATA_LIST[classKey]) { showToast('⚠️ 班级不存在'); return; }
