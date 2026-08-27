@@ -1869,7 +1869,8 @@
                 return;
             }
             var totalStudents = 0, totalDiners = 0, totalPresent = 0, totalLate = 0, totalAbsent = 0, totalLeave = 0, totalNotInRoom = 0;
-            var totalAfter = 0, totalAfterPresent = 0, totalAfterAbsent = 0;
+var totalAfter = 0, totalAfterPresent = 0, totalAfterAbsent = 0;
+var totalStop = 0;  // ← 加上这一行
             var classStats = [];
             for (var i = 0; i < filteredKeys.length; i++) {
                 var key = filteredKeys[i];
