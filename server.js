@@ -235,6 +235,43 @@ app.post('/send', async (req, res) => {
         res.status(500).json({ success: false, error: error.message });
     }
 });
+// ... 其他代码 ...
+
+// ================================================================
+//  🗂️ 系统配置读取（新增）
+// ================================================================
+async function getSystemConfig() {
+    try {
+        const response = await axios.get(
+            SUPABASE_URL + '/rest/v1/system_config?id=eq.main',
+            { headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY } }
+        );
+        return response.data && response.data.length > 0 ? response.data[0] : null;
+    } catch (e) {
+        console.error('❌ 读取配置失败:', e.message);
+        return null;
+    }
+}
+
+// ================================================================
+//  ⏰ 就餐时间锁检查
+// ================================================================
+app.get('/api/diner-check', async (req, res) => {
+    try {
+        const config = await getSystemConfig();
+        const deadline = config ? config.diner_deadline : '09:00';
+        const now = new Date();
+        const [h, m] = deadline.split(':').map(Number);
+        const deadlineDate = new Date(now);
+        deadlineDate.setHours(h, m, 0, 0);
+        const canEdit = now < deadlineDate;
+        res.json({ success: true, canEdit, deadline, currentTime: now.toLocaleTimeString() });
+    } catch (e) {
+        console.error('❌ diner-check 报错:', e.message);
+        res.status(500).json({ success: false, error: e.message });
+    }
+});
+// ... 后面的代码 ...
 
 // 静态首页
 app.get('/', (req, res) => {
