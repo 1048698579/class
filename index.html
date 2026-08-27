@@ -526,10 +526,8 @@
 }
         function canCommentStudent(user, classKey) {
     if (!user) return false;
-    // 超级管理员、管理员可以点评所有班级
-    if (user.role === '超级管理员' || user.role === '管理员') return true;
-    // 校委会可以点评所有班级（加上明确判断）
-    if (user.role === '校委会') return true;
+    // 超级管理员、管理员、校委会 可以点评所有班级
+    if (user.role === '超级管理员' || user.role === '管理员' || user.role === '校委会') return true;
     // 年级主任只可点评本年级
     if (user.role === '年级主任') {
         var userGrade = user.grade || '';
@@ -1181,13 +1179,13 @@
         //  弹窗控制
         // ================================================================
         function openStudentModal(index) {
-            if (!currentUser) { showToast('🔒 请先登录'); return; }
-            var students = getCurrentStudents();
-            if (!students || index >= students.length) return;
-            if (!canCommentStudent(currentUser, currentClassKey) && !canEditClass(currentUser, currentClassKey)) {
-                showToast('🔒 您无权操作该班');
-                return;
-            }
+    if (!currentUser) { showToast('🔒 请先登录'); return; }
+    // 检查是否有点评权限
+    if (!canCommentStudent(currentUser, currentClassKey)) {
+        showToast('🔒 您无权点评该班');
+        return;
+    }
+    
             selectedStudentIndex = index;
             var data = getCurrentData();
             var nameEl = $('studentModalName'); if (nameEl) nameEl.textContent = students[index];
@@ -1206,8 +1204,12 @@
         function closeStudentModal() { var m = $('studentModal'); if (m) m.classList.remove('active'); selectedStudentIndex = null; }
 
         function openTeacherModal(index) {
-            if (!currentUser) { showToast('🔒 请先登录'); return; }
-            if (!canCommentStudent(currentUser, currentClassKey)) { showToast('🔒 您无权点评该班教师'); return; }
+    if (!currentUser) { showToast('🔒 请先登录'); return; }
+    // 检查是否有点评权限
+    if (!canCommentStudent(currentUser, currentClassKey)) {
+        showToast('🔒 您无权点评该班教师');
+        return;
+    }
             var teachers = getCurrentTeachers();
             if (!teachers || index >= teachers.length) return;
             selectedTeacherIndex = index;
