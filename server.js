@@ -223,6 +223,7 @@ app.post('/send', async (req, res) => {
 
 // 静态首页
 app.get('/', (req, res) => {
+    res.setHeader('Content-Type', 'text/html; charset=utf-8');
     res.sendFile(path.join(__dirname, 'index.html'));
 });
 
