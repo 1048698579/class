@@ -2120,80 +2120,74 @@
             var isGradeLeader = (currentUser && level === 2);
             var isTeacher = (currentUser && currentUser.role === '班主任');
 
+            var urlParams = new URLSearchParams(window.location.search);
+            var isScanMode = urlParams.has('class');
+
             // ===== 头部显示 =====
-var urlParams = new URLSearchParams(window.location.search);
-var isScanMode = urlParams.has('class');
+            if (isScanMode) {
+                var classData = getCurrentData();
+                var className = classData.className || '未知班级';
+                var classSub = classData.classSub || '🏫 扫码查看班级信息';
+                
+                var teacherName = '未设置';
+                var keys = Object.keys(USERS);
+                for (var i = 0; i < keys.length; i++) {
+                    var u = USERS[keys[i]];
+                    if (u.class === currentClassKey && u.role === '班主任') {
+                        teacherName = u.name;
+                        break;
+                    }
+                }
+                
+                document.getElementById('className').textContent = className;
+                document.getElementById('classSub').textContent = classSub + ' ｜ 班主任：' + teacherName + ' ｜ 总人数：' + classData.students.length + ' 人';
+            } else if (isLeader) {
+                document.getElementById('className').textContent = '📊 全校数据总览';
+                document.getElementById('classSub').textContent = '👤 ' + currentUser.role + ' · 共 ' + Object.keys(CLASS_DATA_LIST).length + ' 个班级';
+            } else if (isGradeLeader) {
+                document.getElementById('className').textContent = '📊 ' + (currentUser.grade || '本年级') + ' 数据总览';
+                document.getElementById('classSub').textContent = '👤 ' + currentUser.role + ' · ' + currentUser.name;
+            } else {
+                var data2 = getCurrentData();
+                var teacherName2 = '未设置';
+                var keys2 = Object.keys(USERS);
+                for (var i = 0; i < keys2.length; i++) {
+                    var u = USERS[keys2[i]];
+                    if (u.class === currentClassKey && u.role === '班主任') {
+                        teacherName2 = u.name;
+                        break;
+                    }
+                }
+                document.getElementById('className').textContent = data2.className || '未知班级';
+                document.getElementById('classSub').textContent = (data2.classSub || '🏫 扫码查看班级信息') + ' ｜ 班主任：' + teacherName2 + ' ｜ 总人数：' + (data2.students ? data2.students.length : 0) + ' 人';
+            }
 
-if (isScanMode) {
-    // 🔑 扫码模式：显示班级信息 + 班主任 + 总人数
-    var classData = getCurrentData();
-    var className = classData.className || '未知班级';
-    var classSub = classData.classSub || '🏫 扫码查看班级信息';
-    
-    // 查找班主任姓名
-    var teacherName = '未设置';
-    var keys = Object.keys(USERS);
-    for (var i = 0; i < keys.length; i++) {
-        var u = USERS[keys[i]];
-        if (u.class === currentClassKey && u.role === '班主任') {
-            teacherName = u.name;
-            break;
-        }
-    }
-    
-    document.getElementById('className').textContent = className;
-    document.getElementById('classSub').textContent = classSub + ' ｜ 班主任：' + teacherName + ' ｜ 总人数：' + classData.students.length + ' 人';
-} else if (isLeader) {
-    document.getElementById('className').textContent = '📊 全校数据总览';
-    document.getElementById('classSub').textContent = '👤 ' + currentUser.role + ' · 共 ' + Object.keys(CLASS_DATA_LIST).length + ' 个班级';
-} else if (isGradeLeader) {
-    document.getElementById('className').textContent = '📊 ' + (currentUser.grade || '本年级') + ' 数据总览';
-    document.getElementById('classSub').textContent = '👤 ' + currentUser.role + ' · ' + currentUser.name;
-} else {
-    var data2 = getCurrentData();
-    var teacherName2 = '未设置';
-    var keys2 = Object.keys(USERS);
-    for (var i = 0; i < keys2.length; i++) {
-        var u = USERS[keys2[i]];
-        if (u.class === currentClassKey && u.role === '班主任') {
-            teacherName2 = u.name;
-            break;
-        }
-    }
-    document.getElementById('className').textContent = data2.className || '未知班级';
-    document.getElementById('classSub').textContent = (data2.classSub || '🏫 扫码查看班级信息') + ' ｜ 班主任：' + teacherName2 + ' ｜ 总人数：' + (data2.students ? data2.students.length : 0) + ' 人';
-}
+            // ===== 判断模式 =====
+            var isClassMode = false;
+            if (isScanMode) {
+                isClassMode = true;
+                var urlParams2 = new URLSearchParams(window.location.search);
+                var classParam = urlParams2.get('class');
+                if (classParam && CLASS_DATA_LIST[classParam]) {
+                    currentClassKey = classParam;
+                }
+            } else if (isTeacher) {
+                isClassMode = true;
+            } else if (window.forceClassView) {
+                isClassMode = true;
+                window.forceClassView = false;
+            } else if (isLeader || isGradeLeader) {
+                isClassMode = false;
+            } else {
+                isClassMode = true;
+            }
 
-            // ===== 判断模式（扫码优先） =====
-var isClassMode = false;
-
-// 1. 如果是扫码模式，强制显示班级视图（优先级最高）
-if (isScanMode) {
-    isClassMode = true;
-    // 更新当前班级为扫码指定的班级
-    var urlParams = new URLSearchParams(window.location.search);
-    var classParam = urlParams.get('class');
-    if (classParam && CLASS_DATA_LIST[classParam]) {
-        currentClassKey = classParam;
-    }
-} 
-// 2. 如果是班主任登录
-else if (isTeacher) {
-    isClassMode = true;
-} 
-// 3. 如果是强制班级视图
-else if (window.forceClassView) {
-    isClassMode = true;
-    window.forceClassView = false;
-} 
-// 4. 如果是校领导或年级主任（非扫码模式），显示面板
-else if (isLeader || isGradeLeader) {
-    isClassMode = false;
-} 
-// 5. 其他情况（兜底）
-else {
-    isClassMode = true;
-}
+            // ===== 获取DOM元素 =====
+            var cards = document.querySelectorAll('.card');
+            var seatCard = document.querySelector('.card:last-of-type');
+            var actionRow = document.querySelector('.action-row');
+            var adminEntries = document.querySelectorAll('.admin-entry');
+            var legend = document.querySelector('.seat-legend');
 
             if (isClassMode) {
                 window.forceClassView = false;
@@ -2208,17 +2202,13 @@ else {
                 document.getElementById('seatInfo').textContent = '点击学生可标注';
                 document.getElementById('teacherBadge').textContent = '点击可点评';
                 document.getElementById('seatGrid').innerHTML = '';
-                // 班级模式：统计栏显示本班数据（原有逻辑）
                 document.getElementById('statsBar').style.display = '';
                 renderTeachers();
                 renderSchedule();
                 renderSeats();
                 updateStats();
             } else {
-                // ===== 面板模式 =====
-                // 显示统计栏（由 renderDashboard 更新数据）
                 document.getElementById('statsBar').style.display = '';
-                
                 if (cards[0]) cards[0].style.display = 'none';
                 if (cards[1]) cards[1].style.display = 'none';
                 if (seatCard) {
@@ -2239,7 +2229,6 @@ else {
                 document.getElementById('scheduleBody').innerHTML = '';
                 document.getElementById('teacherGrid').innerHTML = '';
                 document.getElementById('seatGrid').innerHTML = '';
-                
                 renderDashboard();
             }
 
