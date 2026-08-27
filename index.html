@@ -2083,9 +2083,20 @@
             }
 
             var data = getCurrentData();
-            document.getElementById('className').textContent = data.className || '未知班级';
-            document.getElementById('classSub').textContent = data.classSub || '🏫 扫码查看班级信息';
+var level = getUserRoleLevel(currentUser);
+var isLeader = (currentUser && level >= 3);
+var isGradeLeader = (currentUser && level === 2);
 
+if (isLeader) {
+    document.getElementById('className').textContent = '📊 全校数据总览';
+    document.getElementById('classSub').textContent = '👤 ' + currentUser.role + ' · 共 ' + Object.keys(CLASS_DATA_LIST).length + ' 个班级';
+} else if (isGradeLeader) {
+    document.getElementById('className').textContent = '📊 ' + (currentUser.grade || '本年级') + ' 数据总览';
+    document.getElementById('classSub').textContent = '👤 ' + currentUser.role + ' · ' + currentUser.name;
+} else {
+    document.getElementById('className').textContent = data.className || '未知班级';
+    document.getElementById('classSub').textContent = data.classSub || '🏫 扫码查看班级信息';
+}
             var urlParams = new URLSearchParams(window.location.search);
             var isScanMode = urlParams.has('class');
             var level = getUserRoleLevel(currentUser);
