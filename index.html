@@ -2083,101 +2083,82 @@
             }
 
             var data = getCurrentData();
-var level = getUserRoleLevel(currentUser);
-var isLeader = (currentUser && level >= 3);
-var isGradeLeader = (currentUser && level === 2);
-
-if (isLeader) {
-    document.getElementById('className').textContent = '📊 全校数据总览';
-    document.getElementById('classSub').textContent = '👤 ' + currentUser.role + ' · 共 ' + Object.keys(CLASS_DATA_LIST).length + ' 个班级';
-} else if (isGradeLeader) {
-    document.getElementById('className').textContent = '📊 ' + (currentUser.grade || '本年级') + ' 数据总览';
-    document.getElementById('classSub').textContent = '👤 ' + currentUser.role + ' · ' + currentUser.name;
-} else {
-    document.getElementById('className').textContent = data.className || '未知班级';
-    document.getElementById('classSub').textContent = data.classSub || '🏫 扫码查看班级信息';
-}
-            var urlParams = new URLSearchParams(window.location.search);
-            var isScanMode = urlParams.has('class');
             var level = getUserRoleLevel(currentUser);
-            var isTeacher = (currentUser && currentUser.role === '班主任');
             var isLeader = (currentUser && level >= 3);
             var isGradeLeader = (currentUser && level === 2);
+            var isTeacher = (currentUser && currentUser.role === '班主任');
 
-            var allCards = document.querySelectorAll('.card');
+            // ===== 头部显示 =====
+            if (isLeader) {
+                document.getElementById('className').textContent = '📊 全校数据总览';
+                document.getElementById('classSub').textContent = '👤 ' + currentUser.role + ' · 共 ' + Object.keys(CLASS_DATA_LIST).length + ' 个班级';
+            } else if (isGradeLeader) {
+                document.getElementById('className').textContent = '📊 ' + (currentUser.grade || '本年级') + ' 数据总览';
+                document.getElementById('classSub').textContent = '👤 ' + currentUser.role + ' · ' + currentUser.name;
+            } else {
+                document.getElementById('className').textContent = data.className || '未知班级';
+                document.getElementById('classSub').textContent = data.classSub || '🏫 扫码查看班级信息';
+            }
+
+            var urlParams = new URLSearchParams(window.location.search);
+            var isScanMode = urlParams.has('class');
+
+            // 获取所有卡片
+            var cards = document.querySelectorAll('.card');
             var seatCard = document.querySelector('.card:last-of-type');
             var actionRow = document.querySelector('.action-row');
+            var adminEntries = document.querySelectorAll('.admin-entry');
+            var legend = document.querySelector('.seat-legend');
 
             // ===== 扫码模式 或 班主任 =====
-            if (isScanMode || isTeacher || window.forceClassView) {
+            if (isScanMode || isTeacher || window.forceClassView || (!isLeader && !isGradeLeader)) {
                 window.forceClassView = false;
                 // 显示所有卡片
-                for (var i = 0; i < allCards.length; i++) {
-                    allCards[i].style.display = 'block';
+                for (var i = 0; i < cards.length; i++) {
+                    cards[i].style.display = 'block';
                 }
                 if (actionRow) actionRow.style.display = '';
+                for (var i = 0; i < adminEntries.length; i++) {
+                    adminEntries[i].style.display = '';
+                }
+                if (legend) legend.style.display = '';
                 document.getElementById('seatInfo').textContent = '点击学生可标注';
                 document.getElementById('teacherBadge').textContent = '点击可点评';
-                document.querySelector('.seat-legend').style.display = '';
                 document.getElementById('seatGrid').innerHTML = '';
-
                 renderTeachers();
                 renderSchedule();
                 renderSeats();
                 updateStats();
             }
-            // ===== 校委会/管理员/超级管理员 =====
-            else if (isLeader) {
-                // 只显示座位表卡片，隐藏其他所有卡片
-                for (var i = 0; i < allCards.length; i++) {
-                    if (allCards[i] === seatCard) {
-                        allCards[i].style.display = 'block';
-                    } else {
-                        allCards[i].style.display = 'none';
-                    }
-                }
+            // ===== 面板模式（校领导/年级主任） =====
+            else if (isLeader || isGradeLeader) {
+                // 隐藏教师卡片
+                if (cards[0]) cards[0].style.display = 'none';
+                // 隐藏课程表卡片
+                if (cards[1]) cards[1].style.display = 'none';
+                // 座位表卡片保留，但修改标题
+                if (seatCard) seatCard.style.display = 'block';
+                // 隐藏操作按钮
                 if (actionRow) actionRow.style.display = 'none';
-                document.getElementById('seatInfo').textContent = '📊 全校数据总览';
-                document.getElementById('teacherBadge').textContent = '全校概览';
+                // 隐藏所有管理入口
+                for (var i = 0; i < adminEntries.length; i++) {
+                    adminEntries[i].style.display = 'none';
+                }
+                // 隐藏座位图例
+                if (legend) legend.style.display = 'none';
+                // 修改座位表卡片的标题
+                var cardTitle = seatCard ? seatCard.querySelector('.card-title') : null;
+                if (cardTitle) {
+                    var titleText = isLeader ? '📊 全校数据总览' : '📊 ' + (currentUser.grade || '本年级') + ' 数据总览';
+                    cardTitle.innerHTML = titleText + ' <span class="badge">' + (isLeader ? '全校' : '本年级') + '</span>';
+                }
+                document.getElementById('seatInfo').textContent = '';
+                document.getElementById('teacherBadge').textContent = '';
                 document.getElementById('scheduleBody').innerHTML = '';
                 document.getElementById('teacherGrid').innerHTML = '';
-                document.querySelector('.seat-legend').style.display = 'none';
 
+                // 渲染数据面板
                 renderDashboard();
-            }
-            // ===== 年级主任 =====
-            else if (isGradeLeader) {
-                // 只显示座位表卡片，隐藏其他所有卡片
-                for (var i = 0; i < allCards.length; i++) {
-                    if (allCards[i] === seatCard) {
-                        allCards[i].style.display = 'block';
-                    } else {
-                        allCards[i].style.display = 'none';
-                    }
-                }
-                if (actionRow) actionRow.style.display = 'none';
-                document.getElementById('seatInfo').textContent = '📊 ' + (currentUser.grade || '本年级') + ' 数据总览';
-                document.getElementById('teacherBadge').textContent = '本年级概览';
-                document.getElementById('scheduleBody').innerHTML = '';
-                document.getElementById('teacherGrid').innerHTML = '';
-                document.querySelector('.seat-legend').style.display = 'none';
-
-                renderDashboard();
-            }
-            // ===== 其他（兜底） =====
-            else {
-                for (var i = 0; i < allCards.length; i++) {
-                    allCards[i].style.display = 'block';
-                }
-                if (actionRow) actionRow.style.display = '';
-                document.getElementById('seatInfo').textContent = '点击学生可标注';
-                document.getElementById('teacherBadge').textContent = '点击可点评';
-                document.querySelector('.seat-legend').style.display = '';
-
-                renderTeachers();
-                renderSchedule();
-                renderSeats();
-                updateStats();
             }
 
             var se = document.getElementById('studentAdminEntry');
