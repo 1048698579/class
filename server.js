@@ -168,7 +168,10 @@ app.get('/api/data', async (req, res) => {
         res.status(500).json({ success: false, error: error.message });
     }
 });
-
+// 健康检查接口（用于 cron-job.org 唤醒）
+app.get('/health', (req, res) => {
+    res.status(200).send('OK');
+});
 // 保存数据
 app.post('/api/data', async (req, res) => {
     try {
