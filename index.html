@@ -1886,22 +1886,89 @@
         }
 
         function addUser() {
-            var username = $('newUserUsername'); var name = $('newUserName'); var role = $('newUserRole');
-            var grade = $('newUserGrade'); var cls = $('newUserClass'); var pwd = $('newUserPassword');
-            if (!username || !name || !role || !grade || !cls || !pwd) return;
-            var u = username.value.trim(); var n = name.value.trim(); var r = role.value;
-            var g = grade.value.trim(); var c = cls.value.trim(); var p = pwd.value.trim() || '123456';
-            if (!u) { showToast('请输入账号'); return; }
-            if (!n) { showToast('请输入姓名'); return; }
-            if (USERS[u]) { showToast('⚠️ 账号已存在'); return; }
-            var user = { name: n, role: r, role_level: ROLE_LEVELS[r] || 1, grade: r === '年级主任' ? g : null, class: r === '班主任' ? c : null, password: p, permissions: {} };
-            USERS[u] = user;
-            saveAllDataToServer().then(function() {
-                renderAdminUsers();
-                showToast('✅ 教师账号 ' + n + ' 创建成功！');
-                username.value = ''; name.value = ''; grade.value = ''; cls.value = '';
-            });
-        }
+    var username = document.getElementById('newUserUsername');
+    var name = document.getElementById('newUserName');
+    var role = document.getElementById('newUserRole');
+    var grade = document.getElementById('newUserGrade');
+    var cls = document.getElementById('newUserClass');
+    var pwd = document.getElementById('newUserPassword');
+    
+    if (!username || !name || !role || !grade || !cls || !pwd) return;
+    
+    var u = username.value.trim();
+    var n = name.value.trim();
+    var r = role.value;
+    var g = grade.value.trim();
+    var c = cls.value.trim();
+    var p = pwd.value.trim() || '123456';
+    
+    if (!u) { showToast('请输入账号'); return; }
+    if (!n) { showToast('请输入姓名'); return; }
+    if (USERS[u]) { showToast('⚠️ 账号已存在'); return; }
+    
+    // 🔑 根据角色自动分配权限
+    var permissions = {};
+    if (r === '校委会') {
+        permissions = {
+            can_view_all: true,
+            can_manage_all: false,
+            can_comment_all: true,
+            can_manage_users: false,
+            can_export_data: false,
+            can_send_notification: true,
+            can_manage_permissions: false
+        };
+    } else if (r === '管理员') {
+        permissions = {
+            can_view_all: true,
+            can_manage_all: true,
+            can_comment_all: true,
+            can_manage_users: true,
+            can_export_data: true,
+            can_send_notification: true,
+            can_manage_permissions: false
+        };
+    } else if (r === '年级主任') {
+        permissions = {
+            can_view_grade: true,
+            can_manage_grade: true,
+            can_comment_grade: true,
+            can_export_data: false,
+            can_send_notification: true,
+            can_manage_permissions: false
+        };
+    } else if (r === '班主任') {
+        permissions = {
+            can_view_class: true,
+            can_manage_class: true,
+            can_comment_class: false,
+            can_export_data: false,
+            can_send_notification: false,
+            can_manage_permissions: false
+        };
+    }
+    
+    var user = {
+        name: n,
+        role: r,
+        role_level: ROLE_LEVELS[r] || 1,
+        grade: r === '年级主任' ? g : null,
+        class: r === '班主任' ? c : null,
+        password: p,
+        permissions: permissions
+    };
+    
+    USERS[u] = user;
+    
+    saveAllDataToServer().then(function() {
+        renderAdminUsers();
+        showToast('✅ 教师账号 ' + n + ' 创建成功！');
+        username.value = '';
+        name.value = '';
+        grade.value = '';
+        cls.value = '';
+    });
+}
 
         function editUser(username) {
             var user = USERS[username];
