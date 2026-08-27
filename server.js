@@ -9,8 +9,8 @@ const PORT = process.env.PORT || 3000;
 // ================================================================
 //  Supabase 配置（已确认正确）
 // ================================================================
-const SUPABASE_URL = 'https://tvfiykgnfkhlhrlyybw.supabase.co';
-const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR2Zml5eWtnbmZrbHBIcmx5eWJwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc3NDQ1MjgsImV4cCI6MjEyMzMyMDUyOH0.R9V_oK4jLFWpgOCToh8Kk1dj-Ji39I-5NyD0ETLuiBeI';
+const SUPABASE_URL = 'https://dlgjlyygnqklpurlyybp.supabase.co/rest/v1/';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRsZ2pseXlnbnFrbHB1cmx5eWJwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc3NDQ1MjgsImV4cCI6MjEwMzMyMDUyOH0.R9V_oK4jLFWpGOCtH8Kk1dj-Ji39I-5NyDOETLuiBeI';
 
 // ================================================================
 //  钉钉机器人配置（已填入你的实际密钥）
