@@ -2124,20 +2124,38 @@
             var isScanMode = urlParams.has('class');
 
             // ===== 头部显示 =====
-            if (isScanMode) {
-                var classData = getCurrentData();
-                var className = classData.className || '未知班级';
-                var classSub = classData.classSub || '🏫 扫码查看班级信息';
-                
-                var teacherName = '未设置';
-                var keys = Object.keys(USERS);
-                for (var i = 0; i < keys.length; i++) {
-                    var u = USERS[keys[i]];
-                    if (u.class === currentClassKey && u.role === '班主任') {
-                        teacherName = u.name;
-                        break;
-                    }
-                }
+           if (isScanMode) {
+    // 🔑 直接从 URL 获取班级数据，不依赖 currentUser
+    var urlParams = new URLSearchParams(window.location.search);
+    var classKey = urlParams.get('class');
+    var classData = CLASS_DATA_LIST[classKey] || null;
+    
+    if (!classData) {
+        document.getElementById('className').textContent = '班级不存在';
+        document.getElementById('classSub').textContent = '请检查链接是否正确';
+        return;
+    }
+    
+    var className = classData.className || '未知班级';
+    var classSub = classData.classSub || '🏫 扫码查看班级信息';
+    
+    // 查找班主任姓名
+    var teacherName = '未设置';
+    var keys = Object.keys(USERS);
+    for (var i = 0; i < keys.length; i++) {
+        var u = USERS[keys[i]];
+        if (u.class === classKey && u.role === '班主任') {
+            teacherName = u.name;
+            break;
+        }
+    }
+    
+    document.getElementById('className').textContent = className;
+    document.getElementById('classSub').textContent = classSub + ' ｜ 班主任：' + teacherName + ' ｜ 总人数：' + (classData.students ? classData.students.length : 0) + ' 人';
+    
+    // 确保当前班级也更新为扫码的班级
+    currentClassKey = classKey;
+}
                 
                 document.getElementById('className').textContent = className;
                 document.getElementById('classSub').textContent = classSub + ' ｜ 班主任：' + teacherName + ' ｜ 总人数：' + classData.students.length + ' 人';
