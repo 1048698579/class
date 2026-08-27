@@ -482,18 +482,26 @@
         //  权限判断
         // ================================================================
         function hasPermission(user, perm) {
-            if (!user) return false;
-            if (user.role === '超级管理员') return true;
-            if (user.permissions && user.permissions[perm] === true) return true;
-            var defaults = {
-                '管理员': { can_view_all: true, can_manage_all: true, can_comment_all: true, can_manage_users: true, can_export_data: true, can_send_notification: true, can_manage_permissions: false },
-                '校委会': { can_view_all: true, can_manage_all: false, can_comment_all: true, can_manage_users: false, can_export_data: false, can_send_notification: true, can_manage_permissions: false },
-                '年级主任': { can_view_grade: true, can_manage_grade: true, can_comment_grade: true, can_export_data: false, can_send_notification: true, can_manage_permissions: false },
-                '班主任': { can_view_class: true, can_manage_class: true, can_comment_class: false, can_export_data: false, can_send_notification: false, can_manage_permissions: false }
-            };
-            var def = defaults[user.role] || {};
-            return def[perm] === true;
-        }
+    if (!user) return false;
+    // 超级管理员拥有所有权限
+    if (user.role === '超级管理员') return true;
+    // 校委会默认拥有点评权限
+    if (user.role === '校委会') {
+        var commentPerms = ['can_comment_all', 'can_comment_grade', 'can_comment_class', 'can_view_all', 'can_send_notification'];
+        if (commentPerms.indexOf(perm) !== -1) return true;
+    }
+    // 检查用户自定义权限
+    if (user.permissions && user.permissions[perm] === true) return true;
+    // 检查角色默认权限
+    var defaults = {
+        '管理员': { can_view_all: true, can_manage_all: true, can_comment_all: true, can_manage_users: true, can_export_data: true, can_send_notification: true, can_manage_permissions: false },
+        '校委会': { can_view_all: true, can_manage_all: false, can_comment_all: true, can_manage_users: false, can_export_data: false, can_send_notification: true, can_manage_permissions: false },
+        '年级主任': { can_view_grade: true, can_manage_grade: true, can_comment_grade: true, can_export_data: false, can_send_notification: true, can_manage_permissions: false },
+        '班主任': { can_view_class: true, can_manage_class: true, can_comment_class: false, can_export_data: false, can_send_notification: false, can_manage_permissions: false }
+    };
+    var def = defaults[user.role] || {};
+    return def[perm] === true;
+}
 
         function canViewAll(user) { return hasPermission(user, 'can_view_all') || user.role === '超级管理员'; }
         function canEditAllClasses(user) { return hasPermission(user, 'can_manage_all') || user.role === '超级管理员'; }
@@ -505,15 +513,31 @@
             return false;
         }
         function canSendDingTalk(user, classKey) {
-            if (user.role === '超级管理员' || user.role === '管理员' || user.role === '校委会') return true;
-            if (user.role === '年级主任') { var ug = user.grade || ''; var cg = getClassGrade(classKey); return ug === cg; }
-            return false;
-        }
+    if (!user) return false;
+    // 超级管理员、管理员、校委会可以发全校通知
+    if (user.role === '超级管理员' || user.role === '管理员' || user.role === '校委会') return true;
+    // 年级主任只可发本年级通知
+    if (user.role === '年级主任') {
+        var userGrade = user.grade || '';
+        var classGrade = getClassGrade(classKey);
+        return userGrade === classGrade;
+    }
+    return false;
+}
         function canCommentStudent(user, classKey) {
-            if (user.role === '超级管理员' || user.role === '管理员' || user.role === '校委会') return true;
-            if (user.role === '年级主任') { var ug = user.grade || ''; var cg = getClassGrade(classKey); return ug === cg; }
-            return false;
-        }
+    if (!user) return false;
+    // 超级管理员、管理员可以点评所有班级
+    if (user.role === '超级管理员' || user.role === '管理员') return true;
+    // 校委会可以点评所有班级（加上明确判断）
+    if (user.role === '校委会') return true;
+    // 年级主任只可点评本年级
+    if (user.role === '年级主任') {
+        var userGrade = user.grade || '';
+        var classGrade = getClassGrade(classKey);
+        return userGrade === classGrade;
+    }
+    return false;
+}
         function canManageUsers(user) { return hasPermission(user, 'can_manage_users') || user.role === '超级管理员'; }
         function canManagePermissions(user) { return hasPermission(user, 'can_manage_permissions') || user.role === '超级管理员'; }
 
