@@ -2141,7 +2141,36 @@
             var adminEntries = document.querySelectorAll('.admin-entry');
             var legend = document.querySelector('.seat-legend');
 
-            var isClassMode = (isScanMode || isTeacher || window.forceClassView || (!isLeader && !isGradeLeader));
+            // ===== 判断模式（扫码优先） =====
+var isClassMode = false;
+
+// 1. 如果是扫码模式，强制显示班级视图（优先级最高）
+if (isScanMode) {
+    isClassMode = true;
+    // 更新当前班级为扫码指定的班级
+    var urlParams = new URLSearchParams(window.location.search);
+    var classParam = urlParams.get('class');
+    if (classParam && CLASS_DATA_LIST[classParam]) {
+        currentClassKey = classParam;
+    }
+} 
+// 2. 如果是班主任登录
+else if (isTeacher) {
+    isClassMode = true;
+} 
+// 3. 如果是强制班级视图
+else if (window.forceClassView) {
+    isClassMode = true;
+    window.forceClassView = false;
+} 
+// 4. 如果是校领导或年级主任（非扫码模式），显示面板
+else if (isLeader || isGradeLeader) {
+    isClassMode = false;
+} 
+// 5. 其他情况（兜底）
+else {
+    isClassMode = true;
+}
 
             if (isClassMode) {
                 window.forceClassView = false;
