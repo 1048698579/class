@@ -2020,118 +2020,165 @@
 }
 
         function switchToClass(classKey) {
-            if (!CLASS_DATA_LIST[classKey]) { showToast('⚠️ 班级不存在'); return; }
-            currentClassKey = classKey;
-            window.forceClassView = true;
-            setTimeout(function() {
-                renderTeachers();
-                renderSchedule();
-                renderSeats();
-                updateStats();
-                document.querySelector('.seat-legend').style.display = '';
-                document.getElementById('teacherBadge').textContent = '点击可点评';
-                document.getElementById('className').textContent = CLASS_DATA_LIST[classKey].className;
-                document.getElementById('classSub').textContent = CLASS_DATA_LIST[classKey].classSub || '🏫 扫码查看班级信息';
-                document.getElementById('seatInfo').textContent = '点击学生可标注';
-                showToast('📚 已切换到 ' + CLASS_DATA_LIST[classKey].className);
-                window.forceClassView = false;
-            }, 100);
-        }
+    if (!CLASS_DATA_LIST[classKey]) {
+        showToast('⚠️ 班级不存在');
+        return;
+    }
+    currentClassKey = classKey;
+    window.forceClassView = true;
+    // 更新 URL 参数，模拟扫码模式
+    var url = new URL(window.location);
+    url.searchParams.set('class', classKey);
+    window.history.pushState({}, '', url);
+    loadClassData();
+    showToast('📚 已切换到 ' + CLASS_DATA_LIST[classKey].className);
+}
 
         // ================================================================
         //  加载班级数据
         // ================================================================
         function loadClassData() {
-            loadAllDataFromServer()
-                .then(function(success) {
-                    if (!success) {
-                        if (Object.keys(CLASS_DATA_LIST).length === 0) {
-                            CLASS_DATA_LIST['2024-301'] = {
-                                className: '三年级(1)班',
-                                classSub: '🏫 教学楼2层 201教室',
-                                seatColumns: 8,
-                                teachers: [],
-                                schedule: [ ['','','','',''], ['','','','',''], ['','','','',''], ['','','','',''], ['','','','',''], ['','','','',''] ],
-                                students: [],
-                                diners: {},
-                                afterSchool: {}
-                            };
-                        }
-                        if (Object.keys(USERS).length === 0) {
-                            USERS['admin'] = {
-                                name: '超级管理员',
-                                role: '超级管理员',
-                                role_level: 5,
-                                grade: null,
-                                class: null,
-                                password: 'admin123',
-                                permissions: { can_manage_users: true, can_manage_all_classes: true, can_manage_all_grades: true, can_view_all: true, can_comment_all: true, can_export_data: true, can_send_notification: true, can_manage_permissions: true }
-                            };
-                        }
-                        saveAllDataToServer();
+    loadAllDataFromServer()
+        .then(function(success) {
+            if (!success) {
+                if (Object.keys(CLASS_DATA_LIST).length === 0) {
+                    CLASS_DATA_LIST['2024-301'] = {
+                        className: '三年级(1)班',
+                        classSub: '🏫 教学楼2层 201教室',
+                        seatColumns: 8,
+                        teachers: [],
+                        schedule: [ ['','','','',''], ['','','','',''], ['','','','',''], ['','','','',''], ['','','','',''], ['','','','',''] ],
+                        students: [],
+                        diners: {},
+                        afterSchool: {}
+                    };
+                }
+                if (Object.keys(USERS).length === 0) {
+                    USERS['admin'] = {
+                        name: '超级管理员',
+                        role: '超级管理员',
+                        role_level: 5,
+                        grade: null,
+                        class: null,
+                        password: 'admin123',
+                        permissions: { can_manage_users: true, can_manage_all_classes: true, can_manage_all_grades: true, can_view_all: true, can_comment_all: true, can_export_data: true, can_send_notification: true, can_manage_permissions: true }
+                    };
+                }
+                saveAllDataToServer();
+            }
+
+            // 获取就餐截止时间
+            fetch('/api/diner-check')
+                .then(function(r) { return r.json(); })
+                .then(function(result) {
+                    if (result.success) {
+                        dinerCanEdit = result.canEdit;
+                        dinerDeadline = result.deadline;
                     }
+                })
+                .catch(function(e) {});
 
-                    // 获取就餐截止时间
-                    fetch('/api/diner-check')
-                        .then(function(r) { return r.json(); })
-                        .then(function(result) {
-                            if (result.success) {
-                                dinerCanEdit = result.canEdit;
-                                dinerDeadline = result.deadline;
-                            }
-                        })
-                        .catch(function(e) {});
+            if (!currentClassKey || !CLASS_DATA_LIST[currentClassKey]) {
+                var keys = Object.keys(CLASS_DATA_LIST);
+                currentClassKey = keys.length > 0 ? keys[0] : null;
+            }
 
-                    if (!currentClassKey || !CLASS_DATA_LIST[currentClassKey]) {
-                        var keys = Object.keys(CLASS_DATA_LIST);
-                        currentClassKey = keys.length > 0 ? keys[0] : null;
-                    }
+            var data = getCurrentData();
+            document.getElementById('className').textContent = data.className || '未知班级';
+            document.getElementById('classSub').textContent = data.classSub || '🏫 扫码查看班级信息';
 
-                    var data = getCurrentData();
-                    document.getElementById('className').textContent = data.className || '未知班级';
-                    document.getElementById('classSub').textContent = data.classSub || '🏫 扫码查看班级信息';
+            // ===== 🔑 核心逻辑：判断显示模式 =====
+            var urlParams = new URLSearchParams(window.location.search);
+            var isScanMode = urlParams.has('class'); // URL带 ?class=xxx 就是扫码进入
+            var level = getUserRoleLevel(currentUser);
+            var isTeacher = (currentUser && currentUser.role === '班主任');
+            var isLeader = (currentUser && level >= 3);
+            var isGradeLeader = (currentUser && level === 2);
 
-                    var level = getUserRoleLevel(currentUser);
-                    if (currentUser && level >= 3 && !window.forceClassView) {
-                        renderDashboard();
-                        document.getElementById('seatGrid').innerHTML = '';
-                        document.getElementById('seatInfo').textContent = '📊 全校数据总览';
-                        document.querySelector('.seat-legend').style.display = 'none';
-                        document.getElementById('teacherGrid').innerHTML = '';
-                        document.getElementById('teacherBadge').textContent = '全校概览';
-                        document.getElementById('scheduleBody').innerHTML = '';
-                    } else if (currentUser && level === 2 && !window.forceClassView) {
-                        renderDashboard();
-                        document.getElementById('seatGrid').innerHTML = '';
-                        document.getElementById('seatInfo').textContent = '📊 ' + (currentUser.grade || '本年级') + ' 数据总览';
-                        document.querySelector('.seat-legend').style.display = 'none';
-                        document.getElementById('teacherGrid').innerHTML = '';
-                        document.getElementById('teacherBadge').textContent = '本年级概览';
-                        document.getElementById('scheduleBody').innerHTML = '';
-                    } else {
-                        window.forceClassView = false;
-                        renderTeachers();
-                        renderSchedule();
-                        renderSeats();
-                        updateStats();
-                        document.querySelector('.seat-legend').style.display = '';
-                        document.getElementById('teacherBadge').textContent = '点击可点评';
-                    }
+            // 获取 DOM 元素
+            var teacherCard = document.querySelector('.card:first-of-type');
+            var scheduleCard = document.querySelector('.card:nth-of-type(2)');
+            var seatCard = document.querySelector('.card:nth-of-type(3)');
+            var legend = document.querySelector('.seat-legend');
 
-                    var se = document.getElementById('studentAdminEntry');
-                    var superEntry = document.getElementById('superAdminEntry');
-                    if (canManageUsers(currentUser) || canEditAllClasses(currentUser) || canManagePermissions(currentUser)) {
-                        superEntry.classList.remove('hidden');
-                    } else {
-                        superEntry.classList.add('hidden');
-                    }
-                    se.classList.remove('hidden');
+            // ===== 情况1：扫码模式 或 班主任登录 =====
+            if (isScanMode || isTeacher || window.forceClassView) {
+                window.forceClassView = false;
+                // 显示班级视图
+                if (teacherCard) teacherCard.style.display = 'block';
+                if (scheduleCard) scheduleCard.style.display = 'block';
+                if (seatCard) seatCard.style.display = 'block';
+                if (legend) legend.style.display = '';
+                document.getElementById('seatInfo').textContent = '点击学生可标注';
+                document.getElementById('teacherBadge').textContent = '点击可点评';
+                document.querySelector('.seat-legend').style.display = '';
+                document.getElementById('seatGrid').innerHTML = '';
 
-                    console.log('✅ 当前班级: ' + currentClassKey);
-                    console.log('👤 当前用户: ' + (currentUser ? currentUser.name : '未登录'));
-                    initLogin();
-                });
-        }
+                renderTeachers();
+                renderSchedule();
+                renderSeats();
+                updateStats();
+            }
+            // ===== 情况2：校委会/管理员/超级管理员 登录 =====
+            else if (isLeader) {
+                // 隐藏班级视图
+                if (teacherCard) teacherCard.style.display = 'none';
+                if (scheduleCard) scheduleCard.style.display = 'none';
+                if (seatCard) seatCard.style.display = 'block';
+                if (legend) legend.style.display = 'none';
+                document.getElementById('seatInfo').textContent = '📊 全校数据总览';
+                document.getElementById('teacherBadge').textContent = '全校概览';
+                document.getElementById('scheduleBody').innerHTML = '';
+                document.getElementById('teacherGrid').innerHTML = '';
+
+                renderDashboard();
+            }
+            // ===== 情况3：年级主任 登录 =====
+            else if (isGradeLeader) {
+                // 隐藏班级视图
+                if (teacherCard) teacherCard.style.display = 'none';
+                if (scheduleCard) scheduleCard.style.display = 'none';
+                if (seatCard) seatCard.style.display = 'block';
+                if (legend) legend.style.display = 'none';
+                document.getElementById('seatInfo').textContent = '📊 ' + (currentUser.grade || '本年级') + ' 数据总览';
+                document.getElementById('teacherBadge').textContent = '本年级概览';
+                document.getElementById('scheduleBody').innerHTML = '';
+                document.getElementById('teacherGrid').innerHTML = '';
+
+                renderDashboard();
+            }
+            // ===== 情况4：其他（兜底，显示班级视图） =====
+            else {
+                if (teacherCard) teacherCard.style.display = 'block';
+                if (scheduleCard) scheduleCard.style.display = 'block';
+                if (seatCard) seatCard.style.display = 'block';
+                if (legend) legend.style.display = '';
+                document.getElementById('seatInfo').textContent = '点击学生可标注';
+                document.getElementById('teacherBadge').textContent = '点击可点评';
+                document.querySelector('.seat-legend').style.display = '';
+
+                renderTeachers();
+                renderSchedule();
+                renderSeats();
+                updateStats();
+            }
+
+            // 控制管理入口
+            var se = document.getElementById('studentAdminEntry');
+            var superEntry = document.getElementById('superAdminEntry');
+            if (canManageUsers(currentUser) || canEditAllClasses(currentUser) || canManagePermissions(currentUser)) {
+                superEntry.classList.remove('hidden');
+            } else {
+                superEntry.classList.add('hidden');
+            }
+            se.classList.remove('hidden');
+
+            console.log('✅ 当前模式:', isScanMode ? '扫码模式' : '主页模式');
+            console.log('✅ 当前班级:', currentClassKey);
+            console.log('👤 当前用户:', currentUser ? currentUser.name : '未登录');
+            initLogin();
+        });
+}
 
         // ================================================================
         //  事件绑定
