@@ -168,6 +168,21 @@ app.get('/api/data', async (req, res) => {
         res.status(500).json({ success: false, error: error.message });
     }
 });
+// ⏰ 就餐时间锁检查
+app.get('/api/diner-check', async (req, res) => {
+    try {
+        const config = await getSystemConfig();
+        const deadline = config ? config.diner_deadline : '09:00';
+        const now = new Date();
+        const [h, m] = deadline.split(':').map(Number);
+        const deadlineDate = new Date(now);
+        deadlineDate.setHours(h, m, 0, 0);
+        const canEdit = now < deadlineDate;
+        res.json({ success: true, canEdit, deadline, currentTime: now.toLocaleTimeString() });
+    } catch (e) {
+        res.status(500).json({ success: false, error: e.message });
+    }
+});
 // 健康检查接口（用于 cron-job.org 唤醒）
 app.get('/health', (req, res) => {
     res.status(200).send('OK');
