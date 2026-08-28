@@ -139,6 +139,36 @@ app.post('/api/change-password', async (req, res) => {
     } catch (e) { res.status(500).json({ success: false, error: e.message }); }
 });
 
+// ================================================================
+//  🔐 真正的权限更新 API
+// ================================================================
+app.post('/api/update-permissions', async (req, res) => {
+    try {
+        const { username, permissions } = req.body;
+        if (!username || !permissions) {
+            return res.status(400).json({ success: false, error: '缺少用户名或权限数据' });
+        }
+
+        const d = await getData();
+        if (!d || !d.users || !d.users[username]) {
+            return res.status(404).json({ success: false, error: '用户不存在' });
+        }
+
+        // 更新用户的权限
+        d.users[username].permissions = permissions;
+        await saveData(d);
+
+        console.log(`✅ 用户 ${username} 的权限已更新:`, permissions);
+        res.json({ success: true, message: '权限更新成功' });
+    } catch (e) {
+        console.error('更新权限失败:', e.message);
+        res.status(500).json({ success: false, error: e.message });
+    }
+});
+
+// ================================================================
+//  表扬接口
+// ================================================================
 app.post('/api/praise-teacher', async (req, res) => {
     try {
         const { className, teacherName, reason, commenter } = req.body;
