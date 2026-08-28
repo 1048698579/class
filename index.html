@@ -1105,7 +1105,7 @@
                 var seats = document.querySelectorAll('.seat:not(.disabled)');
                 for (var i = 0; i < seats.length; i++) {
                     (function(el) {
-                        el.addEventListener('click', function() { var idx = parseInt(this.dataset.index); openStudentModal(idx); });
+                        el.addEventListener('click', function() { var idx = parseInt(this.dataset.index); (idx); });
                     })(seats[i]);
                 }
             }
@@ -1185,21 +1185,42 @@
         showToast('🔒 您无权点评该班');
         return;
     }
+
+    // 🔑 关键修复：获取学生列表
+    var students = getCurrentStudents();
+    if (!students || index >= students.length) {
+        showToast('⚠️ 学生不存在');
+        return;
+    }
+
+    selectedStudentIndex = index;
+    var data = getCurrentData();
+    var nameEl = document.getElementById('studentModalName');
+    if (nameEl) nameEl.textContent = students[index];
+    var infoEl = document.getElementById('studentModalInfo');
+    if (infoEl) infoEl.textContent = data.className + ' · 座位号 ' + (index + 1);
+    var commentEl = document.getElementById('studentComment');
+    if (commentEl) { commentEl.value = ''; commentEl.style.height = 'auto'; }
+
+    var canEdit = canEditClass(currentUser, currentClassKey);
+    var canComment = canCommentStudent(currentUser, currentClassKey);
+
+    // 出勤按钮
+    var btns = document.querySelectorAll('#studentStatusGrid .status-btn');
+    for (var i = 0; i < btns.length; i++) {
+        btns[i].style.display = canEdit ? '' : 'none';
+    }
+
+    var pg = document.getElementById('praiseGrid');
+    if (pg) pg.style.display = canComment ? '' : 'none';
+    var ng = document.getElementById('negativeGrid');
+    if (ng) ng.style.display = canComment ? '' : 'none';
     
-            selectedStudentIndex = index;
-            var data = getCurrentData();
-            var nameEl = $('studentModalName'); if (nameEl) nameEl.textContent = students[index];
-            var infoEl = $('studentModalInfo'); if (infoEl) infoEl.textContent = data.className + ' · 座位号 ' + (index + 1);
-            var commentEl = $('studentComment'); if (commentEl) { commentEl.value = ''; commentEl.style.height = 'auto'; }
-            var canEdit = canEditClass(currentUser, currentClassKey);
-            var canComment = canCommentStudent(currentUser, currentClassKey);
-            var btns = document.querySelectorAll('#studentStatusGrid .status-btn');
-            for (var i = 0; i < btns.length; i++) btns[i].style.display = canEdit ? '' : 'none';
-            var pg = $('praiseGrid'); if (pg) pg.style.display = canComment ? '' : 'none';
-            var ng = $('negativeGrid'); if (ng) ng.style.display = canComment ? '' : 'none';
-            if (canComment) renderQuickComments();
-            var modal = $('studentModal'); if (modal) modal.classList.add('active');
-        }
+    if (canComment) renderQuickComments();
+    
+    var modal = document.getElementById('studentModal');
+    if (modal) modal.classList.add('active');
+}
 
         function closeStudentModal() { var m = $('studentModal'); if (m) m.classList.remove('active'); selectedStudentIndex = null; }
 
