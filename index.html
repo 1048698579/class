@@ -1087,55 +1087,115 @@
         }
 
         function renderSeats() {
-            var students = getCurrentStudents();
-            var columns = getCurrentData().seatColumns || 8;
-            var total = students.length;
-            var rows = Math.ceil(total / columns);
-            var info = $('seatInfo');
-            if (info) info.textContent = '共' + total + '人 · ' + columns + '列 × ' + rows + '行';
-            var canEdit = canEditClass(currentUser, currentClassKey);
-            var grid = $('seatGrid');
-            if (grid) {
-                grid.style.gridTemplateColumns = 'repeat(' + columns + ', 1fr)';
-                var html = '';
-                for (var i = 0; i < students.length; i++) {
-                    var name = students[i];
-                    var fontSize = name.length >= 4 ? '11px' : '12px';
-                    var disabledClass = canEdit ? '' : ' disabled';
-                    var hint = canEdit ? '' : '<span class="seat-hint">🔒</span>';
-                    html += '<div class="seat' + disabledClass + '" data-index="' + i + '" style="font-size:' + fontSize + ';">' +
-                        name + '<span class="status-dot"></span>' + hint + '</div>';
-                }
-                grid.innerHTML = html;
-                var seats = document.querySelectorAll('.seat:not(.disabled)');
-                for (var i = 0; i < seats.length; i++) {
-                    (function(el) {
-                        el.addEventListener('click', function() {
-                            var idx = parseInt(this.dataset.index);
-                            openStudentModal(idx);
-                        });
-                    })(seats[i]);
-                }
-            }
-            updateSeatStatus();
-            var lock = $('seatLockIcon');
-            if (lock) lock.textContent = canEdit ? '🔓' : '🔒';
-            var btns = ['classOverallBtn', 'resetAttendanceBtn', 'reportBtn'];
-            for (var i = 0; i < btns.length; i++) {
-                var btn = $(btns[i]);
-                if (btn) { btn.disabled = !currentUser; btn.style.opacity = currentUser ? '1' : '0.5'; }
-            }
-            var se = $('studentAdminEntry');
-            if (se) {
-                if (canEditClass(currentUser, currentClassKey) || getUserRoleLevel(currentUser) >= 2) se.classList.remove('hidden');
-                else se.classList.add('hidden');
-            }
-            var superEntry = $('superAdminEntry');
-            if (superEntry) {
-                if (canManageUsers(currentUser) || canManageClasses(currentUser)) superEntry.classList.remove('hidden');
-                else superEntry.classList.add('hidden');
-            }
+    var students = getCurrentStudents();
+    var columns = getCurrentData().seatColumns || 8;
+    var total = students.length;
+    var rows = Math.ceil(total / columns);
+    var info = $('seatInfo');
+    if (info) info.textContent = '共' + total + '人 · ' + columns + '列 × ' + rows + '行';
+
+    var canEdit = canEditClass(currentUser, currentClassKey);
+    var grid = $('seatGrid');
+    if (grid) {
+        grid.style.gridTemplateColumns = 'repeat(' + columns + ', 1fr)';
+        var html = '';
+        for (var i = 0; i < students.length; i++) {
+            var name = students[i];
+            var fontSize = name.length >= 4 ? '11px' : '12px';
+            var disabledClass = canEdit ? '' : ' disabled';
+            var hint = canEdit ? '' : '<span class="seat-hint">🔒</span>';
+            html += '<div class="seat' + disabledClass + '" data-index="' + i + '" style="font-size:' + fontSize + ';">' +
+                name + '<span class="status-dot"></span>' + hint + '</div>';
         }
+        grid.innerHTML = html;
+
+        var seats = document.querySelectorAll('.seat:not(.disabled)');
+        for (var i = 0; i < seats.length; i++) {
+            (function(el) {
+                el.addEventListener('click', function() {
+                    var idx = parseInt(this.dataset.index);
+                    openStudentModal(idx);
+                });
+            })(seats[i]);
+        }
+    }
+
+    updateSeatStatus();
+
+    var lock = $('seatLockIcon');
+    if (lock) lock.textContent = canEdit ? '🔓' : '🔒';
+
+    var btns = ['classOverallBtn', 'resetAttendanceBtn', 'reportBtn'];
+    for (var i = 0; i < btns.length; i++) {
+        var btn = $(btns[i]);
+        if (btn) {
+            btn.disabled = !currentUser;
+            btn.style.opacity = currentUser ? '1' : '0.5';
+        }
+    }
+
+    var se = $('studentAdminEntry');
+    if (se) {
+        if (canEditClass(currentUser, currentClassKey) || getUserRoleLevel(currentUser) >= 2) {
+            se.classList.remove('hidden');
+        } else {
+            se.classList.add('hidden');
+        }
+    }
+
+    var superEntry = $('superAdminEntry');
+    if (superEntry) {
+        if (canManageUsers(currentUser) || canManageClasses(currentUser)) {
+            superEntry.classList.remove('hidden');
+        } else {
+            superEntry.classList.add('hidden');
+        }
+    }
+
+    // ================================================================
+    //  🔑 永久修复：重新绑定学生点评弹窗按钮
+    // ================================================================
+    setTimeout(function() {
+        var submitBtn = document.getElementById('studentSubmitBtn');
+        if (submitBtn) {
+            submitBtn.onclick = function() {
+                var status = seatStatus[selectedStudentIndex] || 'present';
+                if (typeof submitStudent === 'function') {
+                    submitStudent(status);
+                } else {
+                    console.warn('submitStudent 函数未定义');
+                }
+            };
+        }
+        var cancelBtn = document.getElementById('studentCancelBtn');
+        if (cancelBtn) {
+            cancelBtn.onclick = function() {
+                if (typeof closeStudentModal === 'function') {
+                    closeStudentModal();
+                } else {
+                    console.warn('closeStudentModal 函数未定义');
+                }
+            };
+        }
+        // 教师弹窗按钮也一并绑定
+        var teacherSubmitBtn = document.getElementById('teacherSubmitBtn');
+        if (teacherSubmitBtn) {
+            teacherSubmitBtn.onclick = function() {
+                if (typeof submitTeacher === 'function') {
+                    submitTeacher();
+                }
+            };
+        }
+        var teacherCancelBtn = document.getElementById('teacherCancelBtn');
+        if (teacherCancelBtn) {
+            teacherCancelBtn.onclick = function() {
+                if (typeof closeTeacherModal === 'function') {
+                    closeTeacherModal();
+                }
+            };
+        }
+    }, 100);
+}
 
         function updateSeatStatus() {
             var seats = document.querySelectorAll('.seat');
