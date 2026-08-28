@@ -2054,7 +2054,63 @@
             return html;
         }
 
-        function updateRolePermission(role, perm, value) { showToast('✅ 权限已更新'); }
+        function updateRolePermission(role, perm, value) {
+    // 1. 找到所有该角色的用户
+    var usersToUpdate = [];
+    var keys = Object.keys(USERS);
+    for (var i = 0; i < keys.length; i++) {
+        var user = USERS[keys[i]];
+        if (user.role === role) {
+            usersToUpdate.push(keys[i]);
+        }
+    }
+
+    if (usersToUpdate.length === 0) {
+        showToast('⚠️ 没有 ' + role + ' 角色的用户需要更新');
+        return;
+    }
+
+    // 2. 为每个用户更新权限并保存
+    var updatePromises = usersToUpdate.map(function(username) {
+        var user = USERS[username];
+        if (!user.permissions) {
+            user.permissions = {};
+        }
+        user.permissions[perm] = value;
+        return fetch('/api/update-permissions', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                username: username,
+                permissions: user.permissions
+            })
+        })
+        .then(function(response) { return response.json(); })
+        .then(function(result) {
+            if (!result.success) {
+                console.error('更新 ' + username + ' 权限失败:', result.error);
+                return false;
+            }
+            return true;
+        })
+        .catch(function(err) {
+            console.error('更新 ' + username + ' 权限网络错误:', err);
+            return false;
+        });
+    });
+
+    Promise.all(updatePromises).then(function(results) {
+        var allSuccess = results.every(function(r) { return r === true; });
+        if (allSuccess) {
+            showToast('✅ 权限更新成功！');
+            loadAllDataFromServer().then(function() {
+                renderAdminContent();
+            });
+        } else {
+            showToast('⚠️ 部分权限更新失败，请检查网络或重试');
+        }
+    });
+}
 
         // ================================================================
         //  系统配置
