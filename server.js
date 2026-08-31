@@ -125,6 +125,28 @@ app.post('/api/data', async (req, res) => {
     } catch (e) { res.status(500).json({ success: false, error: e.message }); }
 });
 
+// 保存系统配置
+app.post('/api/config', async (req, res) => {
+    try {
+        const { praise_comments, negative_comments, teacher_praise, teacher_abnormal, diner_deadline, alert_threshold } = req.body;
+        
+        // 如果前端没有传某些字段，使用默认值
+        const config = {
+            praise_comments: praise_comments || ['🌟 听课专注', '🙋 积极发言', '📝 笔记认真', '🤝 善于合作', '💡 思维活跃'],
+            negative_comments: negative_comments || ['💬 交头接耳', '😴 听课走神', '🤫 纪律差', '📱 注意力分散', '📢 随意讲话'],
+            teacher_praise: teacher_praise || ['课堂气氛好', '备课充分', '精心辅导'],
+            teacher_abnormal: teacher_abnormal || ['空堂', '上课玩手机', '上课迟到', '课堂有待提高'],
+            diner_deadline: diner_deadline || '09:00',
+            alert_threshold: alert_threshold || 20
+        };
+        const ok = await saveSystemConfig(config);
+        res.json({ success: ok, message: ok ? '配置保存成功' : '保存失败' });
+    } catch (e) {
+        console.error('❌ 保存配置失败:', e.message);
+        res.status(500).json({ success: false, error: e.message });
+    }
+});
+
 app.post('/api/change-password', async (req, res) => {
     try {
         const { username, oldPassword, newPassword } = req.body;
@@ -251,15 +273,22 @@ app.post('/api/batch-update-classes', async (req, res) => {
     } catch (e) { res.status(500).json({ success: false, error: e.message }); }
 });
 
+// ⏰ 就餐时间锁检查（从数据库读取配置）
 app.get('/api/diner-check', async (req, res) => {
     try {
-        const config = await getData();
-        const deadline = '09:00';
+        // 从 system_config 表读取配置
+        const config = await getSystemConfig();
+        const deadline = config && config.diner_deadline ? config.diner_deadline : '09:00';
         const now = new Date();
         const [h, m] = deadline.split(':').map(Number);
-        const d = new Date(now); d.setHours(h, m, 0, 0);
-        res.json({ success: true, canEdit: now < d, deadline, currentTime: now.toLocaleTimeString() });
-    } catch (e) { res.status(500).json({ success: false, error: e.message }); }
+        const deadlineDate = new Date(now);
+        deadlineDate.setHours(h, m, 0, 0);
+        const canEdit = now < deadlineDate;
+        res.json({ success: true, canEdit, deadline, currentTime: now.toLocaleTimeString() });
+    } catch (e) {
+        console.error('❌ 就餐锁检查失败:', e.message);
+        res.status(500).json({ success: false, error: e.message });
+    }
 });
 
 app.post('/send', async (req, res) => {
@@ -275,6 +304,12 @@ app.get('/health', (req, res) => res.send('OK'));
 app.get('/', (req, res) => {
     res.setHeader('Content-Type', 'text/html; charset=utf-8');
     res.sendFile(path.join(__dirname, 'index.html'));
+});
+
+// 阻止爬虫
+app.get('/robots.txt', (req, res) => {
+    res.type('text/plain');
+    res.send('User-agent: *\nDisallow: /');
 });
 
 app.listen(PORT, () => {
