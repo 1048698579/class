@@ -299,17 +299,23 @@ app.post('/send', async (req, res) => {
     } catch (e) { res.status(500).json({ success: false, error: e.message }); }
 });
 
+// 简单 IP 限制：屏蔽已知恶意爬虫
+const BLOCKED_IPS = ['192.168.1.100']; // 填你要屏蔽的 IP
+
+app.use((req, res, next) => {
+    const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+    if (BLOCKED_IPS.includes(ip)) {
+        res.status(403).send('Forbidden');
+        return;
+    }
+    next();
+});
+
 app.get('/health', (req, res) => res.send('OK'));
 
 app.get('/', (req, res) => {
     res.setHeader('Content-Type', 'text/html; charset=utf-8');
     res.sendFile(path.join(__dirname, 'index.html'));
-});
-
-// 阻止爬虫
-app.get('/robots.txt', (req, res) => {
-    res.type('text/plain');
-    res.send('User-agent: *\nDisallow: /');
 });
 
 app.listen(PORT, () => {
