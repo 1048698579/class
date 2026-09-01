@@ -90,6 +90,62 @@ async function saveData(data) {
     } catch (e) { console.error('保存失败:', e.message); return false; }
 }
 
+async function getSystemConfig() {
+    try {
+        const r = await axios.get(SUPABASE_URL + '/rest/v1/system_config?id=eq.main', {
+            headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY }
+        });
+        return r.data && r.data[0] || null;
+    } catch (e) { return null; }
+}
+
+async function saveSystemConfig(config) {
+    try {
+        const existing = await getSystemConfig();
+        if (existing) {
+            await axios.patch(SUPABASE_URL + '/rest/v1/system_config?id=eq.main', config, {
+                headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY, 'Content-Type': 'application/json' }
+            });
+        } else {
+            await axios.post(SUPABASE_URL + '/rest/v1/system_config', { id: 'main', ...config }, {
+                headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY, 'Content-Type': 'application/json' }
+            });
+        }
+        return true;
+    } catch (e) { return false; }
+}
+
+// ================================================================
+//  🛡️ 爬虫防护（放在所有 API 路由之前）
+// ================================================================
+// 1. robots.txt - 告诉搜索引擎不要抓取
+app.get('/robots.txt', (req, res) => {
+    res.type('text/plain');
+    res.send('User-agent: *\nDisallow: /');
+});
+
+// 2. 屏蔽常见爬虫 UA 和敏感路径
+app.use((req, res, next) => {
+    const ua = req.headers['user-agent'] || '';
+    const blockedAgents = ['python-requests', 'Go-http-client', 'curl', 'Wget', 'Java', 'okhttp', 'Scrapy', 'HttpClient', 'Apache-HttpClient', 'python', 'PhantomJS', 'HeadlessChrome'];
+    for (let i = 0; i < blockedAgents.length; i++) {
+        if (ua.indexOf(blockedAgents[i]) !== -1) {
+            console.log('🛡️ 已屏蔽爬虫:', ua);
+            res.status(403).send('Forbidden');
+            return;
+        }
+    }
+    const blockedPaths = ['/.env', '/config', '/wp-admin', '/admin', '/.git', '/vendor', '/app/config', '/.aws', '/credentials', '/.ssh'];
+    for (let i = 0; i < blockedPaths.length; i++) {
+        if (req.path === blockedPaths[i] || req.path.indexOf(blockedPaths[i] + '/') === 0) {
+            console.log('🛡️ 已屏蔽敏感路径:', req.path);
+            res.status(403).send('Forbidden');
+            return;
+        }
+    }
+    next();
+});
+
 // ================================================================
 //  API 路由
 // ================================================================
@@ -125,28 +181,6 @@ app.post('/api/data', async (req, res) => {
     } catch (e) { res.status(500).json({ success: false, error: e.message }); }
 });
 
-// 保存系统配置
-app.post('/api/config', async (req, res) => {
-    try {
-        const { praise_comments, negative_comments, teacher_praise, teacher_abnormal, diner_deadline, alert_threshold } = req.body;
-        
-        // 如果前端没有传某些字段，使用默认值
-        const config = {
-            praise_comments: praise_comments || ['🌟 听课专注', '🙋 积极发言', '📝 笔记认真', '🤝 善于合作', '💡 思维活跃'],
-            negative_comments: negative_comments || ['💬 交头接耳', '😴 听课走神', '🤫 纪律差', '📱 注意力分散', '📢 随意讲话'],
-            teacher_praise: teacher_praise || ['课堂气氛好', '备课充分', '精心辅导'],
-            teacher_abnormal: teacher_abnormal || ['空堂', '上课玩手机', '上课迟到', '课堂有待提高'],
-            diner_deadline: diner_deadline || '09:00',
-            alert_threshold: alert_threshold || 20
-        };
-        const ok = await saveSystemConfig(config);
-        res.json({ success: ok, message: ok ? '配置保存成功' : '保存失败' });
-    } catch (e) {
-        console.error('❌ 保存配置失败:', e.message);
-        res.status(500).json({ success: false, error: e.message });
-    }
-});
-
 app.post('/api/change-password', async (req, res) => {
     try {
         const { username, oldPassword, newPassword } = req.body;
@@ -161,26 +195,19 @@ app.post('/api/change-password', async (req, res) => {
     } catch (e) { res.status(500).json({ success: false, error: e.message }); }
 });
 
-// ================================================================
-//  🔐 真正的权限更新 API
-// ================================================================
 app.post('/api/update-permissions', async (req, res) => {
     try {
         const { username, permissions } = req.body;
         if (!username || !permissions) {
             return res.status(400).json({ success: false, error: '缺少用户名或权限数据' });
         }
-
         const d = await getData();
         if (!d || !d.users || !d.users[username]) {
             return res.status(404).json({ success: false, error: '用户不存在' });
         }
-
-        // 更新用户的权限
         d.users[username].permissions = permissions;
         await saveData(d);
-
-        console.log(`✅ 用户 ${username} 的权限已更新:`, permissions);
+        console.log(`✅ 用户 ${username} 的权限已更新`);
         res.json({ success: true, message: '权限更新成功' });
     } catch (e) {
         console.error('更新权限失败:', e.message);
@@ -273,20 +300,70 @@ app.post('/api/batch-update-classes', async (req, res) => {
     } catch (e) { res.status(500).json({ success: false, error: e.message }); }
 });
 
-// ⏰ 就餐时间锁检查（从数据库读取配置）
 app.get('/api/diner-check', async (req, res) => {
     try {
-        // 从 system_config 表读取配置
         const config = await getSystemConfig();
         const deadline = config && config.diner_deadline ? config.diner_deadline : '09:00';
         const now = new Date();
         const [h, m] = deadline.split(':').map(Number);
-        const deadlineDate = new Date(now);
-        deadlineDate.setHours(h, m, 0, 0);
-        const canEdit = now < deadlineDate;
-        res.json({ success: true, canEdit, deadline, currentTime: now.toLocaleTimeString() });
+        const d = new Date(now);
+        d.setHours(h, m, 0, 0);
+        res.json({ success: true, canEdit: now < d, deadline, currentTime: now.toLocaleTimeString() });
     } catch (e) {
         console.error('❌ 就餐锁检查失败:', e.message);
+        res.status(500).json({ success: false, error: e.message });
+    }
+});
+
+// ================================================================
+//  📝 系统配置（教师点评词 + 就餐截止时间）
+// ================================================================
+app.get('/api/config', async (req, res) => {
+    try {
+        const config = await getSystemConfig();
+        if (config) {
+            res.json({ 
+                success: true, 
+                data: {
+                    praise_comments: config.praise_comments || ['🌟 听课专注', '🙋 积极发言', '📝 笔记认真', '🤝 善于合作', '💡 思维活跃'],
+                    negative_comments: config.negative_comments || ['💬 交头接耳', '😴 听课走神', '🤫 纪律差', '📱 注意力分散', '📢 随意讲话'],
+                    teacher_praise: config.teacher_praise || ['课堂气氛好', '备课充分', '精心辅导'],
+                    teacher_abnormal: config.teacher_abnormal || ['空堂', '上课玩手机', '上课迟到', '课堂有待提高'],
+                    diner_deadline: config.diner_deadline || '09:00',
+                    alert_threshold: config.alert_threshold || 20
+                }
+            });
+        } else {
+            res.json({ success: true, data: {
+                praise_comments: ['🌟 听课专注', '🙋 积极发言', '📝 笔记认真', '🤝 善于合作', '💡 思维活跃'],
+                negative_comments: ['💬 交头接耳', '😴 听课走神', '🤫 纪律差', '📱 注意力分散', '📢 随意讲话'],
+                teacher_praise: ['课堂气氛好', '备课充分', '精心辅导'],
+                teacher_abnormal: ['空堂', '上课玩手机', '上课迟到', '课堂有待提高'],
+                diner_deadline: '09:00',
+                alert_threshold: 20
+            }});
+        }
+    } catch (e) {
+        console.error('❌ 读取配置失败:', e.message);
+        res.status(500).json({ success: false, error: e.message });
+    }
+});
+
+app.post('/api/config', async (req, res) => {
+    try {
+        const { praise_comments, negative_comments, teacher_praise, teacher_abnormal, diner_deadline, alert_threshold } = req.body;
+        const config = {
+            praise_comments: praise_comments || ['🌟 听课专注', '🙋 积极发言', '📝 笔记认真', '🤝 善于合作', '💡 思维活跃'],
+            negative_comments: negative_comments || ['💬 交头接耳', '😴 听课走神', '🤫 纪律差', '📱 注意力分散', '📢 随意讲话'],
+            teacher_praise: teacher_praise || ['课堂气氛好', '备课充分', '精心辅导'],
+            teacher_abnormal: teacher_abnormal || ['空堂', '上课玩手机', '上课迟到', '课堂有待提高'],
+            diner_deadline: diner_deadline || '09:00',
+            alert_threshold: alert_threshold || 20
+        };
+        const ok = await saveSystemConfig(config);
+        res.json({ success: ok, message: ok ? '配置保存成功' : '保存失败' });
+    } catch (e) {
+        console.error('❌ 保存配置失败:', e.message);
         res.status(500).json({ success: false, error: e.message });
     }
 });
@@ -297,18 +374,6 @@ app.post('/send', async (req, res) => {
         const ok = await sendDingTalk(message, isEmergency, robot);
         res.json({ success: ok });
     } catch (e) { res.status(500).json({ success: false, error: e.message }); }
-});
-
-// 简单 IP 限制：屏蔽已知恶意爬虫
-const BLOCKED_IPS = ['192.168.1.100']; // 填你要屏蔽的 IP
-
-app.use((req, res, next) => {
-    const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
-    if (BLOCKED_IPS.includes(ip)) {
-        res.status(403).send('Forbidden');
-        return;
-    }
-    next();
 });
 
 app.get('/health', (req, res) => res.send('OK'));
