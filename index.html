@@ -2772,21 +2772,24 @@
                     var backBtn = $('backToHomeBtn');
 
                     if (backBtn) {
-                        if (isClassMode || isScanMode || window.forceClassView || currentClassKey) {
-                            backBtn.style.display = '';
-                            backBtn.onclick = function() {
-                                var url = new URL(window.location);
-                                url.searchParams.delete('class');
-                                window.history.pushState({}, '', url);
-                                window.forceClassView = false;
-                                currentClassKey = null;
-                                loadClassData();
-                                showToast('📊 已返回数据面板');
-                            };
-                        } else {
-                            backBtn.style.display = 'none';
-                        }
-                    }
+    var urlParams = new URLSearchParams(window.location.search);
+    var hasClassParam = urlParams.has('class');
+    
+    if (hasClassParam && currentClassKey) {
+        backBtn.style.display = '';
+        backBtn.onclick = function() {
+            var url = new URL(window.location);
+            url.searchParams.delete('class');
+            window.history.pushState({}, '', url);
+            window.forceClassView = false;
+            currentClassKey = null;
+            loadClassData();
+            showToast('📊 已返回数据面板');
+        };
+    } else {
+        backBtn.style.display = 'none';
+    }
+}
 
                     if (isClassMode) {
                         window.forceClassView = false;
