@@ -2659,32 +2659,66 @@
     function closeChangePassword() { $('changePasswordModal').classList.remove('active'); }
 
     function submitChangePassword() {
-        var oldPwd = $('oldPassword').value;
-        var newPwd = $('newPassword').value;
-        var confirmPwd = $('confirmPassword').value;
-        var resultEl = $('changePwdResult');
-        if (!oldPwd) { resultEl.textContent = '⚠️ 请输入原密码'; resultEl.style.color = '#DC3545'; return; }
-        if (newPwd.length < 6) { resultEl.textContent = '⚠️ 新密码至少6位'; resultEl.style.color = '#DC3545'; return; }
-        if (newPwd !== confirmPwd) { resultEl.textContent = '⚠️ 两次密码不一致'; resultEl.style.color = '#DC3545'; return; }
-        fetch(API_BASE + '/api/change-password', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ username: currentUser.username, oldPassword: oldPwd, newPassword: newPwd })
-        })
-        .then(function(r) { return r.json(); })
-        .then(function(result) {
-            if (result.success) {
-                resultEl.textContent = '✅ ' + result.message;
-                resultEl.style.color = '#28A745';
-                setTimeout(function() { closeChangePassword(); showToast('密码已修改，请重新登录'); doLogout(); }, 1500);
+    var oldPwd = $('oldPassword').value;
+    var newPwd = $('newPassword').value;
+    var confirmPwd = $('confirmPassword').value;
+    var resultEl = $('changePwdResult');
+    if (!oldPwd) { resultEl.textContent = '⚠️ 请输入原密码'; resultEl.style.color = '#DC3545'; return; }
+    if (newPwd.length < 6) { resultEl.textContent = '⚠️ 新密码至少6位'; resultEl.style.color = '#DC3545'; return; }
+    if (newPwd !== confirmPwd) { resultEl.textContent = '⚠️ 两次密码不一致'; resultEl.style.color = '#DC3545'; return; }
+    fetch(API_BASE + '/api/change-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username: currentUser.username, oldPassword: oldPwd, newPassword: newPwd })
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(result) {
+        if (result.success) {
+            resultEl.textContent = '✅ ' + result.message;
+            resultEl.style.color = '#28A745';
+            // 修改成功后，重新加载用户数据
+            return loadAllDataFromServer();
+        } else {
+            resultEl.textContent = '❌ ' + result.error;
+            resultEl.style.color = '#DC3545';
+            return Promise.reject(result.error);
+        }
+    })
+    .then(function() {
+        // 重新获取当前用户的最新信息
+        var updatedUser = USERS[currentUser.username];
+        if (updatedUser) {
+            currentUser = updatedUser;
+            currentUser.username = currentUser.username;
+            // 重新设置班级
+            if (currentUser.class && CLASS_DATA_LIST[currentUser.class]) {
+                currentClassKey = currentUser.class;
             } else {
-                resultEl.textContent = '❌ ' + result.error;
-                resultEl.style.color = '#DC3545';
+                var keys = Object.keys(CLASS_DATA_LIST);
+                currentClassKey = keys.length > 0 ? keys[0] : null;
             }
-        })
-        .catch(function(e) { resultEl.textContent = '❌ 网络错误，请重试'; resultEl.style.color = '#DC3545'; });
-    }
-
+            showUI();
+            loadClassData();
+            showToast('✅ 密码已修改，请重新登录');
+            setTimeout(function() {
+                doLogout();
+            }, 1500);
+        } else {
+            showToast('❌ 获取用户信息失败，请重新登录');
+            setTimeout(function() {
+                doLogout();
+            }, 1500);
+        }
+    })
+    .catch(function(e) {
+        if (typeof e === 'string') {
+            // 错误已显示，不做额外操作
+        } else {
+            resultEl.textContent = '❌ 网络错误，请重试';
+            resultEl.style.color = '#DC3545';
+        }
+    });
+}
     // ================================================================
     //  加载班级数据（主入口）
     // ================================================================
