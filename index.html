@@ -661,40 +661,49 @@
         }
     }
 
-    function doLogin() {
-        var select = $('loginUserSelect');
-        var passwordEl = $('loginPassword');
-        var errorEl = $('loginError');
-        if (!select || !passwordEl || !errorEl) return;
-        var username = select.value;
-        var password = passwordEl.value;
-        if (!username) { errorEl.textContent = '⚠️ 请选择账号'; errorEl.classList.add('show'); return; }
-        var user = USERS[username];
-        if (!user || user.password !== password) {
-            errorEl.textContent = '❌ 密码错误，请重新输入';
-            errorEl.classList.add('show');
-            passwordEl.value = '';
-            passwordEl.focus();
-            return;
-        }
-        errorEl.classList.remove('show');
-        currentUser = user;
-        currentUser.username = username;
-        var rememberEl = $('rememberMe');
-        if (rememberEl && rememberEl.checked) {
-            try { localStorage.setItem('loginState', JSON.stringify({ username: username })); } catch(e) {}
-        } else {
-            try { localStorage.removeItem('loginState'); } catch(e) {}
-        }
-        if (user.class && CLASS_DATA_LIST[user.class]) currentClassKey = user.class;
-        else {
-            var keys = Object.keys(CLASS_DATA_LIST);
-            currentClassKey = keys.length > 0 ? keys[0] : null;
-        }
-        showUI();
-        loadClassData();
-        showToast('👋 欢迎，' + user.name);
+   function doLogin() {
+    var select = $('loginUserSelect');
+    var passwordEl = $('loginPassword');
+    var errorEl = $('loginError');
+    if (!select || !passwordEl || !errorEl) return;
+    var username = select.value;
+    var password = passwordEl.value;
+    if (!username) { errorEl.textContent = '⚠️ 请选择账号'; errorEl.classList.add('show'); return; }
+    var user = USERS[username];
+    if (!user || user.password !== password) {
+        errorEl.textContent = '❌ 密码错误，请重新输入';
+        errorEl.classList.add('show');
+        passwordEl.value = '';
+        passwordEl.focus();
+        return;
     }
+    errorEl.classList.remove('show');
+    currentUser = user;
+    currentUser.username = username;
+    
+    var rememberEl = $('rememberMe');
+    if (rememberEl && rememberEl.checked) {
+        try { 
+            localStorage.setItem('loginState', JSON.stringify({ 
+                username: username,
+                class: user.class || null,
+                role: user.role
+            })); 
+        } catch(e) {}
+    } else {
+        try { localStorage.removeItem('loginState'); } catch(e) {}
+    }
+    
+    if (user.class && CLASS_DATA_LIST[user.class]) {
+        currentClassKey = user.class;
+    } else {
+        var keys = Object.keys(CLASS_DATA_LIST);
+        currentClassKey = keys.length > 0 ? keys[0] : null;
+    }
+    showUI();
+    loadClassData();
+    showToast('👋 欢迎，' + user.name);
+}
 
     function doLogout() {
         if (confirm('确认退出登录吗？')) {
@@ -731,26 +740,32 @@
     }
 
     function autoLogin() {
-        var state = null;
-        try {
-            var raw = localStorage.getItem('loginState');
-            if (raw) { state = JSON.parse(raw); }
-        } catch(e) {}
-        if (!state) return false;
-        var user = USERS[state.username];
-        if (!user) return false;
-        currentUser = user;
-        currentUser.username = state.username;
-        if (user.class && CLASS_DATA_LIST[user.class]) currentClassKey = user.class;
-        else {
-            var keys = Object.keys(CLASS_DATA_LIST);
-            currentClassKey = keys.length > 0 ? keys[0] : null;
-        }
-        showUI();
-        loadClassData();
-        showToast('👋 欢迎回来，' + user.name);
-        return true;
+    var state = null;
+    try {
+        var raw = localStorage.getItem('loginState');
+        if (raw) { state = JSON.parse(raw); }
+    } catch(e) {}
+    if (!state) return false;
+    var user = USERS[state.username];
+    if (!user) return false;
+    currentUser = user;
+    currentUser.username = state.username;
+    
+    // 从 localStorage 读取保存的班级
+    if (state.class && CLASS_DATA_LIST[state.class]) {
+        currentClassKey = state.class;
+    } else if (user.class && CLASS_DATA_LIST[user.class]) {
+        currentClassKey = user.class;
+    } else {
+        var keys = Object.keys(CLASS_DATA_LIST);
+        currentClassKey = keys.length > 0 ? keys[0] : null;
     }
+    
+    showUI();
+    loadClassData();
+    showToast('👋 欢迎回来，' + user.name);
+    return true;
+}
 
     // ================================================================
     //  放假开关
@@ -2692,11 +2707,18 @@
                 .catch(function(e) { console.error('获取就餐锁失败:', e); });
 
             loadAllDataFromServer()
-                .then(function() {
-                    if (!currentClassKey || !CLASS_DATA_LIST[currentClassKey]) {
-                        var keys = Object.keys(CLASS_DATA_LIST);
-                        currentClassKey = keys.length > 0 ? keys[0] : null;
-                    }
+    .then(function() {
+        if (!currentClassKey || !CLASS_DATA_LIST[currentClassKey]) {
+            if (currentUser && (currentUser.role === '班主任' || currentUser.role === '科任老师')) {
+                if (currentUser.class && CLASS_DATA_LIST[currentUser.class]) {
+                    currentClassKey = currentUser.class;
+                }
+            }
+            if (!currentClassKey || !CLASS_DATA_LIST[currentClassKey]) {
+                var keys = Object.keys(CLASS_DATA_LIST);
+                currentClassKey = keys.length > 0 ? keys[0] : null;
+            }
+        }
                     var data = getCurrentData();
                     var level = getUserRoleLevel(currentUser);
                     var isLeader = (currentUser && level >= 3);
