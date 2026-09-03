@@ -1374,7 +1374,7 @@
         adminTab = tab || 'student';
         _selectedSeatIndex = null;
         $('adminModalSub').textContent = getCurrentData().className || '数据管理';
-        renderAdminContent();
+        ();
         $('adminModal').classList.add('active');
     }
 
@@ -1395,10 +1395,13 @@
             tabs.push({ key: 'diner', label: '🍱 就餐' });
         }
         if (canManage) {
-            tabs.push({ key: 'class', label: '🏫 班级' });
-            tabs.push({ key: 'user', label: '👤 账号' });
-            tabs.push({ key: 'config', label: '⚙️ 配置' });
-        }
+    tabs.push({ key: 'class', label: '🏫 班级' });
+}
+// 账号和配置：只有超级管理员、管理员、校委会可见（hasFullAccess）
+if (hasFullAccess(currentUser)) {
+    tabs.push({ key: 'user', label: '👤 账号' });
+    tabs.push({ key: 'config', label: '⚙️ 配置' });
+}
         if (tabs.length === 0) tabs.push({ key: 'student', label: '👨‍🎓 学生' });
         for (var i = 0; i < tabs.length; i++) {
             var active = tabs[i].key === adminTab ? 'active' : '';
