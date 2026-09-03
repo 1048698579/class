@@ -686,25 +686,37 @@
         try { 
             localStorage.setItem('loginState', JSON.stringify({ 
                 username: username,
+                // ✅ 保存完整的用户信息
                 class: user.class || null,
-                role: user.role
+                role: user.role,
+                grade: user.grade || null
             })); 
         } catch(e) {}
     } else {
         try { localStorage.removeItem('loginState'); } catch(e) {}
     }
     
+    // ✅ 设置班级
     if (user.class && CLASS_DATA_LIST[user.class]) {
         currentClassKey = user.class;
-    } else {
+    } else if (user.role === '级委会' && user.grade) {
+        var allKeys = Object.keys(CLASS_DATA_LIST);
+        for (var i = 0; i < allKeys.length; i++) {
+            if (getClassGrade(allKeys[i]) === user.grade) {
+                currentClassKey = allKeys[i];
+                break;
+            }
+        }
+    }
+    if (!currentClassKey || !CLASS_DATA_LIST[currentClassKey]) {
         var keys = Object.keys(CLASS_DATA_LIST);
         currentClassKey = keys.length > 0 ? keys[0] : null;
     }
+    
     showUI();
     loadClassData();
     showToast('👋 欢迎，' + user.name);
 }
-
     function doLogout() {
         if (confirm('确认退出登录吗？')) {
             currentUser = null;
@@ -751,10 +763,8 @@
     currentUser = user;
     currentUser.username = state.username;
     
-    // 从 localStorage 读取保存的班级
-    if (state.class && CLASS_DATA_LIST[state.class]) {
-        currentClassKey = state.class;
-    } else if (user.class && CLASS_DATA_LIST[user.class]) {
+    // ✅ 从 CLASS_DATA_LIST 读取最新的班级信息
+    if (user.class && CLASS_DATA_LIST[user.class]) {
         currentClassKey = user.class;
     } else {
         var keys = Object.keys(CLASS_DATA_LIST);
@@ -2677,9 +2687,10 @@
         if (result.success) {
             resultEl.textContent = '✅ ' + result.message;
             resultEl.style.color = '#28A745';
+            // ✅ 清除缓存的登录状态，防止自动登录用旧数据
+            try { localStorage.removeItem('loginState'); } catch(e) {}
             closeChangePassword();
             showToast('✅ 密码已修改，请重新登录');
-            // 直接退出，不调用任何数据加载函数
             setTimeout(function() {
                 doLogout();
             }, 1500);
@@ -2693,7 +2704,6 @@
         resultEl.style.color = '#DC3545';
     });
 }
-
     // ================================================================
     //  加载班级数据（主入口）
     // ================================================================
