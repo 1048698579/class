@@ -1374,7 +1374,6 @@
         adminTab = tab || 'student';
         _selectedSeatIndex = null;
         $('adminModalSub').textContent = getCurrentData().className || '数据管理';
-        ();
         $('adminModal').classList.add('active');
     }
 
@@ -1814,153 +1813,153 @@ if (hasFullAccess(currentUser)) {
     }
 
     function loadMonthlyDinerStats() {
-        var monthInput = $('dinerMonth');
-        if (!monthInput) return;
-        var month = monthInput.value;
-        if (!month) { showToast('请选择月份'); return; }
-        var data = getCurrentData();
-        var students = data.students || [];
-        var diners = data.diners || {};
-        var afterSchool = data.afterSchool || {};
-        var year = parseInt(month.substring(0, 4));
-        var mon = parseInt(month.substring(5, 7));
-        var daysInMonth = new Date(year, mon, 0).getDate();
-        var html = '<div class="stats-table-wrap"><table class="stats-table"><thead><tr><th style="min-width:50px;">姓名</th><th style="min-width:40px;">就餐</th><th style="min-width:40px;">课后</th>';
-        for (var d = 1; d <= daysInMonth; d++) {
-            var dateStr = year + '-' + String(mon).padStart(2,'0') + '-' + String(d).padStart(2,'0');
-            var isHoliday = attendanceRecords[dateStr] && attendanceRecords[dateStr]._holiday === true;
-            var label = isHoliday ? '放假' : d;
-            var style = isHoliday ? 'color:#ccc;' : '';
-            html += '<th style="font-weight:400;font-size:10px;' + style + '">' + label + '</th>';
-        }
-        html += '<th>正常</th><th>停餐</th><th>课后到</th><th>课后缺</th></tr></thead><tbody>';
-        var totalNormal = 0, totalStop = 0, totalAfterP = 0, totalAfterA = 0;
-        for (var i = 0; i < students.length; i++) {
-            var name = students[i];
-            if (!name || name.trim() === '') continue;
-            var isDiner = diners[name] || false;
-            var isAfter = afterSchool[name] || false;
-            if (!isDiner && !isAfter) continue;
-            html += '<tr><td class="student-name">' + name + '</td><td>' + (isDiner ? '✅' : '—') + '</td><td>' + (isAfter ? '📚' : '—') + '</td>';
-            var normalCount = 0, stopCount = 0, afterP = 0, afterA = 0;
-            for (var d = 1; d <= daysInMonth; d++) {
-                var dateStr = year + '-' + String(mon).padStart(2,'0') + '-' + String(d).padStart(2,'0');
-                var isHoliday = attendanceRecords[dateStr] && attendanceRecords[dateStr]._holiday === true;
-                if (isHoliday) { html += '<td style="color:#ccc;">-</td>'; continue; }
-                var dayOfWeek = new Date(year, mon - 1, d).getDay();
-                if (dayOfWeek === 0 || dayOfWeek === 6) { html += '<td>-</td>'; continue; }
-                var status = 'present';
-                if (attendanceRecords[dateStr] && attendanceRecords[dateStr][currentClassKey] && attendanceRecords[dateStr][currentClassKey][name]) {
-                    status = attendanceRecords[dateStr][currentClassKey][name];
-                }
-                if (status === 'leave' || status === 'absent') {
-                    html += '<td class="status-stop">⚠️</td>';
-                    if (isDiner) stopCount++;
-                    if (isAfter) afterA++;
-                } else {
-                    html += '<td class="status-present">✅</td>';
-                    if (isDiner) normalCount++;
-                    if (isAfter) afterP++;
-                }
-            }
-            html += '<td>' + normalCount + '</td><td style="color:#DC3545;">' + stopCount + '</td><td>' + afterP + '</td><td style="color:#DC3545;">' + afterA + '</td></tr>';
-            totalNormal += normalCount;
-            totalStop += stopCount;
-            totalAfterP += afterP;
-            totalAfterA += afterA;
-        }
-        html += '<tr class="stats-total-row"><td colspan="3">📊 合计</td>';
-        for (var d = 1; d <= daysInMonth; d++) {
-            var dateStr = year + '-' + String(mon).padStart(2,'0') + '-' + String(d).padStart(2,'0');
-            var isHoliday = attendanceRecords[dateStr] && attendanceRecords[dateStr]._holiday === true;
-            var dayOfWeek = new Date(year, mon - 1, d).getDay();
-            html += '<td>' + (isHoliday ? '放' : (dayOfWeek === 0 || dayOfWeek === 6 ? '-' : '·')) + '</td>';
-        }
-        html += '<td><strong>' + totalNormal + '</strong></td><td style="color:#DC3545;"><strong>' + totalStop + '</strong></td><td><strong>' + totalAfterP + '</strong></td><td style="color:#DC3545;"><strong>' + totalAfterA + '</strong></td></tr>';
-        html += '</tbody></table></div>';
-        html += '<div style="margin-top:10px;font-size:13px;color:#888;">🍱 正常就餐：<strong style="color:#28A745;">' + totalNormal + '</strong> 人次 | 停餐：<strong style="color:#DC3545;">' + totalStop + '</strong> 人次 | 📚 课后到：<strong style="color:#28A745;">' + totalAfterP + '</strong> 人次 | 缺：<strong style="color:#DC3545;">' + totalAfterA + '</strong> 人次</div>';
-        var resultEl = $('monthlyDinerResult');
-        if (resultEl) resultEl.innerHTML = html;
-        showToast('✅ 已加载 ' + month + ' 统计');
+    var monthInput = $('dinerMonth');
+    if (!monthInput) return;
+    var month = monthInput.value;
+    if (!month) { showToast('请选择月份'); return; }
+    var data = getCurrentData();
+    var students = data.students || [];
+    var diners = data.diners || {};
+    var afterSchool = data.afterSchool || {};
+    var year = parseInt(month.substring(0, 4));
+    var mon = parseInt(month.substring(5, 7));
+    var daysInMonth = new Date(year, mon, 0).getDate();
+    var html = '<div class="stats-table-wrap"><table class="stats-table"><thead><tr><th style="min-width:50px;">姓名</th><th style="min-width:40px;">就餐</th><th style="min-width:40px;">课后</th>';
+    for (var d = 1; d <= daysInMonth; d++) {
+        var dateStr = year + '-' + String(mon).padStart(2,'0') + '-' + String(d).padStart(2,'0');
+        var isHoliday = attendanceRecords[dateStr] && attendanceRecords[dateStr]._holiday === true;
+        var label = isHoliday ? '放假' : d;
+        var style = isHoliday ? 'color:#ccc;' : '';
+        html += '<th style="font-weight:400;font-size:10px;' + style + '">' + label + '</th>';
     }
+    html += '<th>正常</th><th>停餐</th><th>课后到</th><th>课后缺</th><th>课后总节数</th></tr></thead><tbody>';
+    var totalNormal = 0, totalStop = 0, totalAfterP = 0, totalAfterA = 0;
+    for (var i = 0; i < students.length; i++) {
+        var name = students[i];
+        if (!name || name.trim() === '') continue;
+        var isDiner = diners[name] || false;
+        var isAfter = afterSchool[name] || false;
+        if (!isDiner && !isAfter) continue;
+        html += '<tr><td class="student-name">' + name + '</td><td>' + (isDiner ? '✅' : '—') + '</td><td>' + (isAfter ? '📚' : '—') + '</td>';
+        var normalCount = 0, stopCount = 0, afterP = 0, afterA = 0;
+        for (var d = 1; d <= daysInMonth; d++) {
+            var dateStr = year + '-' + String(mon).padStart(2,'0') + '-' + String(d).padStart(2,'0');
+            var isHoliday = attendanceRecords[dateStr] && attendanceRecords[dateStr]._holiday === true;
+            if (isHoliday) { html += '<td style="color:#ccc;">-</td>'; continue; }
+            var dayOfWeek = new Date(year, mon - 1, d).getDay();
+            if (dayOfWeek === 0 || dayOfWeek === 6) { html += '<td>-</td>'; continue; }
+            var status = 'present';
+            if (attendanceRecords[dateStr] && attendanceRecords[dateStr][currentClassKey] && attendanceRecords[dateStr][currentClassKey][name]) {
+                status = attendanceRecords[dateStr][currentClassKey][name];
+            }
+            if (status === 'leave' || status === 'absent') {
+                html += '<td class="status-stop">⚠️</td>';
+                if (isDiner) stopCount++;
+                if (isAfter) afterA++;
+            } else {
+                html += '<td class="status-present">✅</td>';
+                if (isDiner) normalCount++;
+                if (isAfter) afterP++;
+            }
+        }
+        html += '<td>' + normalCount + '</td><td style="color:#DC3545;">' + stopCount + '</td><td>' + afterP + '</td><td style="color:#DC3545;">' + afterA + '</td><td>' + (afterP * 2) + '</td></tr>';
+        totalNormal += normalCount;
+        totalStop += stopCount;
+        totalAfterP += afterP;
+        totalAfterA += afterA;
+    }
+    html += '<tr class="stats-total-row"><td colspan="3">📊 合计</td>';
+    for (var d = 1; d <= daysInMonth; d++) {
+        var dateStr = year + '-' + String(mon).padStart(2,'0') + '-' + String(d).padStart(2,'0');
+        var isHoliday = attendanceRecords[dateStr] && attendanceRecords[dateStr]._holiday === true;
+        var dayOfWeek = new Date(year, mon - 1, d).getDay();
+        html += '<td>' + (isHoliday ? '放' : (dayOfWeek === 0 || dayOfWeek === 6 ? '-' : '·')) + '</td>';
+    }
+    html += '<td><strong>' + totalNormal + '</strong></td><td style="color:#DC3545;"><strong>' + totalStop + '</strong></td><td><strong>' + totalAfterP + '</strong></td><td style="color:#DC3545;"><strong>' + totalAfterA + '</strong></td><td><strong>' + (totalAfterP * 2) + '</strong></td></tr>';
+    html += '</tbody></table></div>';
+    html += '<div style="margin-top:10px;font-size:13px;color:#888;">🍱 正常就餐：<strong style="color:#28A745;">' + totalNormal + '</strong> 人次 | 停餐：<strong style="color:#DC3545;">' + totalStop + '</strong> 人次 | 📚 课后到：<strong style="color:#28A745;">' + totalAfterP + '</strong> 人次 | 缺：<strong style="color:#DC3545;">' + totalAfterA + '</strong> 人次 | 📊 课后总节数：<strong style="color:#4A90D9;">' + (totalAfterP * 2) + '</strong> 节</div>';
+    var resultEl = $('monthlyDinerResult');
+    if (resultEl) resultEl.innerHTML = html;
+    showToast('✅ 已加载 ' + month + ' 统计');
+}
 
     function exportDinerReport() {
-        var monthInput = $('dinerMonth');
-        if (!monthInput) { showToast('请先选择月份'); return; }
-        var month = monthInput.value;
-        if (!month) { showToast('请选择月份'); return; }
-        var data = getCurrentData();
-        var students = data.students || [];
-        var diners = data.diners || {};
-        var afterSchool = data.afterSchool || {};
-        var year = parseInt(month.substring(0, 4));
-        var mon = parseInt(month.substring(5, 7));
-        var daysInMonth = new Date(year, mon, 0).getDate();
-        var csvRows = [];
-        var header = ['姓名', '在校就餐', '参加课后服务'];
-        for (var d = 1; d <= daysInMonth; d++) {
-            var dateStr = year + '-' + String(mon).padStart(2,'0') + '-' + String(d).padStart(2,'0');
-            var isHoliday = attendanceRecords[dateStr] && attendanceRecords[dateStr]._holiday === true;
-            var dayOfWeek = new Date(year, mon - 1, d).getDay();
-            if (isHoliday) header.push(d + '日(放假)');
-            else if (dayOfWeek !== 0 && dayOfWeek !== 6) header.push(d + '日');
-        }
-        header.push('正常就餐', '停餐', '课后到', '课后缺', '餐费标准', '应缴餐费');
-        csvRows.push(header.join(','));
-        var totalNormal = 0, totalStop = 0, totalAfterP = 0, totalAfterA = 0, price = 10;
-        for (var i = 0; i < students.length; i++) {
-            var name = students[i];
-            if (!name || name.trim() === '') continue;
-            var isDiner = diners[name] || false;
-            var isAfter = afterSchool[name] || false;
-            if (!isDiner && !isAfter) continue;
-            var row = [name, isDiner ? '是' : '否', isAfter ? '是' : '否'];
-            var normalCount = 0, stopCount = 0, afterP = 0, afterA = 0;
-            for (var d = 1; d <= daysInMonth; d++) {
-                var dateStr = year + '-' + String(mon).padStart(2,'0') + '-' + String(d).padStart(2,'0');
-                var isHoliday = attendanceRecords[dateStr] && attendanceRecords[dateStr]._holiday === true;
-                if (isHoliday) { row.push('放假'); continue; }
-                var dayOfWeek = new Date(year, mon - 1, d).getDay();
-                if (dayOfWeek === 0 || dayOfWeek === 6) continue;
-                var status = 'present';
-                if (attendanceRecords[dateStr] && attendanceRecords[dateStr][currentClassKey] && attendanceRecords[dateStr][currentClassKey][name]) {
-                    status = attendanceRecords[dateStr][currentClassKey][name];
-                }
-                if (status === 'leave' || status === 'absent') {
-                    row.push('停餐');
-                    if (isDiner) stopCount++;
-                    if (isAfter) afterA++;
-                } else {
-                    row.push('正常');
-                    if (isDiner) normalCount++;
-                    if (isAfter) afterP++;
-                }
-            }
-            row.push(normalCount, stopCount, afterP, afterA, price, normalCount * price);
-            csvRows.push(row.join(','));
-            totalNormal += normalCount;
-            totalStop += stopCount;
-            totalAfterP += afterP;
-            totalAfterA += afterA;
-        }
-        var totalRow = ['合计', '', ''];
-        for (var d = 1; d <= daysInMonth; d++) {
-            var dateStr = year + '-' + String(mon).padStart(2,'0') + '-' + String(d).padStart(2,'0');
-            var isHoliday = attendanceRecords[dateStr] && attendanceRecords[dateStr]._holiday === true;
-            var dayOfWeek = new Date(year, mon - 1, d).getDay();
-            if (isHoliday) totalRow.push('放假');
-            else if (dayOfWeek !== 0 && dayOfWeek !== 6) totalRow.push('');
-        }
-        totalRow.push(totalNormal, totalStop, totalAfterP, totalAfterA, '', totalNormal * price);
-        csvRows.push(totalRow.join(','));
-        var csvContent = csvRows.join('\n');
-        var blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
-        var link = document.createElement('a');
-        link.href = URL.createObjectURL(blob);
-        link.download = getCurrentData().className + '_' + month + '_统计报账单.csv';
-        link.click();
-        showToast('✅ 导出成功！');
+    var monthInput = $('dinerMonth');
+    if (!monthInput) { showToast('请先选择月份'); return; }
+    var month = monthInput.value;
+    if (!month) { showToast('请选择月份'); return; }
+    var data = getCurrentData();
+    var students = data.students || [];
+    var diners = data.diners || {};
+    var afterSchool = data.afterSchool || {};
+    var year = parseInt(month.substring(0, 4));
+    var mon = parseInt(month.substring(5, 7));
+    var daysInMonth = new Date(year, mon, 0).getDate();
+    var csvRows = [];
+    var header = ['姓名', '在校就餐', '参加课后服务'];
+    for (var d = 1; d <= daysInMonth; d++) {
+        var dateStr = year + '-' + String(mon).padStart(2,'0') + '-' + String(d).padStart(2,'0');
+        var isHoliday = attendanceRecords[dateStr] && attendanceRecords[dateStr]._holiday === true;
+        var dayOfWeek = new Date(year, mon - 1, d).getDay();
+        if (isHoliday) header.push(d + '日(放假)');
+        else if (dayOfWeek !== 0 && dayOfWeek !== 6) header.push(d + '日');
     }
+    header.push('正常就餐', '停餐', '课后到', '课后缺', '课后总节数', '餐费标准', '应缴餐费');
+    csvRows.push(header.join(','));
+    var totalNormal = 0, totalStop = 0, totalAfterP = 0, totalAfterA = 0, price = 10;
+    for (var i = 0; i < students.length; i++) {
+        var name = students[i];
+        if (!name || name.trim() === '') continue;
+        var isDiner = diners[name] || false;
+        var isAfter = afterSchool[name] || false;
+        if (!isDiner && !isAfter) continue;
+        var row = [name, isDiner ? '是' : '否', isAfter ? '是' : '否'];
+        var normalCount = 0, stopCount = 0, afterP = 0, afterA = 0;
+        for (var d = 1; d <= daysInMonth; d++) {
+            var dateStr = year + '-' + String(mon).padStart(2,'0') + '-' + String(d).padStart(2,'0');
+            var isHoliday = attendanceRecords[dateStr] && attendanceRecords[dateStr]._holiday === true;
+            if (isHoliday) { row.push('放假'); continue; }
+            var dayOfWeek = new Date(year, mon - 1, d).getDay();
+            if (dayOfWeek === 0 || dayOfWeek === 6) continue;
+            var status = 'present';
+            if (attendanceRecords[dateStr] && attendanceRecords[dateStr][currentClassKey] && attendanceRecords[dateStr][currentClassKey][name]) {
+                status = attendanceRecords[dateStr][currentClassKey][name];
+            }
+            if (status === 'leave' || status === 'absent') {
+                row.push('停餐');
+                if (isDiner) stopCount++;
+                if (isAfter) afterA++;
+            } else {
+                row.push('正常');
+                if (isDiner) normalCount++;
+                if (isAfter) afterP++;
+            }
+        }
+        row.push(normalCount, stopCount, afterP, afterA, afterP * 2, price, normalCount * price);
+        csvRows.push(row.join(','));
+        totalNormal += normalCount;
+        totalStop += stopCount;
+        totalAfterP += afterP;
+        totalAfterA += afterA;
+    }
+    var totalRow = ['合计', '', ''];
+    for (var d = 1; d <= daysInMonth; d++) {
+        var dateStr = year + '-' + String(mon).padStart(2,'0') + '-' + String(d).padStart(2,'0');
+        var isHoliday = attendanceRecords[dateStr] && attendanceRecords[dateStr]._holiday === true;
+        var dayOfWeek = new Date(year, mon - 1, d).getDay();
+        if (isHoliday) totalRow.push('放假');
+        else if (dayOfWeek !== 0 && dayOfWeek !== 6) totalRow.push('');
+    }
+    totalRow.push(totalNormal, totalStop, totalAfterP, totalAfterA, totalAfterP * 2, '', totalNormal * price);
+    csvRows.push(totalRow.join(','));
+    var csvContent = csvRows.join('\n');
+    var blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
+    var link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = getCurrentData().className + '_' + month + '_统计报账单.csv';
+    link.click();
+    showToast('✅ 导出成功！');
+}
 
     // ================================================================
     //  班级管理（含权限控制）
