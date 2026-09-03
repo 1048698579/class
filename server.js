@@ -69,14 +69,49 @@ async function getData() {
 
 async function saveData(data) {
     try {
-        const payload = {
+        // 先读取数据库里现有的数据
+        const existing = await getData();
+        
+        // 准备要保存的数据
+        var payload = {
             class_data_list: data.classDataList || {},
             seat_status: data.seatStatus || {},
             teacher_status: data.teacherStatus || {},
             users: data.users || {},
             attendance_records: data.attendanceRecords || {}
         };
-        const existing = await getData();
+        
+        // 🔧 核心修复：如果前端传入了空数据，但数据库里有数据，保留数据库的
+        if (existing) {
+            // 保护班级数据
+            if (existing.class_data_list && Object.keys(existing.class_data_list).length > 0) {
+                if (!payload.class_data_list || Object.keys(payload.class_data_list).length === 0) {
+                    console.log('🛡️ 防止覆盖：保留现有班级数据');
+                    payload.class_data_list = existing.class_data_list;
+                }
+            }
+            // 保护座位数据
+            if (existing.seat_status && Object.keys(existing.seat_status).length > 0) {
+                if (!payload.seat_status || Object.keys(payload.seat_status).length === 0) {
+                    payload.seat_status = existing.seat_status;
+                }
+            }
+            // 保护教师状态数据
+            if (existing.teacher_status && Object.keys(existing.teacher_status).length > 0) {
+                if (!payload.teacher_status || Object.keys(payload.teacher_status).length === 0) {
+                    payload.teacher_status = existing.teacher_status;
+                }
+            }
+            // 用户数据也要保护（防止账号被清空）
+            if (existing.users && Object.keys(existing.users).length > 0) {
+                if (!payload.users || Object.keys(payload.users).length === 0) {
+                    console.log('🛡️ 防止覆盖：保留现有用户数据');
+                    payload.users = existing.users;
+                }
+            }
+        }
+        
+        // 保存到 Supabase
         if (existing) {
             await axios.patch(SUPABASE_URL + '/rest/v1/system_data?id=eq.main', payload, {
                 headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY, 'Content-Type': 'application/json' }
@@ -86,8 +121,12 @@ async function saveData(data) {
                 headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY, 'Content-Type': 'application/json' }
             });
         }
+        console.log('✅ 数据保存成功');
         return true;
-    } catch (e) { console.error('保存失败:', e.message); return false; }
+    } catch (e) { 
+        console.error('❌ 保存失败:', e.message); 
+        return false; 
+    }
 }
 
 async function getSystemConfig() {
