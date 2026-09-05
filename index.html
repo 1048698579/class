@@ -1940,11 +1940,9 @@ if (currentUser && (currentUser.role === '超级管理员' || currentUser.role =
     var allClassNames = '';
     
     if (role === '超级管理员' || role === '管理员' || role === '校委会') {
-        // 全校：所有班级
         targetKeys = Object.keys(CLASS_DATA_LIST);
         allClassNames = '全校';
     } else if (role === '级委会') {
-        // 本年级
         var grade = currentUser.grade || '';
         var allKeys = Object.keys(CLASS_DATA_LIST);
         for (var i = 0; i < allKeys.length; i++) {
@@ -1954,14 +1952,12 @@ if (currentUser && (currentUser.role === '超级管理员' || currentUser.role =
         }
         allClassNames = grade || '本年级';
     } else if (role === '班主任' || role === '科任老师') {
-        // 本班
         if (currentClassKey) {
             targetKeys = [currentClassKey];
             var cls = CLASS_DATA_LIST[currentClassKey];
             allClassNames = cls ? cls.className : '本班';
         }
     } else {
-        // 默认当前班级
         if (currentClassKey) {
             targetKeys = [currentClassKey];
             var cls = CLASS_DATA_LIST[currentClassKey];
@@ -1975,129 +1971,151 @@ if (currentUser && (currentUser.role === '超级管理员' || currentUser.role =
     }
     
     // ================================================================
-    //  合并多个班级的学生数据（按姓名去重）
-    // ================================================================
-    var allStudents = [];
-    var allDiners = {};
-    var allAfterSchool = {};
-    
-    for (var i = 0; i < targetKeys.length; i++) {
-        var key = targetKeys[i];
-        var cls = CLASS_DATA_LIST[key];
-        if (!cls) continue;
-        var students = cls.students || [];
-        var diners = cls.diners || {};
-        var afterSchool = cls.afterSchool || {};
-        for (var j = 0; j < students.length; j++) {
-            var name = students[j];
-            if (!name || name.trim() === '') continue;
-            if (allStudents.indexOf(name) === -1) {
-                allStudents.push(name);
-                allDiners[name] = diners[name] || false;
-                allAfterSchool[name] = afterSchool[name] || false;
-            } else {
-                // 同名合并：只要有一个班是 true 就为 true
-                allDiners[name] = allDiners[name] || diners[name] || false;
-                allAfterSchool[name] = allAfterSchool[name] || afterSchool[name] || false;
-            }
-        }
-    }
-    
-    if (allStudents.length === 0) {
-        showToast('⚠️ 没有学生数据可导出');
-        return;
-    }
-    
-    // ================================================================
-    //  生成 CSV
+    //  按班级依次导出
     // ================================================================
     var year = parseInt(month.substring(0, 4));
     var mon = parseInt(month.substring(5, 7));
     var daysInMonth = new Date(year, mon, 0).getDate();
     var csvRows = [];
+    var totalNormalAll = 0, totalStopAll = 0, totalAfterPAll = 0, totalAfterAAll = 0;
+    var price = 10;
+    var allStudentCount = 0;
     
-    // 表头
-    var header = ['姓名', '在校就餐', '参加课后服务'];
-    for (var d = 1; d <= daysInMonth; d++) {
-        var dateStr = year + '-' + String(mon).padStart(2,'0') + '-' + String(d).padStart(2,'0');
-        var isHoliday = attendanceRecords[dateStr] && attendanceRecords[dateStr]._holiday === true;
-        var dayOfWeek = new Date(year, mon - 1, d).getDay();
-        if (isHoliday) {
-            header.push(d + '日(放假)');
-        } else if (dayOfWeek !== 0 && dayOfWeek !== 6) {
-            header.push(d + '日');
+    // 遍历每个班级
+    for (var t = 0; t < targetKeys.length; t++) {
+        var classKey = targetKeys[t];
+        var cls = CLASS_DATA_LIST[classKey];
+        if (!cls) continue;
+        var className = cls.className || classKey;
+        var students = cls.students || [];
+        var diners = cls.diners || {};
+        var afterSchool = cls.afterSchool || {};
+        
+        // 如果没有学生，跳过
+        var hasStudent = false;
+        for (var s = 0; s < students.length; s++) {
+            if (students[s] && students[s].trim() !== '') {
+                hasStudent = true;
+                break;
+            }
         }
-    }
-    header.push('正常就餐', '停餐', '课后到', '课后缺', '课后总节数', '餐费标准', '应缴餐费');
-    csvRows.push(header.join(','));
-    
-    var totalNormal = 0, totalStop = 0, totalAfterP = 0, totalAfterA = 0, price = 10;
-    
-    for (var i = 0; i < allStudents.length; i++) {
-        var name = allStudents[i];
-        var isDiner = allDiners[name] || false;
-        var isAfter = allAfterSchool[name] || false;
+        if (!hasStudent) continue;
         
-        var row = [name, isDiner ? '是' : '否', isAfter ? '是' : '否'];
-        var normalCount = 0, stopCount = 0, afterP = 0, afterA = 0;
+        // 班级标题行（用空行分隔）
+        if (csvRows.length > 0) {
+            csvRows.push(''); // 空行分隔不同班级
+        }
+        csvRows.push('【' + className + '】');
         
+        // 表头（每个班级单独表头）
+        var header = ['姓名', '在校就餐', '参加课后服务'];
         for (var d = 1; d <= daysInMonth; d++) {
             var dateStr = year + '-' + String(mon).padStart(2,'0') + '-' + String(d).padStart(2,'0');
             var isHoliday = attendanceRecords[dateStr] && attendanceRecords[dateStr]._holiday === true;
-            if (isHoliday) { row.push('放假'); continue; }
             var dayOfWeek = new Date(year, mon - 1, d).getDay();
-            if (dayOfWeek === 0 || dayOfWeek === 6) continue;
+            if (isHoliday) {
+                header.push(d + '日(放假)');
+            } else if (dayOfWeek !== 0 && dayOfWeek !== 6) {
+                header.push(d + '日');
+            }
+        }
+        header.push('正常就餐', '停餐', '课后到', '课后缺', '课后总节数', '餐费标准', '应缴餐费');
+        csvRows.push(header.join(','));
+        
+        var classNormal = 0, classStop = 0, classAfterP = 0, classAfterA = 0;
+        var classStudentCount = 0;
+        
+        for (var i = 0; i < students.length; i++) {
+            var name = students[i];
+            if (!name || name.trim() === '') continue;
+            classStudentCount++;
+            allStudentCount++;
             
-            // 检查该生当天是否有记录（遍历所有目标班级）
-            var status = 'present';
-            var found = false;
-            for (var k = 0; k < targetKeys.length; k++) {
-                var key = targetKeys[k];
-                if (attendanceRecords[dateStr] && attendanceRecords[dateStr][key] && attendanceRecords[dateStr][key][name]) {
-                    status = attendanceRecords[dateStr][key][name];
-                    found = true;
-                    break;
+            var isDiner = diners[name] || false;
+            var isAfter = afterSchool[name] || false;
+            
+            var row = [name, isDiner ? '是' : '否', isAfter ? '是' : '否'];
+            var normalCount = 0, stopCount = 0, afterP = 0, afterA = 0;
+            
+            for (var d = 1; d <= daysInMonth; d++) {
+                var dateStr = year + '-' + String(mon).padStart(2,'0') + '-' + String(d).padStart(2,'0');
+                var isHoliday = attendanceRecords[dateStr] && attendanceRecords[dateStr]._holiday === true;
+                if (isHoliday) { row.push('放假'); continue; }
+                var dayOfWeek = new Date(year, mon - 1, d).getDay();
+                if (dayOfWeek === 0 || dayOfWeek === 6) { continue; }
+                
+                var status = 'present';
+                if (attendanceRecords[dateStr] && attendanceRecords[dateStr][classKey] && attendanceRecords[dateStr][classKey][name]) {
+                    status = attendanceRecords[dateStr][classKey][name];
+                }
+                
+                if (status === 'leave' || status === 'absent') {
+                    row.push('停餐');
+                    if (isDiner) stopCount++;
+                    if (isAfter) afterA++;
+                } else {
+                    row.push('正常');
+                    if (isDiner) normalCount++;
+                    if (isAfter) afterP++;
                 }
             }
             
-            if (status === 'leave' || status === 'absent') {
-                row.push('停餐');
-                if (isDiner) stopCount++;
-                if (isAfter) afterA++;
-            } else {
-                row.push('正常');
-                if (isDiner) normalCount++;
-                if (isAfter) afterP++;
-            }
+            row.push(normalCount, stopCount, afterP, afterA, afterP * 2, price, normalCount * price);
+            csvRows.push(row.join(','));
+            
+            classNormal += normalCount;
+            classStop += stopCount;
+            classAfterP += afterP;
+            classAfterA += afterA;
+            totalNormalAll += normalCount;
+            totalStopAll += stopCount;
+            totalAfterPAll += afterP;
+            totalAfterAAll += afterA;
         }
         
-        row.push(normalCount, stopCount, afterP, afterA, afterP * 2, price, normalCount * price);
-        csvRows.push(row.join(','));
-        totalNormal += normalCount;
-        totalStop += stopCount;
-        totalAfterP += afterP;
-        totalAfterA += afterA;
+        // 班级小计
+        var classTotalRow = ['小计', '', ''];
+        for (var d = 1; d <= daysInMonth; d++) {
+            var dateStr = year + '-' + String(mon).padStart(2,'0') + '-' + String(d).padStart(2,'0');
+            var isHoliday = attendanceRecords[dateStr] && attendanceRecords[dateStr]._holiday === true;
+            var dayOfWeek = new Date(year, mon - 1, d).getDay();
+            if (isHoliday) classTotalRow.push('放');
+            else if (dayOfWeek !== 0 && dayOfWeek !== 6) classTotalRow.push('');
+        }
+        classTotalRow.push(classNormal, classStop, classAfterP, classAfterA, classAfterP * 2, '', classNormal * price);
+        csvRows.push(classTotalRow.join(','));
+        csvRows.push('班级人数：' + classStudentCount + ' 人');
     }
     
-    // 合计行
-    var totalRow = ['合计', '', ''];
-    for (var d = 1; d <= daysInMonth; d++) {
-        var dateStr = year + '-' + String(mon).padStart(2,'0') + '-' + String(d).padStart(2,'0');
-        var isHoliday = attendanceRecords[dateStr] && attendanceRecords[dateStr]._holiday === true;
-        var dayOfWeek = new Date(year, mon - 1, d).getDay();
-        if (isHoliday) totalRow.push('放假');
-        else if (dayOfWeek !== 0 && dayOfWeek !== 6) totalRow.push('');
+    // ================================================================
+    //  全校/全年级合计行
+    // ================================================================
+    if (targetKeys.length > 1) {
+        csvRows.push('');
+        csvRows.push('【合计】');
+        var totalRow = ['合计', '', ''];
+        for (var d = 1; d <= daysInMonth; d++) {
+            var dateStr = year + '-' + String(mon).padStart(2,'0') + '-' + String(d).padStart(2,'0');
+            var isHoliday = attendanceRecords[dateStr] && attendanceRecords[dateStr]._holiday === true;
+            var dayOfWeek = new Date(year, mon - 1, d).getDay();
+            if (isHoliday) totalRow.push('放');
+            else if (dayOfWeek !== 0 && dayOfWeek !== 6) totalRow.push('');
+        }
+        totalRow.push(totalNormalAll, totalStopAll, totalAfterPAll, totalAfterAAll, totalAfterPAll * 2, '', totalNormalAll * price);
+        csvRows.push(totalRow.join(','));
+        csvRows.push('总人数：' + allStudentCount + ' 人');
     }
-    totalRow.push(totalNormal, totalStop, totalAfterP, totalAfterA, totalAfterP * 2, '', totalNormal * price);
-    csvRows.push(totalRow.join(','));
     
+    // ================================================================
+    //  导出文件
+    // ================================================================
     var csvContent = csvRows.join('\n');
     var blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
     var link = document.createElement('a');
     link.href = URL.createObjectURL(blob);
     link.download = allClassNames + '_' + month + '_统计报账单.csv';
     link.click();
-    showToast('✅ ' + allClassNames + ' 导出成功！共 ' + allStudents.length + ' 名学生');
+    showToast('✅ ' + allClassNames + ' 导出成功！共 ' + allStudentCount + ' 名学生');
 }
 
     // ================================================================
