@@ -504,7 +504,6 @@
     loadAllDataFromServer().then(function() {
         updateStats();
         updateSeatStatus();
-        ();
         // 如果是领导（超级管理员/管理员/校委会/级委会），刷新总览页面
         if (currentUser && (currentUser.role === '超级管理员' || currentUser.role === '管理员' || currentUser.role === '校委会' || currentUser.role === '级委会')) {
             renderDashboard();
