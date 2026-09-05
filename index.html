@@ -504,7 +504,7 @@
     loadAllDataFromServer().then(function() {
         updateStats();
         updateSeatStatus();
-        updateHeaderStats();
+        ();
         // 如果是领导（超级管理员/管理员/校委会/级委会），刷新总览页面
         if (currentUser && (currentUser.role === '超级管理员' || currentUser.role === '管理员' || currentUser.role === '校委会' || currentUser.role === '级委会')) {
             renderDashboard();
@@ -822,7 +822,7 @@
         saveAllDataToServer().then(function() {
             updateStats();
             updateSeatStatus();
-            updateHeaderStats();
+            ();
             showToast(checked ? '📅 今日已设为放假，数据不计入统计' : '📅 今日已取消放假，恢复正常统计');
             renderHolidayBar();
         });
@@ -994,7 +994,7 @@ if (superEntry) {
         superEntry.classList.add('hidden');
     }
 }
-        updateHeaderStats();
+        ();
         renderHolidayBar();
     }
 
@@ -1048,25 +1048,24 @@ if (superEntry) {
     }
 
     function updateHeaderStats() {
-        var data = getCurrentData();
-        var students = data.students || [];
-        var diners = data.diners || {};
-        var afterSchool = data.afterSchool || {};
-        var dinerCount = 0, afterCount = 0;
-        for (var i = 0; i < students.length; i++) {
-            var name = students[i];
-            if (!name || name.trim() === '') continue;
-            if (diners[name]) dinerCount++;
-            // 课后人数：只要参加任一节就算
-if (afterSchool[name] || (data.afterClass1 && data.afterClass1[name]) || (data.afterClass2 && data.afterClass2[name])) {
-    afterCount++;
-}
-        }
-        var dinerEl = $('headerDinerStats');
-        if (dinerEl) dinerEl.textContent = '🍱 就餐: ' + dinerCount + '人';
-        var afterEl = $('headerAfterStats');
-        if (afterEl) afterEl.textContent = '📚 课后: ' + afterCount + '人';
+    var data = getCurrentData();
+    var students = data.students || [];
+    var diners = data.diners || {};
+    var afterClass1 = data.afterClass1 || {};
+    var afterClass2 = data.afterClass2 || {};
+    var dinerCount = 0, afterCount = 0;
+    for (var i = 0; i < students.length; i++) {
+        var name = students[i];
+        if (!name || name.trim() === '') continue;
+        if (diners[name]) dinerCount++;
+        // 只要参加任意一节就算参加课后
+        if (afterClass1[name] || afterClass2[name]) afterCount++;
     }
+    var dinerEl = $('headerDinerStats');
+    if (dinerEl) dinerEl.textContent = '🍱 就餐: ' + dinerCount + '人';
+    var afterEl = $('headerAfterStats');
+    if (afterEl) afterEl.textContent = '📚 课后: ' + afterCount + '人';
+}
 
     function saveDataToServer() { saveAllDataToServer(); }
 
@@ -1515,7 +1514,7 @@ if (currentUser && (currentUser.role === '超级管理员' || currentUser.role =
         }
         html += '</div>';
         html += '<div class="admin-table-wrap"><table class="admin-table"><thead><tr>' +
-            '<th style="width:30px;">选</th><th>序号</th><th>姓名</th><th>🍱 就餐</th><th>📚 课后</th><th>操作</th></tr></thead><tbody>';
+            '<th style="width:30px;">选</th><th>序号</th><th>姓名</th><th>🍱 就餐</th><th>📚 课后1</th><th>📚 课后2</th><th>操作</th>';
         for (var i = 0; i < students.length; i++) {
             var name = students[i];
             var isEmpty = !name || name.trim() === '';
@@ -1525,7 +1524,12 @@ if (currentUser && (currentUser.role === '超级管理员' || currentUser.role =
             var checked = (selected !== undefined && selected !== null && selected === i) ? 'checked' : '';
             var dinerDisabled = dinerCanEdit && !isEmpty ? '' : 'disabled';
             var dinerCheckbox = !isEmpty ? '<input type="checkbox" ' + isDiner + ' ' + dinerDisabled + ' onchange="updateStudentDiner(' + i + ', this.checked)">' : '—';
-            var afterCheckbox = !isEmpty ? '<input type="checkbox" ' + isAfter + ' onchange="updateStudentAfterSchool(' + i + ', this.checked)">' : '—';
+            var afterClass1 = data.afterClass1 || {};
+var afterClass2 = data.afterClass2 || {};
+var isAfter1 = !isEmpty && afterClass1[name] ? 'checked' : '';
+var isAfter2 = !isEmpty && afterClass2[name] ? 'checked' : '';
+var afterCheckbox1 = !isEmpty ? '<input type="checkbox" ' + isAfter1 + ' onchange="updateStudentAfterClass(' + i + ', 1, this.checked)">' : '—';
+var afterCheckbox2 = !isEmpty ? '<input type="checkbox" ' + isAfter2 + ' onchange="updateStudentAfterClass(' + i + ', 2, this.checked)">' : '—';
             var delBtn = !isEmpty ? '<button class="del-btn" onclick="deleteStudent(' + i + ')">✕</button>' : '';
             html += '<tr>' +
                 '<td><input type="checkbox" ' + checked + ' onclick="selectSeat(' + i + ')" style="width:18px;height:18px;cursor:pointer;"></td>' +
@@ -1744,6 +1748,25 @@ data.afterSchool[name] = true;  // 兼容旧数据
         saveAllDataToServer().then(function() { showToast('✅ 已更新课后服务状态'); updateHeaderStats(); });
     }
 
+        function updateStudentAfterClass(index, classNum, checked) {
+    var data = getCurrentData();
+    var name = data.students[index];
+    if (!name || name.trim() === '') { showToast('空座位无需设置'); return; }
+    var field = classNum === 1 ? 'afterClass1' : 'afterClass2';
+    if (!data[field]) data[field] = {};
+    data[field][name] = checked;
+    // 同步更新 afterSchool 兼容字段
+    if (!data.afterSchool) data.afterSchool = {};
+    var after1 = data.afterClass1 && data.afterClass1[name] || false;
+    var after2 = data.afterClass2 && data.afterClass2[name] || false;
+    data.afterSchool[name] = after1 || after2;
+    CLASS_DATA_LIST[currentClassKey] = data;
+    saveAllDataToServer().then(function() {
+        showToast('✅ 已更新课后服务状态');
+        updateHeaderStats();
+        renderAdminStudents(data);
+    });
+}
     // ================================================================
     //  座位列数更新函数
     // ================================================================
@@ -2032,17 +2055,17 @@ data.afterSchool[name] = true;  // 兼容旧数据
     }
     
     // ================================================================
-    //  按班级依次导出
+    //  按班级依次导出（就餐和课后分开统计，课后分两节）
     // ================================================================
     var year = parseInt(month.substring(0, 4));
     var mon = parseInt(month.substring(5, 7));
     var daysInMonth = new Date(year, mon, 0).getDate();
     var csvRows = [];
-    var totalNormalAll = 0, totalStopAll = 0, totalAfterPAll = 0, totalAfterAAll = 0;
-    var totalMealFeeAll = 0, totalAfterFeeAll = 0;
+    var totalDinerNormal = 0, totalDinerStop = 0;
+    var totalAfter1P = 0, totalAfter1A = 0, totalAfter2P = 0, totalAfter2A = 0;
+    var totalMealFee = 0, totalAfterFee = 0;
     var allStudentCount = 0;
     
-    // 遍历每个班级
     for (var t = 0; t < targetKeys.length; t++) {
         var classKey = targetKeys[t];
         var cls = CLASS_DATA_LIST[classKey];
@@ -2050,9 +2073,9 @@ data.afterSchool[name] = true;  // 兼容旧数据
         var className = cls.className || classKey;
         var students = cls.students || [];
         var diners = cls.diners || {};
-        var afterSchool = cls.afterSchool || {};
+        var afterClass1 = cls.afterClass1 || {};
+        var afterClass2 = cls.afterClass2 || {};
         
-        // 如果没有学生，跳过
         var hasStudent = false;
         for (var s = 0; s < students.length; s++) {
             if (students[s] && students[s].trim() !== '') {
@@ -2062,10 +2085,7 @@ data.afterSchool[name] = true;  // 兼容旧数据
         }
         if (!hasStudent) continue;
         
-        // 班级标题行
-        if (csvRows.length > 0) {
-            csvRows.push('');
-        }
+        if (csvRows.length > 0) csvRows.push('');
         csvRows.push('【' + className + '】');
         
         // 表头
@@ -2080,12 +2100,13 @@ data.afterSchool[name] = true;  // 兼容旧数据
                 header.push(d + '日');
             }
         }
-        header.push('正常', '停餐', '天数', '费用');
+        header.push('正常', '停餐/缺', '天数', '费用');
         csvRows.push(header.join(','));
         
-        var classDinerNormal = 0, classDinerStop = 0, classAfterP = 0, classAfterA = 0;
-        var classStudentCount = 0;
+        var classDinerNormal = 0, classDinerStop = 0;
+        var classAfter1P = 0, classAfter1A = 0, classAfter2P = 0, classAfter2A = 0;
         var classMealTotal = 0, classAfterTotal = 0;
+        var classStudentCount = 0;
         
         for (var i = 0; i < students.length; i++) {
             var name = students[i];
@@ -2094,7 +2115,8 @@ data.afterSchool[name] = true;  // 兼容旧数据
             allStudentCount++;
             
             var isDiner = diners[name] || false;
-            var isAfter = afterSchool[name] || false;
+            var isAfter1 = afterClass1[name] || false;
+            var isAfter2 = afterClass2[name] || false;
             var studentGrade = getStudentGrade(name, classKey);
             var fees = getGradeFees(studentGrade);
             
@@ -2143,11 +2165,10 @@ data.afterSchool[name] = true;  // 兼容旧数据
                 csvRows.push(row.join(','));
             }
             
-            // ===== 课后行 =====
-            if (isAfter) {
-                var row = [name, '课后'];
-                var presentCount = 0, absentCount = 0;
-                // 判断该生年级和星期几，决定每天应上几节课（一二年级周一1节，其他2节）
+            // ===== 课后第一节 =====
+            if (isAfter1) {
+                var row = [name, '课后1'];
+                var p1 = 0, a1 = 0;
                 for (var d = 1; d <= daysInMonth; d++) {
                     var dateStr = year + '-' + String(mon).padStart(2,'0') + '-' + String(d).padStart(2,'0');
                     var isHoliday = attendanceRecords[dateStr] && attendanceRecords[dateStr]._holiday === true;
@@ -2155,10 +2176,56 @@ data.afterSchool[name] = true;  // 兼容旧数据
                     var dayOfWeek = new Date(year, mon - 1, d).getDay();
                     if (dayOfWeek === 0 || dayOfWeek === 6) { continue; }
                     
-                    // 一二年级周一只有1节，其他2节
-                    var shouldHaveClass = 2;
+                    // 判断当天是否有第一节（一二年级周一只有1节，但第一节是有的）
+                    var status = 'present';
+                    if (attendanceRecords[dateStr] && attendanceRecords[dateStr][classKey] && attendanceRecords[dateStr][classKey][name]) {
+                        status = attendanceRecords[dateStr][classKey][name];
+                    }
+                    
+                    if (status === 'leave' || status === 'absent') {
+                        row.push('缺');
+                        a1++;
+                    } else {
+                        row.push('到');
+                        p1++;
+                    }
+                }
+                var total1 = p1 + a1;
+                var fee1 = p1 * fees.after;
+                row.push(p1, a1, total1, fee1);
+                csvRows.push(row.join(','));
+                classAfter1P += p1;
+                classAfter1A += a1;
+                classAfterTotal += fee1;
+            } else {
+                var row = [name, '课后1(不参加)'];
+                for (var d = 1; d <= daysInMonth; d++) {
+                    var dateStr = year + '-' + String(mon).padStart(2,'0') + '-' + String(d).padStart(2,'0');
+                    var isHoliday = attendanceRecords[dateStr] && attendanceRecords[dateStr]._holiday === true;
+                    if (isHoliday) { row.push('放'); continue; }
+                    var dayOfWeek = new Date(year, mon - 1, d).getDay();
+                    if (dayOfWeek === 0 || dayOfWeek === 6) { continue; }
+                    row.push('-');
+                }
+                row.push(0, 0, 0, 0);
+                csvRows.push(row.join(','));
+            }
+            
+            // ===== 课后第二节 =====
+            if (isAfter2) {
+                var row = [name, '课后2'];
+                var p2 = 0, a2 = 0;
+                for (var d = 1; d <= daysInMonth; d++) {
+                    var dateStr = year + '-' + String(mon).padStart(2,'0') + '-' + String(d).padStart(2,'0');
+                    var isHoliday = attendanceRecords[dateStr] && attendanceRecords[dateStr]._holiday === true;
+                    if (isHoliday) { row.push('放'); continue; }
+                    var dayOfWeek = new Date(year, mon - 1, d).getDay();
+                    if (dayOfWeek === 0 || dayOfWeek === 6) { continue; }
+                    
+                    // 一二年级周一没有第二节，直接标记为"无"
                     if ((studentGrade === '一年级' || studentGrade === '二年级') && dayOfWeek === 1) {
-                        shouldHaveClass = 1;
+                        row.push('无');
+                        continue;
                     }
                     
                     var status = 'present';
@@ -2168,21 +2235,21 @@ data.afterSchool[name] = true;  // 兼容旧数据
                     
                     if (status === 'leave' || status === 'absent') {
                         row.push('缺');
-                        absentCount += shouldHaveClass;
+                        a2++;
                     } else {
                         row.push('到');
-                        presentCount += shouldHaveClass;
+                        p2++;
                     }
                 }
-                var totalAfterDays = presentCount + absentCount;
-                var afterFee = presentCount * fees.after;
-                row.push(presentCount, absentCount, totalAfterDays, afterFee);
+                var total2 = p2 + a2;
+                var fee2 = p2 * fees.after;
+                row.push(p2, a2, total2, fee2);
                 csvRows.push(row.join(','));
-                classAfterP += presentCount;
-                classAfterA += absentCount;
-                classAfterTotal += afterFee;
+                classAfter2P += p2;
+                classAfter2A += a2;
+                classAfterTotal += fee2;
             } else {
-                var row = [name, '课后(不参加)'];
+                var row = [name, '课后2(不参加)'];
                 for (var d = 1; d <= daysInMonth; d++) {
                     var dateStr = year + '-' + String(mon).padStart(2,'0') + '-' + String(d).padStart(2,'0');
                     var isHoliday = attendanceRecords[dateStr] && attendanceRecords[dateStr]._holiday === true;
@@ -2197,16 +2264,20 @@ data.afterSchool[name] = true;  // 兼容旧数据
         }
         
         // 班级小计
-        csvRows.push('小计,就餐,' + ','.repeat(daysInMonth - 2) + ',' + classDinerNormal + ',' + classDinerStop + ',' + (classDinerNormal + classDinerStop) + ',' + classMealTotal);
-        csvRows.push('小计,课后,' + ','.repeat(daysInMonth - 2) + ',' + classAfterP + ',' + classAfterA + ',' + (classAfterP + classAfterA) + ',' + classAfterTotal);
+        var daysPlaceholder = ','.repeat(daysInMonth - 2);
+        csvRows.push('小计,就餐,' + daysPlaceholder + ',' + classDinerNormal + ',' + classDinerStop + ',' + (classDinerNormal + classDinerStop) + ',' + classMealTotal);
+        csvRows.push('小计,课后1,' + daysPlaceholder + ',' + classAfter1P + ',' + classAfter1A + ',' + (classAfter1P + classAfter1A) + ',' + (classAfter1P * getGradeFees(getStudentGrade('', classKey)).after));
+        csvRows.push('小计,课后2,' + daysPlaceholder + ',' + classAfter2P + ',' + classAfter2A + ',' + (classAfter2P + classAfter2A) + ',' + (classAfter2P * getGradeFees(getStudentGrade('', classKey)).after));
         csvRows.push('班级人数：' + classStudentCount + ' 人');
         
-        totalNormalAll += classDinerNormal;
-        totalStopAll += classDinerStop;
-        totalAfterPAll += classAfterP;
-        totalAfterAAll += classAfterA;
-        totalMealFeeAll += classMealTotal;
-        totalAfterFeeAll += classAfterTotal;
+        totalDinerNormal += classDinerNormal;
+        totalDinerStop += classDinerStop;
+        totalAfter1P += classAfter1P;
+        totalAfter1A += classAfter1A;
+        totalAfter2P += classAfter2P;
+        totalAfter2A += classAfter2A;
+        totalMealFee += classMealTotal;
+        totalAfterFee += classAfterTotal;
     }
     
     // ================================================================
@@ -2215,8 +2286,10 @@ data.afterSchool[name] = true;  // 兼容旧数据
     if (targetKeys.length > 1) {
         csvRows.push('');
         csvRows.push('【合计】');
-        csvRows.push('合计,就餐,' + ','.repeat(daysInMonth - 2) + ',' + totalNormalAll + ',' + totalStopAll + ',' + (totalNormalAll + totalStopAll) + ',' + totalMealFeeAll);
-        csvRows.push('合计,课后,' + ','.repeat(daysInMonth - 2) + ',' + totalAfterPAll + ',' + totalAfterAAll + ',' + (totalAfterPAll + totalAfterAAll) + ',' + totalAfterFeeAll);
+        var daysPlaceholder = ','.repeat(daysInMonth - 2);
+        csvRows.push('合计,就餐,' + daysPlaceholder + ',' + totalDinerNormal + ',' + totalDinerStop + ',' + (totalDinerNormal + totalDinerStop) + ',' + totalMealFee);
+        csvRows.push('合计,课后1,' + daysPlaceholder + ',' + totalAfter1P + ',' + totalAfter1A + ',' + (totalAfter1P + totalAfter1A) + ',' + (totalAfter1P * 5));
+        csvRows.push('合计,课后2,' + daysPlaceholder + ',' + totalAfter2P + ',' + totalAfter2A + ',' + (totalAfter2P + totalAfter2A) + ',' + (totalAfter2P * 5));
         csvRows.push('总人数：' + allStudentCount + ' 人');
     }
     
