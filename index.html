@@ -134,9 +134,32 @@
         .submit-btn:disabled{opacity:.5;cursor:not-allowed}
         .toast{position:fixed;bottom:30px;left:50%;transform:translateX(-50%);background:#333;color:#fff;padding:10px 24px;border-radius:30px;font-size:14px;opacity:0;transition:opacity .3s;pointer-events:none;z-index:9998;white-space:nowrap;max-width:90%;overflow:hidden;text-overflow:ellipsis}
         .toast.show{opacity:1}
-        .admin-entry{margin-top:16px;padding-top:14px;border-top:1px solid #eee;text-align:center}
-        .admin-entry .admin-btn{padding:10px 20px;border-radius:10px;border:1px solid #4A90D9;background:#fff;color:#4A90D9;font-size:13px;font-weight:500;cursor:pointer;margin:4px}
-        .admin-entry .admin-btn:active{transform:scale(0.96)}
+        .admin-entry {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    justify-content: center;
+    padding-top: 14px;
+    border-top: 1px solid #eee;
+    margin-top: 16px;
+}
+.admin-entry .admin-btn {
+    flex: 1;
+    min-width: 60px;
+    padding: 8px 12px;
+    border-radius: 8px;
+    border: 1px solid #4A90D9;
+    background: #fff;
+    color: #4A90D9;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    text-align: center;
+    margin: 0;
+}
+.admin-entry .admin-btn:active {
+    transform: scale(0.96);
+}
         .admin-tabs{display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap}
         .admin-tabs button{padding:8px 12px;border-radius:8px;border:1px solid #E5E7EB;background:#fff;font-size:12px;cursor:pointer;flex:1;min-width:60px}
         .admin-tabs button.active{background:#4A90D9;color:#fff;border-color:#4A90D9}
@@ -954,10 +977,22 @@
             else se.classList.add('hidden');
         }
         var superEntry = $('superAdminEntry');
-        if (superEntry) {
-            if (canManageUsers(currentUser) || canManageClasses(currentUser)) superEntry.classList.remove('hidden');
-            else superEntry.classList.add('hidden');
+if (superEntry) {
+    if (currentUser && (currentUser.role === '班主任' || currentUser.role === '级委会')) {
+        superEntry.classList.remove('hidden');
+        var btns = superEntry.querySelectorAll('.admin-btn');
+        for (var i = 0; i < btns.length; i++) {
+            var text = btns[i].textContent;
+            if (text.indexOf('教师账号') !== -1 || text.indexOf('系统配置') !== -1) {
+                btns[i].style.display = 'none';
+            }
         }
+    } else if (canManageUsers(currentUser) || canManageClasses(currentUser)) {
+        superEntry.classList.remove('hidden');
+    } else {
+        superEntry.classList.add('hidden');
+    }
+}
         updateHeaderStats();
         renderHolidayBar();
     }
