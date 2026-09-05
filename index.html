@@ -1494,62 +1494,60 @@ if (currentUser && (currentUser.role === '超级管理员' || currentUser.role =
     //  学生管理（含调座、空座位）
     // ================================================================
     function renderAdminStudents(data) {
-        var students = data.students || [];
-        var diners = data.diners || {};
-        var afterSchool = data.afterSchool || {};
-        var selected = _selectedSeatIndex;
-        var html = '';
-        html += '<div style="margin-bottom:8px;font-size:13px;color:#555;">';
-        if (selected !== undefined && selected !== null && students[selected]) {
-            var name = students[selected];
-            if (name && name.trim() !== '') html += '已选：<strong style="color:#4A90D9;">' + name + '</strong>（座位' + (selected + 1) + '）';
-            else html += '已选：<strong style="color:#999;">空座位</strong>（座位' + (selected + 1) + '）';
-            html += ' <button onclick="swapSeats()" style="padding:4px 16px;border:none;border-radius:6px;background:#F39C12;color:#fff;cursor:pointer;font-size:13px;">🔄 交换座位</button>';
-            html += ' <button onclick="clearSelectedSeat()" style="padding:4px 12px;border:none;border-radius:6px;background:#ccc;color:#333;cursor:pointer;font-size:13px;">取消选择</button>';
-        } else {
-            html += '💡 勾选两名学生，点击"交换座位"即可调座';
-        }
-        html += '</div>';
-        html += '<div class="admin-table-wrap"><table class="admin-table"><thead><tr>' +
-            '<th style="width:30px;">选</th><th>序号</th><th>姓名</th><th>🍱 就餐</th><th>📚 课后1</th><th>📚 课后2</th><th>操作</th>';
-        for (var i = 0; i < students.length; i++) {
-            var name = students[i];
-            var isEmpty = !name || name.trim() === '';
-            var displayName = isEmpty ? '🪑 空座' : name;
-            var isDiner = !isEmpty && diners[name] ? 'checked' : '';
-            var isAfter = !isEmpty && afterSchool[name] ? 'checked' : '';
-            var checked = (selected !== undefined && selected !== null && selected === i) ? 'checked' : '';
-            var dinerDisabled = dinerCanEdit && !isEmpty ? '' : 'disabled';
-            var dinerCheckbox = !isEmpty ? '<input type="checkbox" ' + isDiner + ' ' + dinerDisabled + ' onchange="updateStudentDiner(' + i + ', this.checked)">' : '—';
-            var afterClass1 = data.afterClass1 || {};
-var afterClass2 = data.afterClass2 || {};
-var isAfter1 = !isEmpty && afterClass1[name] ? 'checked' : '';
-var isAfter2 = !isEmpty && afterClass2[name] ? 'checked' : '';
-var afterCheckbox1 = !isEmpty ? '<input type="checkbox" ' + isAfter1 + ' onchange="updateStudentAfterClass(' + i + ', 1, this.checked)">' : '—';
-var afterCheckbox2 = !isEmpty ? '<input type="checkbox" ' + isAfter2 + ' onchange="updateStudentAfterClass(' + i + ', 2, this.checked)">' : '—';
-            var delBtn = !isEmpty ? '<button class="del-btn" onclick="deleteStudent(' + i + ')">✕</button>' : '';
-            html += '<tr>' +
-                '<td><input type="checkbox" ' + checked + ' onclick="selectSeat(' + i + ')" style="width:18px;height:18px;cursor:pointer;"></td>' +
-                '<td>' + (i + 1) + '</td>' +
-                '<td>' + displayName + '</td>' +
-                '<td>' + dinerCheckbox + '</td>' +
-                '<td>' + afterCheckbox + '</td>' +
-                '<td>' + delBtn + '<button class="edit-btn" onclick="setSeatEmpty(' + i + ')" style="color:#999;" title="设为空座位">🪑</button></td></tr>';
-        }
-        html += '</tbody></table></div>';
-        html += '<div class="admin-add-row">' +
-            '<input type="text" id="newStudentName" placeholder="输入新学生姓名">' +
-            '<label style="display:flex;align-items:center;gap:4px;font-size:13px;color:#666;"><input type="checkbox" id="newStudentDiner" checked> 就餐</label>' +
-            '<label style="display:flex;align-items:center;gap:4px;font-size:13px;color:#666;"><input type="checkbox" id="newStudentAfter" checked> 课后</label>' +
-            '<button onclick="addStudent()">➕ 添加</button>' +
-            '</div>' +
-            '<div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap;">' +
-            '<button onclick="batchAddStudents()" style="padding:6px 16px;border:1px solid #4A90D9;border-radius:6px;background:white;color:#4A90D9;font-size:13px;cursor:pointer;">📋 批量添加</button>' +
-            '<button onclick="shuffleSeats()" style="padding:6px 16px;border:1px solid #F39C12;border-radius:6px;background:white;color:#F39C12;font-size:13px;cursor:pointer;">🎲 随机调座</button>' +
-            '</div>';
-        return html;
+    var students = data.students || [];
+    var diners = data.diners || {};
+    var afterClass1 = data.afterClass1 || {};
+    var afterClass2 = data.afterClass2 || {};
+    var selected = _selectedSeatIndex;
+    var html = '';
+    html += '<div style="margin-bottom:8px;font-size:13px;color:#555;">';
+    if (selected !== undefined && selected !== null && students[selected]) {
+        var name = students[selected];
+        if (name && name.trim() !== '') html += '已选：<strong style="color:#4A90D9;">' + name + '</strong>（座位' + (selected + 1) + '）';
+        else html += '已选：<strong style="color:#999;">空座位</strong>（座位' + (selected + 1) + '）';
+        html += ' <button onclick="swapSeats()" style="padding:4px 16px;border:none;border-radius:6px;background:#F39C12;color:#fff;cursor:pointer;font-size:13px;">🔄 交换座位</button>';
+        html += ' <button onclick="clearSelectedSeat()" style="padding:4px 12px;border:none;border-radius:6px;background:#ccc;color:#333;cursor:pointer;font-size:13px;">取消选择</button>';
+    } else {
+        html += '💡 勾选两名学生，点击"交换座位"即可调座';
     }
-
+    html += '</div>';
+    html += '<div class="admin-table-wrap"><table class="admin-table"><thead><tr>' +
+        '<th style="width:30px;">选</th><th>序号</th><th>姓名</th><th>🍱 就餐</th><th>📚 课后1</th><th>📚 课后2</th><th>操作</th></tr></thead><tbody>';
+    for (var i = 0; i < students.length; i++) {
+        var name = students[i];
+        var isEmpty = !name || name.trim() === '';
+        var displayName = isEmpty ? '🪑 空座' : name;
+        var isDiner = !isEmpty && diners[name] ? 'checked' : '';
+        var isAfter1 = !isEmpty && afterClass1[name] ? 'checked' : '';
+        var isAfter2 = !isEmpty && afterClass2[name] ? 'checked' : '';
+        var checked = (selected !== undefined && selected !== null && selected === i) ? 'checked' : '';
+        var dinerDisabled = dinerCanEdit && !isEmpty ? '' : 'disabled';
+        var dinerCheckbox = !isEmpty ? '<input type="checkbox" ' + isDiner + ' ' + dinerDisabled + ' onchange="updateStudentDiner(' + i + ', this.checked)">' : '—';
+        var afterCheckbox1 = !isEmpty ? '<input type="checkbox" ' + isAfter1 + ' onchange="updateStudentAfterClass(' + i + ', 1, this.checked)">' : '—';
+        var afterCheckbox2 = !isEmpty ? '<input type="checkbox" ' + isAfter2 + ' onchange="updateStudentAfterClass(' + i + ', 2, this.checked)">' : '—';
+        var delBtn = !isEmpty ? '<button class="del-btn" onclick="deleteStudent(' + i + ')">✕</button>' : '';
+        html += '<tr>' +
+            '<td><input type="checkbox" ' + checked + ' onclick="selectSeat(' + i + ')" style="width:18px;height:18px;cursor:pointer;"></td>' +
+            '<td>' + (i + 1) + '</td>' +
+            '<td>' + displayName + '</td>' +
+            '<td>' + dinerCheckbox + '</td>' +
+            '<td>' + afterCheckbox1 + '</td>' +
+            '<td>' + afterCheckbox2 + '</td>' +
+            '<td>' + delBtn + '<button class="edit-btn" onclick="setSeatEmpty(' + i + ')" style="color:#999;" title="设为空座位">🪑</button></td></tr>';
+    }
+    html += '</tbody></table></div>';
+    html += '<div class="admin-add-row">' +
+        '<input type="text" id="newStudentName" placeholder="输入新学生姓名">' +
+        '<label style="display:flex;align-items:center;gap:4px;font-size:13px;color:#666;"><input type="checkbox" id="newStudentDiner" checked> 就餐</label>' +
+        '<label style="display:flex;align-items:center;gap:4px;font-size:13px;color:#666;opacity:0.6;">📚 默认参加两节课后服务</label>' +
+        '<button onclick="addStudent()">➕ 添加</button>' +
+        '</div>' +
+        '<div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap;">' +
+        '<button onclick="batchAddStudents()" style="padding:6px 16px;border:1px solid #4A90D9;border-radius:6px;background:white;color:#4A90D9;font-size:13px;cursor:pointer;">📋 批量添加</button>' +
+        '<button onclick="shuffleSeats()" style="padding:6px 16px;border:1px solid #F39C12;border-radius:6px;background:white;color:#F39C12;font-size:13px;cursor:pointer;">🎲 随机调座</button>' +
+        '</div>';
+    return html;
+}
     function selectSeat(index) {
         var students = getCurrentStudents();
         if (!students || index >= students.length) return;
