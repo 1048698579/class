@@ -359,9 +359,10 @@
             </div>
             <div class="section-label">🍱 就餐与课后服务</div>
             <div class="diner-checkbox-row" id="dinerCheckboxRow">
-                <label id="dinerLabel"><input type="checkbox" id="studentDinerCheck"> 在校就餐</label>
-                <label id="afterLabel"><input type="checkbox" id="studentAfterCheck"> 参加课后服务</label>
-            </div>
+    <label id="dinerLabel"><input type="checkbox" id="studentDinerCheck"> 在校就餐</label>
+    <label id="afterLabel1"><input type="checkbox" id="studentAfterCheck1"> 课后服务(第一节)</label>
+    <label id="afterLabel2"><input type="checkbox" id="studentAfterCheck2"> 课后服务(第二节)</label>
+</div>
             <div id="dinerLockTip" style="font-size:12px;color:#856404;text-align:center;margin-top:4px;display:none;">⏰ 已超过就餐调整时间，不可修改就餐状态</div>
             <div class="section-label">🌟 课堂表现</div>
             <div class="comment-group-label">👍 表扬</div>
@@ -1056,7 +1057,10 @@ if (superEntry) {
             var name = students[i];
             if (!name || name.trim() === '') continue;
             if (diners[name]) dinerCount++;
-            if (afterSchool[name]) afterCount++;
+            // 课后人数：只要参加任一节就算
+if (afterSchool[name] || (data.afterClass1 && data.afterClass1[name]) || (data.afterClass2 && data.afterClass2[name])) {
+    afterCount++;
+}
         }
         var dinerEl = $('headerDinerStats');
         if (dinerEl) dinerEl.textContent = '🍱 就餐: ' + dinerCount + '人';
@@ -1125,74 +1129,101 @@ if (superEntry) {
     //  弹窗控制
     // ================================================================
     function openStudentModal(index) {
-        if (!currentUser) { showToast('🔒 请先登录'); return; }
-        var students = getCurrentStudents();
-        if (!students || index >= students.length) { showToast('⚠️ 学生不存在'); return; }
-        if (!canComment(currentUser, currentClassKey) && !canEditClass(currentUser, currentClassKey)) {
-            showToast('🔒 您无权操作该班');
-            return;
-        }
-        selectedStudentIndex = index;
-        var data = getCurrentData();
-        var name = students[index];
-        if (!name || name.trim() === '') { showToast('🪑 该座位为空，无需点评'); return; }
-        $('studentModalName').textContent = name;
-        $('studentModalInfo').textContent = data.className + ' · 座位号 ' + (index + 1);
-        $('studentComment').value = '';
-        $('studentComment').style.height = 'auto';
-        var dinerCheck = $('studentDinerCheck');
-        var afterCheck = $('studentAfterCheck');
-        var diners = data.diners || {};
-        var afterSchool = data.afterSchool || {};
-        if (dinerCheck) dinerCheck.checked = diners[name] || false;
-        if (afterCheck) afterCheck.checked = afterSchool[name] || false;
-        var dinerLabel = $('dinerLabel');
-        var lockTip = $('dinerLockTip');
-        if (!dinerCanEdit) {
-            if (dinerCheck) dinerCheck.disabled = true;
-            if (dinerLabel) dinerLabel.className = 'disabled-label';
-            if (lockTip) lockTip.style.display = 'block';
-        } else {
-            if (dinerCheck) dinerCheck.disabled = false;
-            if (dinerLabel) dinerLabel.className = '';
-            if (lockTip) lockTip.style.display = 'none';
-        }
-        var canEdit = canEditClass(currentUser, currentClassKey);
-        var canCommentFlag = canComment(currentUser, currentClassKey);
-        var btns = document.querySelectorAll('#studentStatusGrid .status-btn');
-        for (var i = 0; i < btns.length; i++) btns[i].style.display = canEdit ? '' : 'none';
-        var praiseGrid = $('praiseGrid');
-        if (praiseGrid) praiseGrid.style.display = canCommentFlag ? '' : 'none';
-        var negGrid = $('negativeGrid');
-        if (negGrid) negGrid.style.display = canCommentFlag ? '' : 'none';
-        if (canCommentFlag) renderQuickComments();
-        $('studentModal').classList.add('active');
-        setTimeout(function() {
-            var submitBtn = $('studentSubmitBtn');
-            if (submitBtn) {
-                submitBtn.onclick = function() {
-                    var status = seatStatus[selectedStudentIndex] || 'present';
-                    if (typeof submitStudent === 'function') {
-                        var dinerChecked = $('studentDinerCheck') ? $('studentDinerCheck').checked : false;
-                        var afterChecked = $('studentAfterCheck') ? $('studentAfterCheck').checked : false;
-                        if (selectedStudentIndex !== null) {
-                            var data2 = getCurrentData();
-                            var name2 = data2.students[selectedStudentIndex];
-                            if (!data2.diners) data2.diners = {};
-                            if (!data2.afterSchool) data2.afterSchool = {};
-                            data2.diners[name2] = dinerChecked;
-                            data2.afterSchool[name2] = afterChecked;
-                            CLASS_DATA_LIST[currentClassKey] = data2;
-                            saveAllDataToServer().then(function() { updateHeaderStats(); });
-                        }
-                        submitStudent(status);
-                    }
-                };
-            }
-            var cancelBtn = $('studentCancelBtn');
-            if (cancelBtn) cancelBtn.onclick = function() { if (typeof closeStudentModal === 'function') closeStudentModal(); };
-        }, 50);
+    if (!currentUser) { showToast('🔒 请先登录'); return; }
+    var students = getCurrentStudents();
+    if (!students || index >= students.length) { showToast('⚠️ 学生不存在'); return; }
+    if (!canComment(currentUser, currentClassKey) && !canEditClass(currentUser, currentClassKey)) {
+        showToast('🔒 您无权操作该班');
+        return;
     }
+    selectedStudentIndex = index;
+    var data = getCurrentData();
+    var name = students[index];
+    if (!name || name.trim() === '') { showToast('🪑 该座位为空，无需点评'); return; }
+    $('studentModalName').textContent = name;
+    $('studentModalInfo').textContent = data.className + ' · 座位号 ' + (index + 1);
+    $('studentComment').value = '';
+    $('studentComment').style.height = 'auto';
+    
+    // 读取就餐和课后状态
+    var dinerCheck = $('studentDinerCheck');
+    var afterCheck1 = $('studentAfterCheck1');
+    var afterCheck2 = $('studentAfterCheck2');
+    var diners = data.diners || {};
+    var afterSchool = data.afterSchool || {};
+    
+    // 兼容旧数据：如果只有旧的 afterSchool 字段，则两节同步
+    var hasOldAfter = afterSchool[name] !== undefined;
+    var after1 = false, after2 = false;
+    if (hasOldAfter) {
+        // 旧数据：把参加课后服务同步到两节
+        after1 = afterSchool[name] || false;
+        after2 = afterSchool[name] || false;
+    } else {
+        // 新数据：分别读取
+        after1 = data.afterClass1 && data.afterClass1[name] || false;
+        after2 = data.afterClass2 && data.afterClass2[name] || false;
+    }
+    
+    if (dinerCheck) dinerCheck.checked = diners[name] || false;
+    if (afterCheck1) afterCheck1.checked = after1;
+    if (afterCheck2) afterCheck2.checked = after2;
+    
+    var dinerLabel = $('dinerLabel');
+    var lockTip = $('dinerLockTip');
+    if (!dinerCanEdit) {
+        if (dinerCheck) dinerCheck.disabled = true;
+        if (dinerLabel) dinerLabel.className = 'disabled-label';
+        if (lockTip) lockTip.style.display = 'block';
+    } else {
+        if (dinerCheck) dinerCheck.disabled = false;
+        if (dinerLabel) dinerLabel.className = '';
+        if (lockTip) lockTip.style.display = 'none';
+    }
+    
+    var canEdit = canEditClass(currentUser, currentClassKey);
+    var canCommentFlag = canComment(currentUser, currentClassKey);
+    var btns = document.querySelectorAll('#studentStatusGrid .status-btn');
+    for (var i = 0; i < btns.length; i++) btns[i].style.display = canEdit ? '' : 'none';
+    var praiseGrid = $('praiseGrid');
+    if (praiseGrid) praiseGrid.style.display = canCommentFlag ? '' : 'none';
+    var negGrid = $('negativeGrid');
+    if (negGrid) negGrid.style.display = canCommentFlag ? '' : 'none';
+    if (canCommentFlag) renderQuickComments();
+    $('studentModal').classList.add('active');
+    
+    setTimeout(function() {
+        var submitBtn = $('studentSubmitBtn');
+        if (submitBtn) {
+            submitBtn.onclick = function() {
+                var status = seatStatus[selectedStudentIndex] || 'present';
+                if (typeof submitStudent === 'function') {
+                    var dinerChecked = $('studentDinerCheck') ? $('studentDinerCheck').checked : false;
+                    var after1Checked = $('studentAfterCheck1') ? $('studentAfterCheck1').checked : false;
+                    var after2Checked = $('studentAfterCheck2') ? $('studentAfterCheck2').checked : false;
+                    if (selectedStudentIndex !== null) {
+                        var data2 = getCurrentData();
+                        var name2 = data2.students[selectedStudentIndex];
+                        if (!data2.diners) data2.diners = {};
+                        if (!data2.afterClass1) data2.afterClass1 = {};
+                        if (!data2.afterClass2) data2.afterClass2 = {};
+                        data2.diners[name2] = dinerChecked;
+                        data2.afterClass1[name2] = after1Checked;
+                        data2.afterClass2[name2] = after2Checked;
+                        // 兼容旧数据：保留 afterSchool 字段
+                        if (!data2.afterSchool) data2.afterSchool = {};
+                        data2.afterSchool[name2] = after1Checked || after2Checked;
+                        CLASS_DATA_LIST[currentClassKey] = data2;
+                        saveAllDataToServer().then(function() { updateHeaderStats(); });
+                    }
+                    submitStudent(status);
+                }
+            };
+        }
+        var cancelBtn = $('studentCancelBtn');
+        if (cancelBtn) cancelBtn.onclick = function() { if (typeof closeStudentModal === 'function') closeStudentModal(); };
+    }, 50);
+}
 
     function closeStudentModal() { $('studentModal').classList.remove('active'); selectedStudentIndex = null; }
 
@@ -1609,9 +1640,12 @@ if (currentUser && (currentUser.role === '超级管理员' || currentUser.role =
         if (emptyIndex >= 0) data.students[emptyIndex] = name;
         else data.students.push(name);
         var dinerCheck = $('newStudentDiner');
-        var afterCheck = $('newStudentAfter');
         data.diners[name] = dinerCheck ? dinerCheck.checked : true;
-        data.afterSchool[name] = afterCheck ? afterCheck.checked : true;
+        if (!data.afterClass1) data.afterClass1 = {};
+if (!data.afterClass2) data.afterClass2 = {};
+data.afterClass1[name] = true;  // 默认参加第一节
+data.afterClass2[name] = true;  // 默认参加第二节
+data.afterSchool[name] = true;  // 兼容旧数据
         CLASS_DATA_LIST[currentClassKey] = data;
         saveAllDataToServer().then(function() {
             renderAdminContent();
