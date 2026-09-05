@@ -821,7 +821,6 @@
         saveAllDataToServer().then(function() {
             updateStats();
             updateSeatStatus();
-            ();
             showToast(checked ? '📅 今日已设为放假，数据不计入统计' : '📅 今日已取消放假，恢复正常统计');
             renderHolidayBar();
         });
