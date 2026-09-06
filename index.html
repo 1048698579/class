@@ -1537,10 +1537,10 @@ if (currentUser && (currentUser.role === '超级管理员' || currentUser.role =
     }
     html += '</tbody></table></div>';
     html += '<div class="admin-add-row">' +
-        '<input type="text" id="newStudentName" placeholder="输入新学生姓名">' +
-        '<label style="display:flex;align-items:center;gap:4px;font-size:13px;color:#666;"><input type="checkbox" id="newStudentDiner" checked> 就餐</label>' +
-        '<label style="display:flex;align-items:center;gap:4px;font-size:13px;color:#666;opacity:0.6;">📚 默认参加两节课后服务</label>' +
-        '<button onclick="addStudent()">➕ 添加</button>' +
+    '<input type="text" id="newStudentName" placeholder="姓名" style="flex:2;min-width:80px;">' +
+    '<input type="number" id="newStudentSeat" placeholder="座位号" style="width:70px;min-width:60px;">' +
+    '<label style="display:flex;align-items:center;gap:4px;font-size:13px;color:#666;"><input type="checkbox" id="newStudentDiner" checked> 就餐</label>' +
+    '<button onclick="addStudent()">➕ 添加</button>' +
         '</div>' +
         '<div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap;">' +
         '<button onclick="batchAddStudents()" style="padding:6px 16px;border:1px solid #4A90D9;border-radius:6px;background:white;color:#4A90D9;font-size:13px;cursor:pointer;">📋 批量添加</button>' +
@@ -1625,34 +1625,59 @@ if (currentUser && (currentUser.role === '超级管理员' || currentUser.role =
     }
 
     function addStudent() {
-        var input = $('newStudentName');
-        if (!input) { showToast('输入框不存在'); return; }
-        var name = input.value.trim();
-        if (!name) { showToast('请输入姓名'); return; }
-        var data = getCurrentData();
-        if (!data.diners) data.diners = {};
-        if (!data.afterSchool) data.afterSchool = {};
-        var emptyIndex = -1;
-        for (var i = 0; i < data.students.length; i++) {
-            if (!data.students[i] || data.students[i].trim() === '') { emptyIndex = i; break; }
+    var input = $('newStudentName');
+    var seatInput = $('newStudentSeat');
+    if (!input) { showToast('输入框不存在'); return; }
+    var name = input.value.trim();
+    if (!name) { showToast('请输入姓名'); return; }
+    
+    var data = getCurrentData();
+    if (!data.diners) data.diners = {};
+    if (!data.afterClass1) data.afterClass1 = {};
+    if (!data.afterClass2) data.afterClass2 = {};
+    if (!data.afterSchool) data.afterSchool = {};
+    
+    var targetIndex = -1;
+    var seatNum = seatInput ? parseInt(seatInput.value) : NaN;
+    
+    if (!isNaN(seatNum) && seatNum > 0) {
+        targetIndex = seatNum - 1;
+        while (data.students.length <= targetIndex) {
+            data.students.push('');
         }
-        if (emptyIndex >= 0) data.students[emptyIndex] = name;
-        else data.students.push(name);
-        var dinerCheck = $('newStudentDiner');
-        data.diners[name] = dinerCheck ? dinerCheck.checked : true;
-        if (!data.afterClass1) data.afterClass1 = {};
-if (!data.afterClass2) data.afterClass2 = {};
-data.afterClass1[name] = true;  // 默认参加第一节
-data.afterClass2[name] = true;  // 默认参加第二节
-data.afterSchool[name] = true;  // 兼容旧数据
-        CLASS_DATA_LIST[currentClassKey] = data;
-        saveAllDataToServer().then(function() {
-            renderAdminContent();
-            renderSeats();
-            showToast('✅ 已添加：' + name);
-            input.value = '';
-        });
+        if (data.students[targetIndex] && data.students[targetIndex].trim() !== '') {
+            showToast('⚠️ 该座位已被占用');
+            return;
+        }
+    } else {
+        for (var i = 0; i < data.students.length; i++) {
+            if (!data.students[i] || data.students[i].trim() === '') {
+                targetIndex = i;
+                break;
+            }
+        }
+        if (targetIndex === -1) {
+            targetIndex = data.students.length;
+            data.students.push('');
+        }
     }
+    
+    data.students[targetIndex] = name;
+    var dinerCheck = $('newStudentDiner');
+    data.diners[name] = dinerCheck ? dinerCheck.checked : true;
+    data.afterClass1[name] = true;
+    data.afterClass2[name] = true;
+    data.afterSchool[name] = true;
+    
+    CLASS_DATA_LIST[currentClassKey] = data;
+    saveAllDataToServer().then(function() {
+        renderAdminContent();
+        renderSeats();
+        showToast('✅ 已添加：' + name + '（座位' + (targetIndex + 1) + '）');
+        input.value = '';
+        if (seatInput) seatInput.value = '';
+    });
+}
 
     function batchAddStudents() {
         var names = prompt('请输入学生姓名，用逗号、顿号或空格分隔：\n例如：张三、李四、王五');
@@ -1777,6 +1802,43 @@ data.afterSchool[name] = true;  // 兼容旧数据
         });
     }
 
+    function updateTotalSeats(classKey, value) {
+    var total = parseInt(value);
+    if (total < 0 || total > 99) { showToast('⚠️ 座位总数请设置在 0~99 之间'); return; }
+    var cls = CLASS_DATA_LIST[classKey];
+    if (!cls) { showToast('班级不存在'); return; }
+    var students = cls.students || [];
+    var currentCount = students.length;
+    
+    if (total > currentCount) {
+        // 增加空座位
+        for (var i = 0; i < total - currentCount; i++) {
+            students.push('');
+        }
+    } else if (total < currentCount) {
+        // 减少座位：从末尾删除，但只删除空座位
+        var removed = 0;
+        for (var i = students.length - 1; i >= 0 && removed < currentCount - total; i--) {
+            if (!students[i] || students[i].trim() === '') {
+                students.splice(i, 1);
+                removed++;
+            }
+        }
+        if (removed < currentCount - total) {
+            showToast('⚠️ 无法删除所有空座位，请先移除学生');
+            return;
+        }
+    }
+    
+    cls.students = students;
+    saveAllDataToServer().then(function() {
+        if (currentClassKey === classKey) {
+            renderSeats();
+            renderAdminClasses();
+        }
+        showToast('✅ 已更新座位总数为 ' + total + ' 个（含空座位）');
+    });
+}
     // ================================================================
     //  课程表管理
     // ================================================================
@@ -2303,93 +2365,114 @@ data.afterSchool[name] = true;  // 兼容旧数据
     //  班级管理（含权限控制）
     // ================================================================
     function renderAdminClasses() {
-        var visibleKeys = getVisibleClassKeys();
-        var isClassTeacher = (currentUser && currentUser.role === '班主任');
-        var isSubjectTeacher = (currentUser && currentUser.role === '科任老师');
-        var canCreateDelete = hasFullAccess(currentUser) || currentUser.role === '级委会';
+    var visibleKeys = getVisibleClassKeys();
+    var isClassTeacher = (currentUser && currentUser.role === '班主任');
+    var isSubjectTeacher = (currentUser && currentUser.role === '科任老师');
+    var canCreateDelete = hasFullAccess(currentUser) || currentUser.role === '级委会';
 
-        var html = '<div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>班级编号</th><th>班级名称</th><th>年级</th><th>班主任</th><th>座位列数</th><th>操作</th></tr></thead><tbody>';
+    var html = '<div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>班级编号</th><th>班级名称</th><th>年级</th><th>班主任</th><th>座位列数</th><th>座位总数</th><th>操作</th></tr></thead><tbody>';
 
-        if (visibleKeys.length === 0) {
-            html += '<tr><td colspan="6" style="text-align:center;color:#999;padding:20px;">' +
-                (isClassTeacher ? '您还没有关联的班级' : '暂无班级') + '</td></tr>';
-        }
-
-        for (var i = 0; i < visibleKeys.length; i++) {
-            var key = visibleKeys[i];
-            var cls = CLASS_DATA_LIST[key];
-            var grade = getClassGrade(key);
-            var teacherName = '未设置';
-            for (var u in USERS) {
-                if (USERS[u].class === key && USERS[u].role === '班主任') { teacherName = USERS[u].name; break; }
-            }
-            var seatCols = cls.seatColumns || 8;
-
-            var editBtns = '';
-            if (!isClassTeacher && !isSubjectTeacher) {
-                editBtns = '<button class="edit-btn" onclick="editClass(\'' + key + '\')">✏️</button>' +
-                           '<button class="del-btn" onclick="deleteClass(\'' + key + '\')">✕</button>';
-            }
-
-            html += '<tr><td><strong>' + key + '</strong></td><td>' + cls.className + '</td><td>' + grade + '</td><td>' + teacherName + '</td>' +
-                '<td><input type="number" min="1" max="12" value="' + seatCols + '" style="width:60px;padding:4px 6px;border:1px solid #E5E7EB;border-radius:4px;font-size:13px;" ' +
-                'onchange="updateSeatColumns(\'' + key + '\', this.value)"></td>' +
-                '<td>' + editBtns + '</td></tr>';
-        }
-        html += '</tbody></table></div>';
-
-        if (canCreateDelete) {
-            html += '<div style="margin-top:10px;display:flex;flex-wrap:wrap;gap:8px;">' +
-                '<button onclick="openBatchModal()" style="padding:6px 16px;background:#4A90D9;color:#fff;border:none;border-radius:6px;cursor:pointer;">📋 批量操作</button>' +
-                '</div>';
-        }
-
-        if (canCreateDelete) {
-            html += '<div class="admin-add-row">' +
-                '<input type="text" id="newClassKey" placeholder="班级编号 如:2024-501">' +
-                '<input type="text" id="newClassName" placeholder="班级名称 如:五年级(1)班">' +
-                '<button onclick="addClass()">🏫 创建班级</button>' +
-                '</div>' +
-                '<div id="classCreateResult" style="margin-top:8px;font-size:13px;color:#666;"></div>';
-        } else if (isClassTeacher) {
-            html += '<div style="margin-top:8px;font-size:13px;color:#999;text-align:center;">📌 您只能管理本班的座位列数</div>';
-        } else if (isSubjectTeacher) {
-            html += '<div style="margin-top:8px;font-size:13px;color:#999;text-align:center;">📌 您只有查看权限</div>';
-        }
-
-        return html;
+    if (visibleKeys.length === 0) {
+        html += '<tr><td colspan="7" style="text-align:center;color:#999;padding:20px;">' +
+            (isClassTeacher ? '您还没有关联的班级' : '暂无班级') + '</td></tr>';
     }
+
+    for (var i = 0; i < visibleKeys.length; i++) {
+        var key = visibleKeys[i];
+        var cls = CLASS_DATA_LIST[key];
+        var grade = getClassGrade(key);
+        var teacherName = '未设置';
+        for (var u in USERS) {
+            if (USERS[u].class === key && USERS[u].role === '班主任') { teacherName = USERS[u].name; break; }
+        }
+        var seatCols = cls.seatColumns || 8;
+        var students = cls.students || [];
+        // 统计实际有名字的学生数量（跳过空座位）
+        var actualCount = 0;
+        for (var j = 0; j < students.length; j++) {
+            if (students[j] && students[j].trim() !== '') {
+                actualCount++;
+            }
+        }
+
+        var editBtns = '';
+        if (!isClassTeacher && !isSubjectTeacher) {
+            editBtns = '<button class="edit-btn" onclick="editClass(\'' + key + '\')">✏️</button>' +
+                       '<button class="del-btn" onclick="deleteClass(\'' + key + '\')">✕</button>';
+        }
+
+        html += '<tr><td><strong>' + key + '</strong></td><td>' + cls.className + '</td><td>' + grade + '</td><td>' + teacherName + '</td>' +
+            '<td><input type="number" min="1" max="12" value="' + seatCols + '" style="width:55px;padding:4px 6px;border:1px solid #E5E7EB;border-radius:4px;font-size:13px;" ' +
+            'onchange="updateSeatColumns(\'' + key + '\', this.value)"></td>' +
+            '<td><input type="number" min="0" max="99" value="' + actualCount + '" style="width:55px;padding:4px 6px;border:1px solid #E5E7EB;border-radius:4px;font-size:13px;" ' +
+            'onchange="updateTotalSeats(\'' + key + '\', this.value)"></td>' +
+            '<td>' + editBtns + '</td></tr>';
+    }
+    html += '</tbody></table></div>';
+
+    if (canCreateDelete) {
+        html += '<div style="margin-top:10px;display:flex;flex-wrap:wrap;gap:8px;">' +
+            '<button onclick="openBatchModal()" style="padding:6px 16px;background:#4A90D9;color:#fff;border:none;border-radius:6px;cursor:pointer;">📋 批量操作</button>' +
+            '</div>';
+    }
+
+    if (canCreateDelete) {
+        html += '<div class="admin-add-row">' +
+            '<input type="text" id="newClassKey" placeholder="班级编号 如:2024-501" style="flex:1;min-width:100px;">' +
+            '<input type="text" id="newClassName" placeholder="班级名称" style="flex:1;min-width:80px;">' +
+            '<input type="number" id="newClassSeats" placeholder="座位数" value="45" style="width:70px;min-width:60px;">' +
+            '<button onclick="addClass()">🏫 创建</button>' +
+            '</div>' +
+            '<div id="classCreateResult" style="margin-top:8px;font-size:13px;color:#666;"></div>';
+    } else if (isClassTeacher) {
+        html += '<div style="margin-top:8px;font-size:13px;color:#999;text-align:center;">📌 您只能管理本班的座位列数</div>';
+    }
+
+    return html;
+}
 
     function addClass() {
-        var keyInput = $('newClassKey');
-        var nameInput = $('newClassName');
-        if (!keyInput || !nameInput) { showToast('输入框不存在'); return; }
-        var key = keyInput.value.trim();
-        var name = nameInput.value.trim();
-        if (!key) { showToast('请输入班级编号'); return; }
-        if (!name) { showToast('请输入班级名称'); return; }
-        if (CLASS_DATA_LIST[key]) { showToast('⚠️ 该班级已存在'); return; }
-        CLASS_DATA_LIST[key] = {
-            className: name,
-            classSub: '🏫 教室位置待设置',
-            seatColumns: 8,
-            teachers: [],
-            schedule: [ ['','','','',''], ['','','','',''], ['','','','',''], ['','','','',''], ['','','','',''], ['','','','',''] ],
-            students: [],
-            diners: {},
-            afterSchool: {}
-        };
-        saveAllDataToServer().then(function() {
-            showToast('✅ 班级 ' + name + ' 创建成功！');
-            var resultEl = $('classCreateResult');
-            if (resultEl) resultEl.innerHTML = '✅ 已创建：' + name + '（编号：' + key + '）';
-            keyInput.value = '';
-            nameInput.value = '';
-            renderAdminClasses();
-            currentClassKey = key;
-            loadClassData();
-        });
+    var keyInput = $('newClassKey');
+    var nameInput = $('newClassName');
+    var seatsInput = $('newClassSeats');
+    if (!keyInput || !nameInput || !seatsInput) { showToast('输入框不存在'); return; }
+    var key = keyInput.value.trim();
+    var name = nameInput.value.trim();
+    var totalSeats = parseInt(seatsInput.value) || 45;
+    if (!key) { showToast('请输入班级编号'); return; }
+    if (!name) { showToast('请输入班级名称'); return; }
+    if (CLASS_DATA_LIST[key]) { showToast('⚠️ 该班级已存在'); return; }
+    
+    // 生成空座位
+    var students = [];
+    for (var i = 0; i < totalSeats; i++) {
+        students.push('');
     }
+    
+    CLASS_DATA_LIST[key] = {
+        className: name,
+        classSub: '🏫 教室位置待设置',
+        seatColumns: 8,
+        teachers: [],
+        schedule: [ ['','','','',''], ['','','','',''], ['','','','',''], ['','','','',''], ['','','','',''], ['','','','',''] ],
+        students: students,
+        diners: {},
+        afterSchool: {},
+        afterClass1: {},
+        afterClass2: {}
+    };
+    saveAllDataToServer().then(function() {
+        showToast('✅ 班级 ' + name + ' 创建成功！共 ' + totalSeats + ' 个座位');
+        var resultEl = $('classCreateResult');
+        if (resultEl) resultEl.innerHTML = '✅ 已创建：' + name + '（编号：' + key + '，座位：' + totalSeats + '个）';
+        keyInput.value = '';
+        nameInput.value = '';
+        seatsInput.value = '45';
+        renderAdminClasses();
+        currentClassKey = key;
+        loadClassData();
+    });
+}
 
     function editClass(key) {
         var cls = CLASS_DATA_LIST[key];
@@ -2904,7 +2987,15 @@ if (hasAfter) {
     else afterP++;
 }
             }
-            totalStudents += students.length;
+            // 统计实际有名字的学生，跳过空座位
+var actualCount = 0;
+for (var j = 0; j < students.length; j++) {
+    var name = students[j];
+    if (name && name.trim() !== '') {
+        actualCount++;
+    }
+}
+totalStudents += actualCount;
             totalDiners += dinerCount;
             totalPresent += p;
             totalLate += l;
