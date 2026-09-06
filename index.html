@@ -2893,11 +2893,16 @@ window.gradeFees = gradeFees;
                     if (status === 'leave' || status === 'absent') stopCount++;
                     else eatenCount++;
                 }
-                if (afterSchool[name]) {
-                    afterCount++;
-                    if (status === 'leave' || status === 'absent' || status === 'not-in-room') afterA++;
-                    else afterP++;
-                }
+                // 课后服务统计 - 只要参加第一节或第二节就算参加课后
+var hasAfter = false;
+if (afterSchool[name]) hasAfter = true;
+if (cls.afterClass1 && cls.afterClass1[name]) hasAfter = true;
+if (cls.afterClass2 && cls.afterClass2[name]) hasAfter = true;
+if (hasAfter) {
+    afterCount++;
+    if (status === 'leave' || status === 'absent' || status === 'not-in-room') afterA++;
+    else afterP++;
+}
             }
             totalStudents += students.length;
             totalDiners += dinerCount;
