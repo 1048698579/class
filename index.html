@@ -1045,23 +1045,47 @@ if (superEntry) {
     }
 
     function updateHeaderStats() {
-    var data = getCurrentData();
-    var students = data.students || [];
-    var diners = data.diners || {};
-    var afterClass1 = data.afterClass1 || {};
-    var afterClass2 = data.afterClass2 || {};
-    var dinerCount = 0, afterCount = 0;
-    for (var i = 0; i < students.length; i++) {
-        var name = students[i];
-        if (!name || name.trim() === '') continue;
-        if (diners[name]) dinerCount++;
-        // 只要参加任意一节就算参加课后
-        if (afterClass1[name] || afterClass2[name]) afterCount++;
+    var role = currentUser ? currentUser.role : '';
+    var isLeader = (role === '超级管理员' || role === '管理员' || role === '校委会' || role === '级委会');
+    
+    var totalDiner = 0, totalAfter = 0;
+    
+    if (isLeader) {
+        // 领导模式：汇总所有可见班级的数据
+        var keys = getVisibleClassKeys();
+        for (var i = 0; i < keys.length; i++) {
+            var cls = CLASS_DATA_LIST[keys[i]];
+            if (!cls) continue;
+            var students = cls.students || [];
+            var diners = cls.diners || {};
+            var afterClass1 = cls.afterClass1 || {};
+            var afterClass2 = cls.afterClass2 || {};
+            for (var j = 0; j < students.length; j++) {
+                var name = students[j];
+                if (!name || name.trim() === '') continue;
+                if (diners[name]) totalDiner++;
+                if (afterClass1[name] || afterClass2[name]) totalAfter++;
+            }
+        }
+    } else {
+        // 班主任/科任老师模式：只统计当前班级
+        var data = getCurrentData();
+        var students = data.students || [];
+        var diners = data.diners || {};
+        var afterClass1 = data.afterClass1 || {};
+        var afterClass2 = data.afterClass2 || {};
+        for (var i = 0; i < students.length; i++) {
+            var name = students[i];
+            if (!name || name.trim() === '') continue;
+            if (diners[name]) totalDiner++;
+            if (afterClass1[name] || afterClass2[name]) totalAfter++;
+        }
     }
+    
     var dinerEl = $('headerDinerStats');
-    if (dinerEl) dinerEl.textContent = '🍱 就餐: ' + dinerCount + '人';
+    if (dinerEl) dinerEl.textContent = '🍱 就餐: ' + totalDiner + '人';
     var afterEl = $('headerAfterStats');
-    if (afterEl) afterEl.textContent = '📚 课后: ' + afterCount + '人';
+    if (afterEl) afterEl.textContent = '📚 课后: ' + totalAfter + '人';
 }
 
     function saveDataToServer() { saveAllDataToServer(); }
