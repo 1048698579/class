@@ -1560,17 +1560,19 @@ if (currentUser && (currentUser.role === '超级管理员' || currentUser.role =
             '<td>' + delBtn + '<button class="edit-btn" onclick="setSeatEmpty(' + i + ')" style="color:#999;" title="设为空座位">🪑</button></td></tr>';
     }
     html += '</tbody></table></div>';
-    html += '<div class="admin-add-row">' +
+html += '<div class="admin-add-row">' +
     '<input type="text" id="newStudentName" placeholder="姓名" style="flex:2;min-width:80px;">' +
     '<input type="number" id="newStudentSeat" placeholder="座位号" style="width:70px;min-width:60px;">' +
     '<label style="display:flex;align-items:center;gap:4px;font-size:13px;color:#666;"><input type="checkbox" id="newStudentDiner" checked> 就餐</label>' +
+    '<label style="display:flex;align-items:center;gap:4px;font-size:13px;color:#666;"><input type="checkbox" id="newStudentAfter1" checked> 课后1</label>' +
+    '<label style="display:flex;align-items:center;gap:4px;font-size:13px;color:#666;"><input type="checkbox" id="newStudentAfter2" checked> 课后2</label>' +
     '<button onclick="addStudent()">➕ 添加</button>' +
-        '</div>' +
-        '<div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap;">' +
-        '<button onclick="batchAddStudents()" style="padding:6px 16px;border:1px solid #4A90D9;border-radius:6px;background:white;color:#4A90D9;font-size:13px;cursor:pointer;">📋 批量添加</button>' +
-        '<button onclick="shuffleSeats()" style="padding:6px 16px;border:1px solid #F39C12;border-radius:6px;background:white;color:#F39C12;font-size:13px;cursor:pointer;">🎲 随机调座</button>' +
-        '</div>';
-    return html;
+    '</div>' +
+    '<div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap;">' +
+    '<button onclick="batchAddStudents()" style="padding:6px 16px;border:1px solid #4A90D9;border-radius:6px;background:white;color:#4A90D9;font-size:13px;cursor:pointer;">📋 批量添加</button>' +
+    '<button onclick="shuffleSeats()" style="padding:6px 16px;border:1px solid #F39C12;border-radius:6px;background:white;color:#F39C12;font-size:13px;cursor:pointer;">🎲 随机调座</button>' +
+    '</div>';
+return html;
 }
     function selectSeat(index) {
         var students = getCurrentStudents();
@@ -1689,9 +1691,11 @@ if (currentUser && (currentUser.role === '超级管理员' || currentUser.role =
     data.students[targetIndex] = name;
     var dinerCheck = $('newStudentDiner');
     data.diners[name] = dinerCheck ? dinerCheck.checked : true;
-    data.afterClass1[name] = true;
-    data.afterClass2[name] = true;
-    data.afterSchool[name] = true;
+    var after1Check = document.getElementById('newStudentAfter1');
+var after2Check = document.getElementById('newStudentAfter2');
+data.afterClass1[name] = after1Check ? after1Check.checked : true;
+data.afterClass2[name] = after2Check ? after2Check.checked : true;
+data.afterSchool[name] = data.afterClass1[name] || data.afterClass2[name];
     
     CLASS_DATA_LIST[currentClassKey] = data;
     saveAllDataToServer().then(function() {
