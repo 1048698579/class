@@ -3065,11 +3065,12 @@ totalStudents += actualCount;
         $('teacherBadge').textContent = isGradeLeader ? '本年级概览' : '全校概览';
         $('scheduleBody').innerHTML = '';
         var html = '';
-        html += '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:14px;">';
-        html += '<div style="background:linear-gradient(135deg,#4A90D9,#357ABD);color:white;border-radius:12px;padding:14px;text-align:center;"><div style="font-size:24px;font-weight:700;">' + totalStudents + '</div><div style="font-size:12px;opacity:0.8;">' + (isGradeLeader ? '本年级学生' : '在校学生') + '</div></div>';
-        html += '<div style="background:linear-gradient(135deg,#28A745,#1e7e34);color:white;border-radius:12px;padding:14px;text-align:center;"><div style="font-size:24px;font-weight:700;">' + totalPresent + '</div><div style="font-size:12px;opacity:0.8;">今日到课</div></div>';
-        html += '<div style="background:linear-gradient(135deg,#FFC107,#d39e00);color:#333;border-radius:12px;padding:14px;text-align:center;"><div style="font-size:24px;font-weight:700;">' + totalDiners + '</div><div style="font-size:12px;opacity:0.8;">在校就餐</div></div>';
-        html += '</div>';
+        html += '<div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px;margin-bottom:14px;">' +
+    '<div style="background:linear-gradient(135deg,#4A90D9,#357ABD);color:white;border-radius:12px;padding:14px;text-align:center;"><div style="font-size:24px;font-weight:700;">' + totalStudents + '</div><div style="font-size:12px;opacity:0.8;">' + (isGradeLeader ? '本年级学生' : '在校学生') + '</div></div>' +
+    '<div style="background:linear-gradient(135deg,#28A745,#1e7e34);color:white;border-radius:12px;padding:14px;text-align:center;"><div style="font-size:24px;font-weight:700;">' + totalPresent + '</div><div style="font-size:12px;opacity:0.8;">今日到课</div></div>' +
+    '<div style="background:linear-gradient(135deg,#FFC107,#d39e00);color:#333;border-radius:12px;padding:14px;text-align:center;"><div style="font-size:24px;font-weight:700;">' + totalDiners + '</div><div style="font-size:12px;opacity:0.8;">在校就餐</div></div>' +
+    '<div style="background:linear-gradient(135deg,#9B59B6,#7D3C98);color:white;border-radius:12px;padding:14px;text-align:center;"><div style="font-size:24px;font-weight:700;">' + totalAfter + '</div><div style="font-size:12px;opacity:0.8;">参加课后</div></div>' +
+    '</div>';
         var totalEaten = totalDiners - totalStop;
         html += '<div style="background:#f8f9fa;border-radius:10px;padding:10px;margin-bottom:14px;font-size:13px;color:#555;display:flex;flex-wrap:wrap;gap:8px 16px;">' +
             '<span>🍱 在校就餐：<strong>' + totalDiners + '</strong> 人</span>' +
