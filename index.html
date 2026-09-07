@@ -3344,7 +3344,7 @@ $('classSub').textContent = classSub + ' ｜ 班主任：' + teacherName + ' ｜
                             if (u.class === currentClassKey && u.role === '班主任') { teacherName2 = u.name; break; }
                         }
                         $('className').textContent = data2.className || '未知班级';
-                        $('classSub').textContent = (data2.classSub || '🏫 扫码查看班级信息') + ' ｜ 班主任：' + teacherName2 + ' ｜ 总人数：' + (data2.students ? data2.students.length : 0) + ' 人';
+                        $('classSub').textContent = (data2.classSub || '🏫 扫码查看班级信息') + ' ｜ 班主任：' + teacherName2 + ' ｜ 总人数：' + (data2.students ? data2.students.filter(function(s) { return s && s.trim() !== ''; }).length : 0) + ' 人';
                         var manageBtn = $('manageClassBtn');
                         if (manageBtn && !isSubjectTeacher) {
                             manageBtn.style.display = '';
