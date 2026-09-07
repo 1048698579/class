@@ -944,10 +944,16 @@
     function renderSeats() {
         var students = getCurrentStudents();
         var columns = getCurrentData().seatColumns || 8;
-        var total = students.length;
-        var rows = Math.ceil(total / columns);
-        var info = $('seatInfo');
-        if (info) info.textContent = '共' + total + '人 · ' + columns + '列 × ' + rows + '行';
+        // 统计实际有名字的学生
+var total = 0;
+for (var i = 0; i < students.length; i++) {
+    if (students[i] && students[i].trim() !== '') {
+        total++;
+    }
+}
+var rows = Math.ceil(students.length / columns);
+var info = $('seatInfo');
+if (info) info.textContent = '共' + total + '人 · ' + columns + '列 × ' + rows + '行';
         var canEdit = canEditClass(currentUser, currentClassKey);
         var grid = $('seatGrid');
         if (grid) {
