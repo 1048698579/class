@@ -279,6 +279,12 @@
     <!-- 座位表 -->
     <div class="card">
         <div class="card-title">💺 座位表 <span class="badge" id="seatInfo">点击学生可标注</span><span class="lock-icon" id="seatLockIcon">🔒</span></div>
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap;background:#f8f9fa;padding:8px 12px;border-radius:8px;">
+    <label style="font-size:13px;color:#666;font-weight:500;">📅 考勤日期：</label>
+    <input type="date" id="attendanceDate" style="padding:6px 10px;border:1px solid #E5E7EB;border-radius:6px;font-size:14px;font-family:inherit;">
+    <button onclick="changeAttendanceDate()" style="padding:6px 16px;border:none;border-radius:6px;background:#4A90D9;color:#fff;font-size:13px;cursor:pointer;">切换</button>
+    <button onclick="setAttendanceToday()" style="padding:6px 12px;border:1px solid #ccc;border-radius:6px;background:white;font-size:13px;cursor:pointer;">📅 今天</button>
+</div>
         <div class="seat-grid" id="seatGrid"></div>
         <div class="seat-legend">
             <span><span class="dot" style="background:#D4EDDA;border-color:#28A745;"></span> 到课</span>
@@ -473,6 +479,7 @@
     //  全局状态 & 工具函数
     // ================================================================
     var USERS = {};
+    var selectedDate = getTodayStr();
     var CLASS_DATA_LIST = {};
     var seatStatus = {};
     var teacherStatus = {};
@@ -499,6 +506,26 @@
         toastTimer = setTimeout(function() { t.classList.remove('show'); }, 2500);
     }
 
+        function changeAttendanceDate() {
+    var dateInput = document.getElementById('attendanceDate');
+    if (!dateInput) return;
+    var newDate = dateInput.value;
+    if (!newDate) { showToast('⚠️ 请选择日期'); return; }
+    selectedDate = newDate;
+    renderSeats();
+    updateStats();
+    showToast('📅 已切换到 ' + selectedDate);
+}
+
+function setAttendanceToday() {
+    selectedDate = getTodayStr();
+    var dateInput = document.getElementById('attendanceDate');
+    if (dateInput) dateInput.value = selectedDate;
+    renderSeats();
+    updateStats();
+    showToast('📅 已切换到今天');
+}
+        
         function refreshStats() {
     showToast('🔄 正在刷新数据...');
     loadAllDataFromServer().then(function() {
@@ -956,6 +983,8 @@ var info = $('seatInfo');
 if (info) info.textContent = '共' + total + '人 · ' + columns + '列 × ' + rows + '行';
         var canEdit = canEditClass(currentUser, currentClassKey);
         var grid = $('seatGrid');
+        var dateInput = document.getElementById('attendanceDate');
+if (dateInput) dateInput.value = getTodayStr();
         if (grid) {
             grid.style.gridTemplateColumns = 'repeat(' + columns + ', minmax(0, 1fr))';
 grid.style.gap = '4px';
@@ -1046,7 +1075,7 @@ if (superEntry) {
 
     function updateStats() {
         var students = getCurrentStudents();
-        var today = getTodayStr();
+        var today = selectedDate;
         var isHoliday = attendanceRecords[today] && attendanceRecords[today]._holiday === true;
         if (isHoliday) {
             var statEls = ['statPresent', 'statLate', 'statAbsent', 'statLeave', 'statNotInRoom'];
@@ -1350,7 +1379,7 @@ if (superEntry) {
         var comment = $('studentComment') ? $('studentComment').value.trim() : '';
         if (status) {
             seatStatus[selectedStudentIndex] = status;
-            var today = getTodayStr();
+            var today = selectedDate;
             if (!attendanceRecords[today]) attendanceRecords[today] = {};
             if (!attendanceRecords[today][currentClassKey]) attendanceRecords[today][currentClassKey] = {};
             attendanceRecords[today][currentClassKey][name] = status;
