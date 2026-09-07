@@ -957,7 +957,8 @@ if (info) info.textContent = '共' + total + '人 · ' + columns + '列 × ' + r
         var canEdit = canEditClass(currentUser, currentClassKey);
         var grid = $('seatGrid');
         if (grid) {
-            grid.style.gridTemplateColumns = 'repeat(' + columns + ', 1fr)';
+            grid.style.gridTemplateColumns = 'repeat(' + columns + ', minmax(0, 1fr))';
+grid.style.gap = '4px';
             var html = '';
             for (var i = 0; i < students.length; i++) {
                 var name = students[i];
