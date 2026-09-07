@@ -658,23 +658,42 @@
     }
 
     function loadSystemConfig() {
-        return fetch(API_BASE + '/api/config')
-            .then(function(response) { return response.json(); })
-            .then(function(result) {
-                if (result.success && result.data) {
-                    var d = result.data;
-                    if (d.praise_comments && Array.isArray(d.praise_comments)) PRAISE_COMMENTS = d.praise_comments;
-                    if (d.negative_comments && Array.isArray(d.negative_comments)) NEGATIVE_COMMENTS = d.negative_comments;
-                    if (d.teacher_praise && Array.isArray(d.teacher_praise)) TEACHER_PRAISE = d.teacher_praise;
-                    if (d.teacher_abnormal && Array.isArray(d.teacher_abnormal)) TEACHER_ABNORMAL = d.teacher_abnormal;
-                    if (d.diner_deadline) dinerDeadline = d.diner_deadline;
-                    console.log('✅ 系统配置已加载');
-                    return true;
+    return fetch(API_BASE + '/api/config')
+        .then(function(response) { return response.json(); })
+        .then(function(result) {
+            if (result.success && result.data) {
+                var d = result.data;
+                if (d.praise_comments && Array.isArray(d.praise_comments)) PRAISE_COMMENTS = d.praise_comments;
+                if (d.negative_comments && Array.isArray(d.negative_comments)) NEGATIVE_COMMENTS = d.negative_comments;
+                if (d.teacher_praise && Array.isArray(d.teacher_praise)) TEACHER_PRAISE = d.teacher_praise;
+                if (d.teacher_abnormal && Array.isArray(d.teacher_abnormal)) TEACHER_ABNORMAL = d.teacher_abnormal;
+                if (d.diner_deadline) {
+                    dinerDeadline = d.diner_deadline;
+                    window.dinerDeadline = d.diner_deadline;
                 }
-                return false;
-            })
-            .catch(function(e) { console.error('加载配置失败:', e); return false; });
-    }
+                if (d.grade_fees) {
+                    window.gradeFees = d.grade_fees;
+                }
+                if (d.meal_price !== undefined) {
+                    window.mealPrice = d.meal_price;
+                } else {
+                    window.mealPrice = 10;
+                }
+                if (d.after_school_fee !== undefined) {
+                    window.afterSchoolFee = d.after_school_fee;
+                } else {
+                    window.afterSchoolFee = 5;
+                }
+                console.log('✅ 系统配置已加载:', d);
+                return true;
+            }
+            return false;
+        })
+        .catch(function(e) {
+            console.error('加载配置失败:', e);
+            return false;
+        });
+}
 
     // ================================================================
     //  登录/退出
@@ -2673,8 +2692,11 @@ data.afterSchool[name] = data.afterClass1[name] || data.afterClass2[name];
     //  系统配置
     // ================================================================
     function renderAdminConfig() {
-    // 读取当前配置中的年级费用，如果没有则用默认值
+    // 从 window 读取配置
     var gradeFees = window.gradeFees || {};
+    var mealPrice = window.mealPrice !== undefined ? window.mealPrice : 10;
+    var afterFee = window.afterSchoolFee !== undefined ? window.afterSchoolFee : 5;
+    var dinerDeadlineVal = window.dinerDeadline || dinerDeadline || '09:00';
     var grades = ['一年级', '二年级', '三年级', '四年级', '五年级', '六年级', '七年级', '八年级', '九年级', '高一年级'];
     var defaultMealPrice = 10;
     var defaultAfterFee = 5;
@@ -2692,11 +2714,18 @@ data.afterSchool[name] = data.afterClass1[name] || data.afterClass2[name];
     html += '<input type="text" id="configTeacherAbnormal" value="' + TEACHER_ABNORMAL.join('，') + '" style="width:100%;padding:8px;border:1px solid #E5E7EB;border-radius:6px;font-size:13px;">';
     html += '<div style="font-weight:600;margin:10px 0 4px;color:#9B59B6;">⚙️ 系统配置</div>';
     html += '<div style="font-weight:600;margin:10px 0 4px;">⏰ 就餐截止时间（格式 HH:MM）</div>';
-    html += '<input type="text" id="configDeadline" value="' + dinerDeadline + '" style="width:100%;padding:8px;border:1px solid #E5E7EB;border-radius:6px;font-size:13px;">';
+    html += '<input type="text" id="configDeadline" value="' + dinerDeadlineVal + '" style="width:100%;padding:8px;border:1px solid #E5E7EB;border-radius:6px;font-size:13px;">';
+    
+    // 餐费和课后服务费
+    html += '<div style="font-weight:600;margin:10px 0 4px;color:#28A745;">💰 餐费与课后服务费</div>';
+    html += '<div style="font-weight:600;margin:10px 0 4px;">🍱 餐费标准（元/餐）</div>';
+    html += '<input type="number" id="configMealPrice" value="' + mealPrice + '" style="width:100%;padding:8px;border:1px solid #E5E7EB;border-radius:6px;font-size:13px;">';
+    html += '<div style="font-weight:600;margin:10px 0 4px;">📚 课后服务费（元/节）</div>';
+    html += '<input type="number" id="configAfterFee" value="' + afterFee + '" style="width:100%;padding:8px;border:1px solid #E5E7EB;border-radius:6px;font-size:13px;">';
     
     // 各年级费用设置
-    html += '<div style="font-weight:600;margin:14px 0 8px 0;color:#28A745;">💰 各年级餐费与课后服务费设置</div>';
-    html += '<div style="font-size:12px;color:#999;margin-bottom:8px;">💡 导出报账单时按学生所在年级自动计算费用</div>';
+    html += '<div style="font-weight:600;margin:14px 0 8px 0;color:#4A90D9;">📊 各年级餐费与课后服务费设置</div>';
+    html += '<div style="font-size:12px;color:#999;margin-bottom:8px;">💡 导出报账单时按学生所在年级自动计算费用（留空则使用上方默认值）</div>';
     html += '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;font-size:13px;font-weight:600;color:#555;padding:4px 0;">';
     html += '<span>年级</span><span>餐费（元/餐）</span><span>课后费（元/节）</span></div>';
     
@@ -2719,80 +2748,95 @@ data.afterSchool[name] = data.afterClass1[name] || data.afterClass2[name];
 }
 
     function saveSystemConfig() {
-        var praiseInput = $('configPraise');
-        var negativeInput = $('configNegative');
-        var teacherPraiseInput = $('configTeacherPraise');
-        var teacherAbnormalInput = $('configTeacherAbnormal');
-        var deadlineInput = $('configDeadline');
-        var thresholdInput = $('configThreshold');
-        if (!praiseInput || !negativeInput || !teacherPraiseInput || !teacherAbnormalInput || !deadlineInput || !thresholdInput) {
-            showToast('输入框不存在');
-            return;
-        }
-        var praise = praiseInput.value.split(/[，,、\s]+/).filter(function(s) { return s.trim(); });
-        var negative = negativeInput.value.split(/[，,、\s]+/).filter(function(s) { return s.trim(); });
-        var teacherPraise = teacherPraiseInput.value.split(/[，,、\s]+/).filter(function(s) { return s.trim(); });
-        var teacherAbnormal = teacherAbnormalInput.value.split(/[，,、\s]+/).filter(function(s) { return s.trim(); });
-        var deadline = deadlineInput.value.trim();
-        var threshold = parseInt(thresholdInput.value) || 20;
-        // 读取各年级费用
-var grades = ['一年级', '二年级', '三年级', '四年级', '五年级', '六年级', '七年级', '八年级', '九年级', '高一年级'];
-var gradeFees = {};
-for (var i = 0; i < grades.length; i++) {
-    var g = grades[i];
-    var mealInput = document.getElementById('fee_meal_' + g);
-    var afterInput = document.getElementById('fee_after_' + g);
-    if (mealInput && afterInput) {
-        gradeFees[g] = {
-            meal: parseFloat(mealInput.value) || 0,
-            after: parseFloat(afterInput.value) || 0
-        };
+    var praiseInput = $('configPraise');
+    var negativeInput = $('configNegative');
+    var teacherPraiseInput = $('configTeacherPraise');
+    var teacherAbnormalInput = $('configTeacherAbnormal');
+    var deadlineInput = $('configDeadline');
+    var thresholdInput = $('configThreshold');
+    var mealPriceInput = $('configMealPrice');
+    var afterFeeInput = $('configAfterFee');
+    
+    if (!praiseInput || !negativeInput || !teacherPraiseInput || !teacherAbnormalInput || !deadlineInput || !thresholdInput || !mealPriceInput || !afterFeeInput) {
+        showToast('输入框不存在');
+        return;
     }
-}
-window.gradeFees = gradeFees;
-        if (deadline && !/^\d{2}:\d{2}$/.test(deadline)) {
-            showToast('⚠️ 截止时间格式错误，应为 HH:MM');
-            return;
+    
+    var praise = praiseInput.value.split(/[，,、\s]+/).filter(function(s) { return s.trim(); });
+    var negative = negativeInput.value.split(/[，,、\s]+/).filter(function(s) { return s.trim(); });
+    var teacherPraise = teacherPraiseInput.value.split(/[，,、\s]+/).filter(function(s) { return s.trim(); });
+    var teacherAbnormal = teacherAbnormalInput.value.split(/[，,、\s]+/).filter(function(s) { return s.trim(); });
+    var deadline = deadlineInput.value.trim();
+    var threshold = parseInt(thresholdInput.value) || 20;
+    var mealPrice = parseFloat(mealPriceInput.value) || 10;
+    var afterFee = parseFloat(afterFeeInput.value) || 5;
+    
+    if (deadline && !/^\d{2}:\d{2}$/.test(deadline)) {
+        showToast('⚠️ 截止时间格式错误，应为 HH:MM');
+        return;
+    }
+    if (mealPrice < 0) { showToast('⚠️ 餐费不能为负数'); return; }
+    if (afterFee < 0) { showToast('⚠️ 课后服务费不能为负数'); return; }
+    
+    // 读取各年级费用
+    var grades = ['一年级', '二年级', '三年级', '四年级', '五年级', '六年级', '七年级', '八年级', '九年级', '高一年级'];
+    var gradeFees = {};
+    for (var i = 0; i < grades.length; i++) {
+        var g = grades[i];
+        var mealInput = document.getElementById('fee_meal_' + g);
+        var afterInput = document.getElementById('fee_after_' + g);
+        if (mealInput && afterInput) {
+            gradeFees[g] = {
+                meal: parseFloat(mealInput.value) || 0,
+                after: parseFloat(afterInput.value) || 0
+            };
         }
-        if (praise.length > 0) PRAISE_COMMENTS = praise;
-        if (negative.length > 0) NEGATIVE_COMMENTS = negative;
-        if (teacherPraise.length > 0) TEACHER_PRAISE = teacherPraise;
-        if (teacherAbnormal.length > 0) TEACHER_ABNORMAL = teacherAbnormal;
-        dinerDeadline = deadline || '09:00';
-        fetch(API_BASE + '/api/config', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-        praise_comments: PRAISE_COMMENTS,
-        negative_comments: NEGATIVE_COMMENTS,
-        teacher_praise: TEACHER_PRAISE,
-        teacher_abnormal: TEACHER_ABNORMAL,
-        diner_deadline: dinerDeadline,
-        alert_threshold: threshold,
-        grade_fees: gradeFees
-    })
-})
-        .then(function(r) { return r.json(); })
-        .then(function(result) {
-            if (result.success) {
-                showToast('✅ 配置已保存');
-                fetch(API_BASE + '/api/diner-check')
-                    .then(function(r) { return r.json(); })
-                    .then(function(res) {
-                        if (res.success) {
-                            dinerCanEdit = res.canEdit;
-                            dinerDeadline = res.deadline;
-                            console.log('⏰ 就餐锁已更新:', dinerCanEdit ? '可修改' : '已锁定', '截止时间:', dinerDeadline);
-                        }
-                    });
-                renderTeacherComments();
-            } else {
-                showToast('❌ 保存失败');
-            }
+    }
+    
+    // 更新全局变量
+    if (praise.length > 0) PRAISE_COMMENTS = praise;
+    if (negative.length > 0) NEGATIVE_COMMENTS = negative;
+    if (teacherPraise.length > 0) TEACHER_PRAISE = teacherPraise;
+    if (teacherAbnormal.length > 0) TEACHER_ABNORMAL = teacherAbnormal;
+    dinerDeadline = deadline || '09:00';
+    window.dinerDeadline = dinerDeadline;
+    window.gradeFees = gradeFees;
+    window.mealPrice = mealPrice;
+    window.afterSchoolFee = afterFee;
+    
+    fetch(API_BASE + '/api/config', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            praise_comments: PRAISE_COMMENTS,
+            negative_comments: NEGATIVE_COMMENTS,
+            teacher_praise: TEACHER_PRAISE,
+            teacher_abnormal: TEACHER_ABNORMAL,
+            diner_deadline: dinerDeadline,
+            alert_threshold: threshold,
+            grade_fees: gradeFees,
+            meal_price: mealPrice,
+            after_school_fee: afterFee
         })
-        .catch(function(e) { showToast('❌ 网络错误'); });
-    }
-
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(result) {
+        if (result.success) {
+            showToast('✅ 配置已保存');
+            // 重新加载配置
+            loadSystemConfig().then(function() {
+                renderTeacherComments();
+                showToast('✅ 配置已生效');
+            });
+        } else {
+            showToast('❌ 保存失败: ' + (result.error || '未知错误'));
+        }
+    })
+    .catch(function(e) {
+        showToast('❌ 网络错误，请重试');
+        console.error('保存配置失败:', e);
+    });
+}
     // ================================================================
     //  批量操作
     // ================================================================
