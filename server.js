@@ -140,18 +140,54 @@ async function getSystemConfig() {
 
 async function saveSystemConfig(config) {
     try {
+        // 先检查是否存在
         const existing = await getSystemConfig();
+        
+        // 准备完整数据
+        const payload = {
+            id: 'main',
+            praise_comments: config.praise_comments || [],
+            negative_comments: config.negative_comments || [],
+            teacher_praise: config.teacher_praise || [],
+            teacher_abnormal: config.teacher_abnormal || [],
+            diner_deadline: config.diner_deadline || '09:00',
+            alert_threshold: config.alert_threshold || 20,
+            grade_fees: config.grade_fees || {},
+            meal_price: config.meal_price !== undefined ? config.meal_price : 10,
+            after_school_fee: config.after_school_fee !== undefined ? config.after_school_fee : 5
+        };
+        
         if (existing) {
-            await axios.patch(SUPABASE_URL + '/rest/v1/system_config?id=eq.main', config, {
-                headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY, 'Content-Type': 'application/json' }
+            // 更新：用 patch
+            await axios.patch(SUPABASE_URL + '/rest/v1/system_config?id=eq.main', payload, {
+                headers: { 
+                    'apikey': SUPABASE_KEY, 
+                    'Authorization': 'Bearer ' + SUPABASE_KEY, 
+                    'Content-Type': 'application/json' 
+                }
             });
+            console.log('✅ 系统配置已更新');
         } else {
-            await axios.post(SUPABASE_URL + '/rest/v1/system_config', { id: 'main', ...config }, {
-                headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY, 'Content-Type': 'application/json' }
+            // 插入：用 post
+            await axios.post(SUPABASE_URL + '/rest/v1/system_config', payload, {
+                headers: { 
+                    'apikey': SUPABASE_KEY, 
+                    'Authorization': 'Bearer ' + SUPABASE_KEY, 
+                    'Content-Type': 'application/json' 
+                }
             });
+            console.log('✅ 系统配置已创建');
         }
         return true;
-    } catch (e) { return false; }
+    } catch (e) { 
+        // 打印详细错误信息
+        console.error('❌ 保存系统配置失败:', e.message);
+        if (e.response) {
+            console.error('响应状态:', e.response.status);
+            console.error('响应数据:', e.response.data);
+        }
+        return false; 
+    }
 }
 
 // ================================================================
