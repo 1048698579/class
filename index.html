@@ -2887,7 +2887,7 @@ data.afterSchool[name] = data.afterClass1[name] || data.afterClass2[name];
         .then(function(result) {
             if (result.success) {
                 showToast('✅ ' + result.message);
-                loadAllDataFromServer().then(function() { renderAdminContent(); if (currentUser && getUserRoleLevel(currentUser) >= 3) (); });
+                loadAllDataFromServer().then(function() { renderAdminContent(); if (currentUser && getUserRoleLevel(currentUser) >= 3) renderDashboard(); });
             } else { showToast('❌ ' + result.error); }
         })
         .catch(function(e) { showToast('❌ 网络错误'); });
