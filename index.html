@@ -65,7 +65,7 @@
         .schedule-table td{text-align:center;padding:6px 3px;border-bottom:1px solid #f0f0f0}
         .schedule-table .period{color:#999;font-size:11px}
         .seat-grid{display:grid;gap:6px}
-        .seat{border-radius:8px;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:12px;font-weight:500;background:#D4EDDA;color:#2C3E50;cursor:pointer;border:2px solid #28A745;padding:6px 2px;min-height:44px;text-align:center;word-break:keep-all;position:relative}
+        .seat{border-radius:8px;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:10px;font-weight:500;background:#D4EDDA;color:#2C3E50;cursor:pointer;border:2px solid #28A745;padding:4px 2px;min-height:36px;text-align:center;word-break:keep-all;position:relative}
         .seat:active{transform:scale(0.94)}
         .seat .status-dot{font-size:10px;margin-top:1px}
         .seat .seat-hint{font-size:8px;color:#aaa;margin-top:1px}
@@ -940,15 +940,15 @@
                 if (!name || name.trim() === '') {
                     var disabledClass = canEdit ? '' : ' disabled';
                     var hint = canEdit ? '点击设置' : '🔒';
-                    html += '<div class="seat empty' + disabledClass + '" data-index="' + i + '" style="font-size:12px;background:#f5f5f5;border-color:#ccc;color:#999;">' +
-                        '🪑 空座<span class="status-dot"></span><span class="seat-hint">' + hint + '</span></div>';
+                    html += '<div class="seat empty' + disabledClass + '" data-index="' + i + '" style="font-size:9px;padding:4px 2px;min-height:32px;background:#f5f5f5;border-color:#ccc;color:#999;">' +
+    '🪑<span class="status-dot"></span><span class="seat-hint">' + hint + '</span></div>';
                     continue;
                 }
                 var fontSize = name.length >= 4 ? '11px' : '12px';
                 var disabledClass = canEdit ? '' : ' disabled';
                 var hint = canEdit ? '' : '<span class="seat-hint">🔒</span>';
-                html += '<div class="seat' + disabledClass + '" data-index="' + i + '" style="font-size:' + fontSize + ';">' +
-                    name + '<span class="status-dot"></span>' + hint + '</div>';
+                html += '<div class="seat' + disabledClass + '" data-index="' + i + '" style="font-size:10px;padding:4px 2px;min-height:36px;">' +
+    name + '<span class="status-dot"></span>' + hint + '</div>';
             }
             grid.innerHTML = html;
             var seats = document.querySelectorAll('.seat:not(.disabled)');
