@@ -3096,7 +3096,7 @@ totalStudents += actualCount;
                 absent: a,
                 leave: le,
                 notInRoom: n,
-                rate: students.length > 0 ? Math.round((p / students.length) * 100) : 0
+                rate: actualCount > 0 ? Math.round((p / students.length) * 100) : 0
             });
         }
         var statEls = ['statPresent', 'statLate', 'statAbsent', 'statLeave', 'statNotInRoom'];
