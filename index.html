@@ -1280,6 +1280,20 @@ if (isHoliday && !isOvertime) {
     var canCommentFlag = canComment(currentUser, currentClassKey);
     var btns = document.querySelectorAll('#studentStatusGrid .status-btn');
     for (var i = 0; i < btns.length; i++) btns[i].style.display = canEdit ? '' : 'none';
+        // 点击状态按钮时，标记为选中
+btns.forEach(function(btn) {
+    btn.onclick = function() {
+        btns.forEach(function(b) { b.classList.remove('active'); });
+        this.classList.add('active');
+    };
+});
+        // 在弹窗打开后，标记当前状态为选中
+var currentStatus = seatStatus[selectedStudentIndex] || 'present';
+btns.forEach(function(btn) {
+    if (btn.dataset.status === currentStatus) {
+        btn.classList.add('active');
+    }
+});
     var praiseGrid = $('praiseGrid');
     if (praiseGrid) praiseGrid.style.display = canCommentFlag ? '' : 'none';
     var negGrid = $('negativeGrid');
@@ -1291,29 +1305,30 @@ if (isHoliday && !isOvertime) {
         var submitBtn = $('studentSubmitBtn');
         if (submitBtn) {
             submitBtn.onclick = function() {
-                var status = seatStatus[selectedStudentIndex] || 'present';
-                if (typeof submitStudent === 'function') {
-                    var dinerChecked = $('studentDinerCheck') ? $('studentDinerCheck').checked : false;
-                    var after1Checked = $('studentAfterCheck1') ? $('studentAfterCheck1').checked : false;
-                    var after2Checked = $('studentAfterCheck2') ? $('studentAfterCheck2').checked : false;
-                    if (selectedStudentIndex !== null) {
-                        var data2 = getCurrentData();
-                        var name2 = data2.students[selectedStudentIndex];
-                        if (!data2.diners) data2.diners = {};
-                        if (!data2.afterClass1) data2.afterClass1 = {};
-                        if (!data2.afterClass2) data2.afterClass2 = {};
-                        data2.diners[name2] = dinerChecked;
-                        data2.afterClass1[name2] = after1Checked;
-                        data2.afterClass2[name2] = after2Checked;
-                        // 兼容旧数据：保留 afterSchool 字段
-                        if (!data2.afterSchool) data2.afterSchool = {};
-                        data2.afterSchool[name2] = after1Checked || after2Checked;
-                        CLASS_DATA_LIST[currentClassKey] = data2;
-                        saveAllDataToServer().then(function() { updateHeaderStats(); });
-                    }
-                    submitStudent(status);
-                }
-            };
+    // 从当前选中的出勤状态按钮获取状态
+    var activeBtn = document.querySelector('#studentStatusGrid .status-btn.active');
+    var status = activeBtn ? activeBtn.dataset.status : 'present';
+    if (typeof submitStudent === 'function') {
+        var dinerChecked = $('studentDinerCheck') ? $('studentDinerCheck').checked : false;
+        var after1Checked = $('studentAfterCheck1') ? $('studentAfterCheck1').checked : false;
+        var after2Checked = $('studentAfterCheck2') ? $('studentAfterCheck2').checked : false;
+        if (selectedStudentIndex !== null) {
+            var data2 = getCurrentData();
+            var name2 = data2.students[selectedStudentIndex];
+            if (!data2.diners) data2.diners = {};
+            if (!data2.afterClass1) data2.afterClass1 = {};
+            if (!data2.afterClass2) data2.afterClass2 = {};
+            data2.diners[name2] = dinerChecked;
+            data2.afterClass1[name2] = after1Checked;
+            data2.afterClass2[name2] = after2Checked;
+            if (!data2.afterSchool) data2.afterSchool = {};
+            data2.afterSchool[name2] = after1Checked || after2Checked;
+            CLASS_DATA_LIST[currentClassKey] = data2;
+            saveAllDataToServer().then(function() { updateHeaderStats(); });
+        }
+        submitStudent(status);
+    }
+};
         }
         var cancelBtn = $('studentCancelBtn');
         if (cancelBtn) cancelBtn.onclick = function() { if (typeof closeStudentModal === 'function') closeStudentModal(); };
