@@ -3307,8 +3307,17 @@ data.afterSchool[name] = data.afterClass1[name] || data.afterClass2[name];
                                 var u = USERS[keys[i]];
                                 if (u.class === classKey && u.role === '班主任') { teacherName = u.name; break; }
                             }
-                            $('className').textContent = className;
-                            $('classSub').textContent = classSub + ' ｜ 班主任：' + teacherName + ' ｜ 总人数：' + (classData.students ? classData.students.length : 0) + ' 人';
+                            // 统计实际有名字的学生
+var actualCount = 0;
+if (classData.students) {
+    for (var si = 0; si < classData.students.length; si++) {
+        if (classData.students[si] && classData.students[si].trim() !== '') {
+            actualCount++;
+        }
+    }
+}
+$('className').textContent = className;
+$('classSub').textContent = classSub + ' ｜ 班主任：' + teacherName + ' ｜ 总人数：' + actualCount + ' 人';
                             currentClassKey = classKey;
                             var manageBtn = $('manageClassBtn');
                             if (manageBtn) { manageBtn.style.display = ''; manageBtn.onclick = function() { openAdminModal('student'); }; }
