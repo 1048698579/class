@@ -856,39 +856,61 @@ function setAttendanceToday() {
     //  放假开关
     // ================================================================
     function toggleHoliday(checked) {
-        var today = getTodayStr();
-        if (!attendanceRecords[today]) attendanceRecords[today] = {};
-        attendanceRecords[today]._holiday = checked;
-        if (checked) {
-            var stopKey = today + '_stop';
-            if (attendanceRecords[stopKey]) delete attendanceRecords[stopKey];
-        }
-        saveAllDataToServer().then(function() {
-            updateStats();
-            updateSeatStatus();
-            showToast(checked ? '📅 今日已设为放假，数据不计入统计' : '📅 今日已取消放假，恢复正常统计');
-            renderHolidayBar();
-        });
+    var today = getTodayStr();
+    if (!attendanceRecords[today]) attendanceRecords[today] = {};
+    attendanceRecords[today]._holiday = checked;
+    if (checked) {
+        attendanceRecords[today]._overtime = false;
+        var overtimeToggle = document.getElementById('overtimeToggle');
+        if (overtimeToggle) overtimeToggle.checked = false;
     }
+    saveAllDataToServer().then(function() {
+        updateStats();
+        updateSeatStatus();
+        showToast(checked ? '📅 今日已设为放假，数据不计入统计' : '📅 今日已取消放假，恢复正常统计');
+        renderHolidayBar();
+    });
+}
 
-    function renderHolidayBar() {
-        var container = $('holidayBarContainer');
-        if (!container) return;
-        var today = getTodayStr();
-        var isHoliday = attendanceRecords[today] && attendanceRecords[today]._holiday === true;
-        var isClassMode = (currentUser && (currentUser.role === '班主任' || currentUser.role === '科任老师')) || (window.location.search.indexOf('class=') !== -1);
-        var canToggle = currentUser && (currentUser.role === '班主任' || hasFullAccess(currentUser) || currentUser.role === '级委会');
-        if (!isClassMode && !(currentUser && currentUser.role === '班主任')) {
-            container.innerHTML = '';
-            return;
-        }
-        container.innerHTML = '<div class="holiday-bar">' +
-            '<label><input type="checkbox" id="holidayToggle" ' + (isHoliday ? 'checked' : '') + (canToggle ? '' : ' disabled') + ' onchange="toggleHoliday(this.checked)"> ' +
-            '<span style="font-weight:500;">📅 今日放假</span></label>' +
-            '<span class="hint">' + (canToggle ? '（勾选后今日所有数据不计入统计）' : '（仅班主任及以上可修改）') + '</span>' +
-            (isHoliday ? '<span class="holiday-active">✅ 已放假</span>' : '') +
-            '</div>';
+        function toggleOvertime(checked) {
+    var today = getTodayStr();
+    if (!attendanceRecords[today]) attendanceRecords[today] = {};
+    attendanceRecords[today]._overtime = checked;
+    if (checked) {
+        attendanceRecords[today]._holiday = false;
+        var holidayToggle = document.getElementById('holidayToggle');
+        if (holidayToggle) holidayToggle.checked = false;
     }
+    saveAllDataToServer().then(function() {
+        updateStats();
+        updateSeatStatus();
+        showToast(checked ? '📚 今日设为调休上课，按正常工作日统计' : '📚 已取消调休上课');
+        renderHolidayBar();
+    });
+}
+        
+    function renderHolidayBar() {
+    var container = $('holidayBarContainer');
+    if (!container) return;
+    var today = getTodayStr();
+    var isHoliday = attendanceRecords[today] && attendanceRecords[today]._holiday === true;
+    var isOvertime = attendanceRecords[today] && attendanceRecords[today]._overtime === true;
+    var isClassMode = (currentUser && (currentUser.role === '班主任' || currentUser.role === '科任老师')) || (window.location.search.indexOf('class=') !== -1);
+    var canToggle = currentUser && (currentUser.role === '班主任' || hasFullAccess(currentUser) || currentUser.role === '级委会');
+    if (!isClassMode && !(currentUser && currentUser.role === '班主任')) {
+        container.innerHTML = '';
+        return;
+    }
+    container.innerHTML = '<div class="holiday-bar">' +
+        '<label><input type="checkbox" id="holidayToggle" ' + (isHoliday ? 'checked' : '') + (canToggle ? '' : ' disabled') + ' onchange="toggleHoliday(this.checked)"> ' +
+        '<span style="font-weight:500;">📅 今日放假</span></label>' +
+        '<label><input type="checkbox" id="overtimeToggle" ' + (isOvertime ? 'checked' : '') + (canToggle ? '' : ' disabled') + ' onchange="toggleOvertime(this.checked)"> ' +
+        '<span style="font-weight:500;">📚 调休上课</span></label>' +
+        '<span class="hint">' + (canToggle ? '（放假不统计，调休上课正常统计）' : '（仅班主任及以上可修改）') + '</span>' +
+        (isHoliday ? '<span class="holiday-active">✅ 已放假</span>' : '') +
+        (isOvertime ? '<span class="holiday-active" style="color:#4A90D9;">✅ 调休上课</span>' : '') +
+        '</div>';
+}
 
     // ================================================================
     //  渲染函数
@@ -1077,11 +1099,12 @@ if (superEntry) {
         var students = getCurrentStudents();
         var today = selectedDate;
         var isHoliday = attendanceRecords[today] && attendanceRecords[today]._holiday === true;
-        if (isHoliday) {
-            var statEls = ['statPresent', 'statLate', 'statAbsent', 'statLeave', 'statNotInRoom'];
-            for (var i = 0; i < statEls.length; i++) { var el = $(statEls[i]); if (el) el.textContent = '—'; }
-            return;
-        }
+var isOvertime = attendanceRecords[today] && attendanceRecords[today]._overtime === true;
+if (isHoliday && !isOvertime) {
+    var statEls = ['statPresent', 'statLate', 'statAbsent', 'statLeave', 'statNotInRoom'];
+    for (var i = 0; i < statEls.length; i++) { var el = $(statEls[i]); if (el) el.textContent = '—'; }
+    return;
+}
         var p = 0, l = 0, a = 0, le = 0, n = 0;
         for (var i = 0; i < students.length; i++) {
             var name = students[i];
@@ -2084,7 +2107,10 @@ data.afterSchool[name] = data.afterClass1[name] || data.afterClass2[name];
                 var isHoliday = attendanceRecords[dateStr] && attendanceRecords[dateStr]._holiday === true;
                 if (isHoliday) { html += '<td style="color:#ccc;">-</td>'; continue; }
                 var dayOfWeek = new Date(year, mon - 1, d).getDay();
-                if (dayOfWeek === 0 || dayOfWeek === 6) { html += '<td>-</td>'; continue; }
+                var dayOfWeek = new Date(year, mon - 1, d).getDay();
+var dateStr = year + '-' + String(mon).padStart(2,'0') + '-' + String(d).padStart(2,'0');
+var isOvertimeDay = attendanceRecords[dateStr] && attendanceRecords[dateStr]._overtime === true;
+if ((dayOfWeek === 0 || dayOfWeek === 6) && !isOvertimeDay) { html += '<td>-</td>'; continue; }
                 var status = 'present';
                 if (attendanceRecords[dateStr] && attendanceRecords[dateStr][currentClassKey] && attendanceRecords[dateStr][currentClassKey][name]) {
                     status = attendanceRecords[dateStr][currentClassKey][name];
@@ -2266,7 +2292,9 @@ data.afterSchool[name] = data.afterClass1[name] || data.afterClass2[name];
                     var isHoliday = attendanceRecords[dateStr] && attendanceRecords[dateStr]._holiday === true;
                     if (isHoliday) { row.push('放'); continue; }
                     var dayOfWeek = new Date(year, mon - 1, d).getDay();
-                    if (dayOfWeek === 0 || dayOfWeek === 6) { continue; }
+var dateStr = year + '-' + String(mon).padStart(2,'0') + '-' + String(d).padStart(2,'0');
+var isOvertimeDay = attendanceRecords[dateStr] && attendanceRecords[dateStr]._overtime === true;
+if ((dayOfWeek === 0 || dayOfWeek === 6) && !isOvertimeDay) { continue; }
                     
                     var status = 'present';
                     if (attendanceRecords[dateStr] && attendanceRecords[dateStr][classKey] && attendanceRecords[dateStr][classKey][name]) {
@@ -2295,7 +2323,9 @@ data.afterSchool[name] = data.afterClass1[name] || data.afterClass2[name];
                     var isHoliday = attendanceRecords[dateStr] && attendanceRecords[dateStr]._holiday === true;
                     if (isHoliday) { row.push('放'); continue; }
                     var dayOfWeek = new Date(year, mon - 1, d).getDay();
-                    if (dayOfWeek === 0 || dayOfWeek === 6) { continue; }
+var dateStr = year + '-' + String(mon).padStart(2,'0') + '-' + String(d).padStart(2,'0');
+var isOvertimeDay = attendanceRecords[dateStr] && attendanceRecords[dateStr]._overtime === true;
+if ((dayOfWeek === 0 || dayOfWeek === 6) && !isOvertimeDay) { continue; }
                     row.push('-');
                 }
                 row.push(0, 0, 0, 0);
@@ -2311,7 +2341,9 @@ data.afterSchool[name] = data.afterClass1[name] || data.afterClass2[name];
                     var isHoliday = attendanceRecords[dateStr] && attendanceRecords[dateStr]._holiday === true;
                     if (isHoliday) { row.push('放'); continue; }
                     var dayOfWeek = new Date(year, mon - 1, d).getDay();
-                    if (dayOfWeek === 0 || dayOfWeek === 6) { continue; }
+var dateStr = year + '-' + String(mon).padStart(2,'0') + '-' + String(d).padStart(2,'0');
+var isOvertimeDay = attendanceRecords[dateStr] && attendanceRecords[dateStr]._overtime === true;
+if ((dayOfWeek === 0 || dayOfWeek === 6) && !isOvertimeDay) { continue; }
                     
                     // 判断当天是否有第一节（一二年级周一只有1节，但第一节是有的）
                     var status = 'present';
@@ -2341,7 +2373,9 @@ data.afterSchool[name] = data.afterClass1[name] || data.afterClass2[name];
                     var isHoliday = attendanceRecords[dateStr] && attendanceRecords[dateStr]._holiday === true;
                     if (isHoliday) { row.push('放'); continue; }
                     var dayOfWeek = new Date(year, mon - 1, d).getDay();
-                    if (dayOfWeek === 0 || dayOfWeek === 6) { continue; }
+var dateStr = year + '-' + String(mon).padStart(2,'0') + '-' + String(d).padStart(2,'0');
+var isOvertimeDay = attendanceRecords[dateStr] && attendanceRecords[dateStr]._overtime === true;
+if ((dayOfWeek === 0 || dayOfWeek === 6) && !isOvertimeDay) { continue; }
                     row.push('-');
                 }
                 row.push(0, 0, 0, 0);
@@ -2357,7 +2391,9 @@ data.afterSchool[name] = data.afterClass1[name] || data.afterClass2[name];
                     var isHoliday = attendanceRecords[dateStr] && attendanceRecords[dateStr]._holiday === true;
                     if (isHoliday) { row.push('放'); continue; }
                     var dayOfWeek = new Date(year, mon - 1, d).getDay();
-                    if (dayOfWeek === 0 || dayOfWeek === 6) { continue; }
+var dateStr = year + '-' + String(mon).padStart(2,'0') + '-' + String(d).padStart(2,'0');
+var isOvertimeDay = attendanceRecords[dateStr] && attendanceRecords[dateStr]._overtime === true;
+if ((dayOfWeek === 0 || dayOfWeek === 6) && !isOvertimeDay) { continue; }
                     
                     // 一二年级周一没有第二节，直接标记为"无"
                     if ((studentGrade === '一年级' || studentGrade === '二年级') && dayOfWeek === 1) {
@@ -2392,7 +2428,9 @@ data.afterSchool[name] = data.afterClass1[name] || data.afterClass2[name];
                     var isHoliday = attendanceRecords[dateStr] && attendanceRecords[dateStr]._holiday === true;
                     if (isHoliday) { row.push('放'); continue; }
                     var dayOfWeek = new Date(year, mon - 1, d).getDay();
-                    if (dayOfWeek === 0 || dayOfWeek === 6) { continue; }
+var dateStr = year + '-' + String(mon).padStart(2,'0') + '-' + String(d).padStart(2,'0');
+var isOvertimeDay = attendanceRecords[dateStr] && attendanceRecords[dateStr]._overtime === true;
+if ((dayOfWeek === 0 || dayOfWeek === 6) && !isOvertimeDay) { continue; }
                     row.push('-');
                 }
                 row.push(0, 0, 0, 0);
@@ -3036,10 +3074,11 @@ data.afterSchool[name] = data.afterClass1[name] || data.afterClass2[name];
     if (!grid) return;
     var today = getTodayStr();
     var isHoliday = attendanceRecords[today] && attendanceRecords[today]._holiday === true;
-    if (isHoliday) {
-        grid.innerHTML = '<div style="text-align:center;padding:40px;color:#999;font-size:16px;">📅 今日放假，数据暂停统计</div>';
-        return;
-    }
+var isOvertime = attendanceRecords[today] && attendanceRecords[today]._overtime === true;
+if (isHoliday && !isOvertime) {
+    grid.innerHTML = '<div style="text-align:center;padding:40px;color:#999;font-size:16px;">📅 今日放假，数据暂停统计</div>';
+    return;
+}
     var level = getUserRoleLevel(currentUser);
     var isGradeLeader = (level === 2);
     var gradeFilter = currentUser ? currentUser.grade : '';
