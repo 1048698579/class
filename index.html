@@ -2748,17 +2748,20 @@ data.afterSchool[name] = data.afterClass1[name] || data.afterClass2[name];
 }
 
     function saveSystemConfig() {
-    var praiseInput = $('configPraise');
-    var negativeInput = $('configNegative');
-    var teacherPraiseInput = $('configTeacherPraise');
-    var teacherAbnormalInput = $('configTeacherAbnormal');
-    var deadlineInput = $('configDeadline');
-    var thresholdInput = $('configThreshold');
-    var mealPriceInput = $('configMealPrice');
-    var afterFeeInput = $('configAfterFee');
+    console.log('🔄 saveSystemConfig 被调用');
+    
+    var praiseInput = document.getElementById('configPraise');
+    var negativeInput = document.getElementById('configNegative');
+    var teacherPraiseInput = document.getElementById('configTeacherPraise');
+    var teacherAbnormalInput = document.getElementById('configTeacherAbnormal');
+    var deadlineInput = document.getElementById('configDeadline');
+    var thresholdInput = document.getElementById('configThreshold');
+    var mealPriceInput = document.getElementById('configMealPrice');
+    var afterFeeInput = document.getElementById('configAfterFee');
     
     if (!praiseInput || !negativeInput || !teacherPraiseInput || !teacherAbnormalInput || !deadlineInput || !thresholdInput || !mealPriceInput || !afterFeeInput) {
-        showToast('输入框不存在');
+        alert('输入框不存在，请刷新页面重试');
+        console.error('输入框缺失');
         return;
     }
     
