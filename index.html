@@ -420,8 +420,8 @@
             <div class="section-label">✏️ 补充说明（选填）</div>
             <textarea class="custom-input" id="classOverallComment" placeholder="例如：整体表现不错，建议加强互动..."></textarea>
             <div class="submit-row">
-                <button class="submit-btn secondary" id="classOverallCancelBtn">取消</button>
-                <button class="submit-btn primary" id="classOverallSubmitBtn">📢 提交整体评价</button>
+                <button class="submit-btn secondary" id="classOverallCancelBtn" onclick="closeClassOverallModal()">取消</button>
+                <button class="submit-btn primary" id="classOverallSubmitBtn" onclick="submitClassOverall()">📢 提交整体评价</button>
             </div>
             <button onclick="openPraiseClass()" style="margin-top:10px;padding:8px 20px;background:#f1c40f;color:#333;border:none;border-radius:12px;font-size:14px;font-weight:600;cursor:pointer;width:100%;">🏆 表扬班级</button>
         </div>
