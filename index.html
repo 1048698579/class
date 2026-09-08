@@ -1592,7 +1592,7 @@ if (currentUser && (currentUser.role === '超级管理员' || currentUser.role =
         }
         $('adminTabs').innerHTML = tabsHtml;
         var html = '';
-        if (adminTab === 'student') html = renderAdminStudents(data);
+        if (adminTab === 'student') html = (data);
         else if (adminTab === 'schedule') html = renderAdminSchedule(data);
         else if (adminTab === 'teacher') html = renderAdminTeachers(data);
         else if (adminTab === 'diner') html = renderAdminDiner(data);
@@ -1639,7 +1639,8 @@ if (currentUser && (currentUser.role === '超级管理员' || currentUser.role =
         var dinerCheckbox = !isEmpty ? '<input type="checkbox" ' + isDiner + ' ' + dinerDisabled + ' onchange="updateStudentDiner(' + i + ', this.checked)">' : '—';
         var afterCheckbox1 = !isEmpty ? '<input type="checkbox" ' + isAfter1 + ' onchange="updateStudentAfterClass(' + i + ', 1, this.checked)">' : '—';
         var afterCheckbox2 = !isEmpty ? '<input type="checkbox" ' + isAfter2 + ' onchange="updateStudentAfterClass(' + i + ', 2, this.checked)">' : '—';
-        var delBtn = !isEmpty ? '<button class="del-btn" onclick="deleteStudent(' + i + ')">✕</button>' : '';
+        // 空座位也显示删除按钮
+        var delBtn = '<button class="del-btn" onclick="deleteStudent(' + i + ')">✕</button>';
         html += '<tr>' +
             '<td><input type="checkbox" ' + checked + ' onclick="selectSeat(' + i + ')" style="width:18px;height:18px;cursor:pointer;"></td>' +
             '<td>' + (i + 1) + '</td>' +
@@ -1829,21 +1830,46 @@ data.afterSchool[name] = data.afterClass1[name] || data.afterClass2[name];
     }
 
     function deleteStudent(index) {
-        var data = getCurrentData();
-        var name = data.students[index];
-        if (!name || name.trim() === '') { showToast('该座位已是空座位'); return; }
-        if (!confirm('确认删除 "' + name + '" 吗？')) return;
-        data.students[index] = '';
-        if (data.diners) delete data.diners[name];
-        if (data.afterSchool) delete data.afterSchool[name];
-        if (seatStatus[index]) delete seatStatus[index];
+    var data = getCurrentData();
+    var name = data.students[index];
+    
+    // 如果是空座位，直接移除该位置
+    if (!name || name.trim() === '') {
+        if (!confirm('确认删除该空座位吗？')) return;
+        data.students.splice(index, 1);
+        // 同步调整 seatStatus
+        var newSeatStatus = {};
+        for (var i = 0; i < data.students.length; i++) {
+            var oldIndex = i >= index ? i + 1 : i;
+            if (seatStatus[oldIndex] !== undefined) {
+                newSeatStatus[i] = seatStatus[oldIndex];
+            }
+        }
+        seatStatus = newSeatStatus;
         CLASS_DATA_LIST[currentClassKey] = data;
         saveAllDataToServer().then(function() {
             renderAdminContent();
             renderSeats();
-            showToast('✅ 已删除 ' + name + '，座位已变空');
+            showToast('✅ 已删除空座位');
         });
+        return;
     }
+    
+    // 有学生：确认删除，座位变空
+    if (!confirm('确认删除 "' + name + '" 吗？')) return;
+    data.students[index] = '';
+    if (data.diners) delete data.diners[name];
+    if (data.afterSchool) delete data.afterSchool[name];
+    if (data.afterClass1) delete data.afterClass1[name];
+    if (data.afterClass2) delete data.afterClass2[name];
+    if (seatStatus[index]) delete seatStatus[index];
+    CLASS_DATA_LIST[currentClassKey] = data;
+    saveAllDataToServer().then(function() {
+        renderAdminContent();
+        renderSeats();
+        showToast('✅ 已删除 ' + name + '，座位已变空');
+    });
+}
 
     function setSeatEmpty(index) {
         var data = getCurrentData();
