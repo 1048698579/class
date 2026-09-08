@@ -294,10 +294,10 @@
             <span><span class="dot" style="background:#E8D5F5;border-color:#9B59B6;"></span> 未在教室</span>
         </div>
         <div class="action-row">
-            <button class="action-btn primary" id="classOverallBtn">📢 整体表现</button>
-            <button class="action-btn outline" id="resetAttendanceBtn">🔄 重置出勤</button>
-            <button class="action-btn outline" id="reportBtn">📋 出勤报表</button>
-        </div>
+    <button class="action-btn primary" id="classOverallBtn" onclick="openClassOverallModal()">📢 整体表现</button>
+    <button class="action-btn outline" id="resetAttendanceBtn" onclick="resetAttendance()">🔄 重置出勤</button>
+    <button class="action-btn outline" id="reportBtn" onclick="openReport()">📋 出勤报表</button>
+</div>
         <div class="admin-entry hidden" id="studentAdminEntry">
             <button class="admin-btn" onclick="openAdminModal('student')">📝 管理学生名单</button>
             <button class="admin-btn" onclick="openAdminModal('diner')">🍱 就餐统计</button>
