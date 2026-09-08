@@ -1224,7 +1224,6 @@ if (isHoliday && !isOvertime) {
     //  弹窗控制
     // ================================================================
     function openStudentModal(index) {
-    selectedStudentIndex = index;
     if (!currentUser) { showToast('🔒 请先登录'); return; }
     var students = getCurrentStudents();
     if (!students || index >= students.length) { showToast('⚠️ 学生不存在'); return; }
@@ -1232,6 +1231,7 @@ if (isHoliday && !isOvertime) {
         showToast('🔒 您无权操作该班');
         return;
     }
+    selectedStudentIndex = index;
     var data = getCurrentData();
     var name = students[index];
     if (!name || name.trim() === '') { showToast('🪑 该座位为空，无需点评'); return; }
@@ -1300,16 +1300,11 @@ for (var i = 0; i < btns.length; i++) {
     }
 }
     var praiseGrid = $('praiseGrid');
-if (praiseGrid) praiseGrid.style.display = canCommentFlag ? '' : 'none';
-var negGrid = $('negativeGrid');
-if (negGrid) negGrid.style.display = canCommentFlag ? '' : 'none';
-$('studentModal').classList.add('active');
-
-if (canCommentFlag) {
-    setTimeout(function() {
-        renderQuickComments();
-    }, 50);
-}
+    if (praiseGrid) praiseGrid.style.display = canCommentFlag ? '' : 'none';
+    var negGrid = $('negativeGrid');
+    if (negGrid) negGrid.style.display = canCommentFlag ? '' : 'none';
+    if (canCommentFlag) renderQuickComments();
+    $('studentModal').classList.add('active');
     
     setTimeout(function() {
         var submitBtn = $('studentSubmitBtn');
