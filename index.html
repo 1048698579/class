@@ -1300,11 +1300,16 @@ for (var i = 0; i < btns.length; i++) {
     }
 }
     var praiseGrid = $('praiseGrid');
-    if (praiseGrid) praiseGrid.style.display = canCommentFlag ? '' : 'none';
-    var negGrid = $('negativeGrid');
-    if (negGrid) negGrid.style.display = canCommentFlag ? '' : 'none';
-    if (canCommentFlag) renderQuickComments();
-    $('studentModal').classList.add('active');
+if (praiseGrid) praiseGrid.style.display = canCommentFlag ? '' : 'none';
+var negGrid = $('negativeGrid');
+if (negGrid) negGrid.style.display = canCommentFlag ? '' : 'none';
+$('studentModal').classList.add('active');
+
+if (canCommentFlag) {
+    setTimeout(function() {
+        renderQuickComments();
+    }, 50);
+}
     
     setTimeout(function() {
         var submitBtn = $('studentSubmitBtn');
