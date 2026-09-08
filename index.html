@@ -1378,7 +1378,33 @@ for (var i = 0; i < btns.length; i++) {
         document.querySelectorAll('.class-comment-btn-full').forEach(function(b) { b.classList.remove('active'); });
         $('classOverallModal').classList.add('active');
     }
-
+function openClassOverallModal() {
+    if (!currentUser) { showToast('🔒 请先登录'); return; }
+    if (!canComment(currentUser, currentClassKey)) { showToast('🔒 您无权评价该班'); return; }
+    var data = getCurrentData();
+    $('classOverallInfo').textContent = data.className;
+    $('classOverallComment').value = '';
+    $('classOverallComment').style.height = 'auto';
+    document.querySelectorAll('.class-comment-btn-full').forEach(function(b) { b.classList.remove('active'); });
+    $('classOverallModal').classList.add('active');
+    
+    // ========== 添加这段：点击评价按钮时添加 active 类 ==========
+    var btns = document.querySelectorAll('.class-comment-btn-full');
+    for (var i = 0; i < btns.length; i++) {
+        (function(btn) {
+            btn.onclick = function(e) {
+                e.stopPropagation();
+                // 同一组移除其他选中
+                var parentClass = this.classList.contains('atmosphere') ? 'atmosphere' : 'discipline';
+                var siblings = document.querySelectorAll('.class-comment-btn-full.' + parentClass);
+                for (var j = 0; j < siblings.length; j++) {
+                    siblings[j].classList.remove('active');
+                }
+                this.classList.add('active');
+            };
+        })(btns[i]);
+    }
+}
     function closeClassOverallModal() { $('classOverallModal').classList.remove('active'); }
 
     function openPraiseClass() {
