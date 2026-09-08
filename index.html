@@ -1280,20 +1280,25 @@ if (isHoliday && !isOvertime) {
     var canCommentFlag = canComment(currentUser, currentClassKey);
     var btns = document.querySelectorAll('#studentStatusGrid .status-btn');
     for (var i = 0; i < btns.length; i++) btns[i].style.display = canEdit ? '' : 'none';
-        // 点击状态按钮时，标记为选中
-btns.forEach(function(btn) {
-    btn.onclick = function() {
-        btns.forEach(function(b) { b.classList.remove('active'); });
-        this.classList.add('active');
-    };
-});
-        // 在弹窗打开后，标记当前状态为选中
+      // 点击状态按钮时，标记为选中
+for (var i = 0; i < btns.length; i++) {
+    (function(btn) {
+        btn.onclick = function() {
+            for (var j = 0; j < btns.length; j++) {
+                btns[j].classList.remove('active');
+            }
+            this.classList.add('active');
+        };
+    })(btns[i]);
+}
+
+// 在弹窗打开后，标记当前状态为选中
 var currentStatus = seatStatus[selectedStudentIndex] || 'present';
-btns.forEach(function(btn) {
-    if (btn.dataset.status === currentStatus) {
-        btn.classList.add('active');
+for (var i = 0; i < btns.length; i++) {
+    if (btns[i].dataset.status === currentStatus) {
+        btns[i].classList.add('active');
     }
-});
+}
     var praiseGrid = $('praiseGrid');
     if (praiseGrid) praiseGrid.style.display = canCommentFlag ? '' : 'none';
     var negGrid = $('negativeGrid');
@@ -1592,7 +1597,7 @@ if (currentUser && (currentUser.role === '超级管理员' || currentUser.role =
         }
         $('adminTabs').innerHTML = tabsHtml;
         var html = '';
-        if (adminTab === 'student') html = (data);
+        if (adminTab === 'student') html = renderAdminStudents(data);
         else if (adminTab === 'schedule') html = renderAdminSchedule(data);
         else if (adminTab === 'teacher') html = renderAdminTeachers(data);
         else if (adminTab === 'diner') html = renderAdminDiner(data);
@@ -2147,7 +2152,6 @@ data.afterSchool[name] = data.afterClass1[name] || data.afterClass2[name];
                 var dateStr = year + '-' + String(mon).padStart(2,'0') + '-' + String(d).padStart(2,'0');
                 var isHoliday = attendanceRecords[dateStr] && attendanceRecords[dateStr]._holiday === true;
                 if (isHoliday) { html += '<td style="color:#ccc;">-</td>'; continue; }
-                var dayOfWeek = new Date(year, mon - 1, d).getDay();
                 var dayOfWeek = new Date(year, mon - 1, d).getDay();
 var dateStr = year + '-' + String(mon).padStart(2,'0') + '-' + String(d).padStart(2,'0');
 var isOvertimeDay = attendanceRecords[dateStr] && attendanceRecords[dateStr]._overtime === true;
