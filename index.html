@@ -2950,33 +2950,36 @@ if ((dayOfWeek === 0 || dayOfWeek === 6) && !isOvertimeDay) { continue; }
     window.afterSchoolFee = afterFee;
     
     fetch(API_BASE + '/api/config', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-            praise_comments: PRAISE_COMMENTS,
-            negative_comments: NEGATIVE_COMMENTS,
-            teacher_praise: TEACHER_PRAISE,
-            teacher_abnormal: TEACHER_ABNORMAL,
-            diner_deadline: dinerDeadline,
-            alert_threshold: threshold,
-            grade_fees: gradeFees,
-            meal_price: mealPrice,
-            after_school_fee: afterFee
-        })
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+        praise_comments: PRAISE_COMMENTS,
+        negative_comments: NEGATIVE_COMMENTS,
+        teacher_praise: TEACHER_PRAISE,
+        teacher_abnormal: TEACHER_ABNORMAL,
+        diner_deadline: dinerDeadline,
+        alert_threshold: threshold,
+        grade_fees: gradeFees,
+        meal_price: mealPrice,
+        after_school_fee: afterFee
     })
-    .then(function(r) { return r.json(); })
-    .then(function(result) {
-        if (result.success) {
-            showToast('✅ 配置已保存');
-            // 重新加载配置
-            loadSystemConfig().then(function() {
-                renderTeacherComments();
-                showToast('✅ 配置已生效');
-            });
-        } else {
-            showToast('❌ 保存失败: ' + (result.error || '未知错误'));
-        }
-    })
+})
+.then(function(r) { return r.json(); })
+.then(function(result) {
+    if (result.success) {
+        showToast('✅ 配置已保存');
+        // ========== 直接赋值给 window ==========
+        window.mealPrice = mealPrice;
+        window.afterSchoolFee = afterFee;
+        window.gradeFees = gradeFees;
+        window.dinerDeadline = dinerDeadline;
+        // ======================================
+        renderTeacherComments();
+        showToast('✅ 配置已生效');
+    } else {
+        showToast('❌ 保存失败: ' + (result.error || '未知错误'));
+    }
+})
     .catch(function(e) {
         showToast('❌ 网络错误，请重试');
         console.error('保存配置失败:', e);
