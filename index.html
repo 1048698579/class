@@ -2265,8 +2265,8 @@ if ((dayOfWeek === 0 || dayOfWeek === 6) && !isOvertimeDay) { html += '<td>-</td
     //  读取各年级费用配置
     // ================================================================
     var gradeFees = window.gradeFees || {};
-    var defaultMeal = 10;
-    var defaultAfter = 5;
+var defaultMeal = window.mealPrice || 10;
+var defaultAfter = window.afterSchoolFee || 5;
     
     function getStudentGrade(studentName, classKey) {
         var cls = CLASS_DATA_LIST[classKey];
