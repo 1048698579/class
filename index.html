@@ -512,15 +512,44 @@
     var newDate = dateInput.value;
     if (!newDate) { showToast('⚠️ 请选择日期'); return; }
     selectedDate = newDate;
+    
+    // ========== 核心修复：重新加载对应日期的考勤数据 ==========
+    var dateRecords = attendanceRecords[selectedDate] && attendanceRecords[selectedDate][currentClassKey] 
+        ? attendanceRecords[selectedDate][currentClassKey] 
+        : {};
+    var students = getCurrentStudents();
+    seatStatus = {};
+    for (var i = 0; i < students.length; i++) {
+        var name = students[i];
+        if (name && dateRecords[name]) {
+            seatStatus[i] = dateRecords[name];
+        }
+    }
+    // ======================================================
+    
     renderSeats();
     updateStats();
     showToast('📅 已切换到 ' + selectedDate);
 }
-
+        
 function setAttendanceToday() {
     selectedDate = getTodayStr();
     var dateInput = document.getElementById('attendanceDate');
     if (dateInput) dateInput.value = selectedDate;
+    
+    // 重新加载今天的考勤数据
+    var dateRecords = attendanceRecords[selectedDate] && attendanceRecords[selectedDate][currentClassKey] 
+        ? attendanceRecords[selectedDate][currentClassKey] 
+        : {};
+    var students = getCurrentStudents();
+    seatStatus = {};
+    for (var i = 0; i < students.length; i++) {
+        var name = students[i];
+        if (name && dateRecords[name]) {
+            seatStatus[i] = dateRecords[name];
+        }
+    }
+    
     renderSeats();
     updateStats();
     showToast('📅 已切换到今天');
