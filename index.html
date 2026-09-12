@@ -269,7 +269,7 @@
         <div class="action-row">
             <button class="action-btn primary" id="classOverallBtn" onclick="openClassOverallModal()">📢 整体表现</button>
             <button class="action-btn outline" id="resetAttendanceBtn" onclick="resetAttendance()">🔄 重置出勤</button>
-            <button class="action-btn outline" id="reportBtn" onclick="openReport()">📋 出勤报表</button>
+            <button class="action-btn outline" id="reportBtn" onclick="openReport()">📋 今日报表</button>
             <button class="action-btn outline" id="backfillBtn" onclick="openBackfillModal()">📝 补录历史</button>
         </div>
         <div class="admin-entry hidden" id="studentAdminEntry">
@@ -317,7 +317,7 @@
         </div>
     </div>
 
-    <!-- 批量操作弹窗（重做） -->
+    <!-- 批量操作弹窗 -->
     <div class="modal-overlay" id="batchModal">
         <div class="modal-box" style="max-width:560px;">
             <div class="modal-title">📋 批量操作</div>
@@ -346,11 +346,15 @@
                 <button class="status-btn leave" data-status="leave">📝 请假</button>
                 <button class="status-btn not-in-room" data-status="not-in-room">🚪 未在教室</button>
             </div>
-            <div class="section-label">🍱 就餐与课后服务</div>
+            <div class="section-label">🍱 就餐与课后服务（今天）</div>
+            <div id="dinerDayHint" style="font-size:11px;color:#999;margin:-4px 0 6px 0;display:none;"></div>
             <div class="diner-checkbox-row" id="dinerCheckboxRow">
-                <label id="dinerLabel"><input type="checkbox" id="studentDinerCheck"> 在校就餐</label>
-                <label id="afterLabel1"><input type="checkbox" id="studentAfterCheck1"> 课后服务(第一节)</label>
-                <label id="afterLabel2"><input type="checkbox" id="studentAfterCheck2"> 课后服务(第二节)</label>
+                <label id="dinerLabel"><input type="checkbox" id="studentDinerCheck"> 今天在校就餐</label>
+                <label id="afterLabel1"><input type="checkbox" id="studentAfterCheck1"> 今天课后1</label>
+                <label id="afterLabel2"><input type="checkbox" id="studentAfterCheck2"> 今天课后2</label>
+            </div>
+            <div style="margin-top:6px;text-align:right;">
+                <button type="button" onclick="resetTodayDinerAfter()" style="padding:4px 12px;border:1px solid #ccc;border-radius:6px;background:#fff;color:#666;font-size:12px;cursor:pointer;">↺ 恢复按本月资格</button>
             </div>
             <div id="dinerLockTip" style="font-size:12px;color:#856404;text-align:center;margin-top:4px;display:none;">⏰ 已超过就餐调整时间，不可修改就餐状态</div>
             <div class="section-label">🌟 课堂表现</div>
@@ -424,13 +428,18 @@
 
     <!-- 补录历史弹窗 -->
     <div class="modal-overlay" id="backfillModal">
-        <div class="modal-box" style="max-width:520px;">
-            <div class="modal-title">📝 补录历史考勤</div>
+        <div class="modal-box" style="max-width:540px;">
+            <div class="modal-title">📝 补录历史</div>
             <div class="modal-sub" id="backfillClassInfo">三年级(1)班</div>
             <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;flex-wrap:wrap;background:#f8f9fa;padding:8px 12px;border-radius:8px;">
                 <label style="font-size:13px;color:#666;font-weight:500;">📅 日期：</label>
-                <input type="date" id="backfillDate" style="padding:6px 10px;border:1px solid #E5E7EB;border-radius:6px;font-size:14px;font-family:inherit;">
-                <button onclick="loadBackfillList()" style="padding:6px 16px;border:none;border-radius:6px;background:#4A90D9;color:#fff;font-size:13px;cursor:pointer;">加载</button>
+                <input type="date" id="backfillDate" onchange="loadBackfillList()" style="padding:6px 10px;border:1px solid #E5E7EB;border-radius:6px;font-size:14px;font-family:inherit;">
+                <button onclick="loadBackfillList()" style="padding:6px 16px;border:none;border-radius:6px;background:#4A90D9;color:#fff;font-size:13px;cursor:pointer;">🔄 重新加载</button>
+            </div>
+            <div style="font-size:11px;color:#888;margin-bottom:8px;line-height:1.6;">
+                📌 <b>出勤</b>：空 = 未记录（导出按到课算）<br>
+                📌 <b>本月</b> = 按长期资格（管理学生里设置）<br>
+                📌 <b>调</b> = 该日期单独调整过
             </div>
             <div id="backfillTip" class="backfill-tip" style="display:none;"></div>
             <div id="backfillList" style="max-height:340px;overflow-y:auto;border:1px solid #E5E7EB;border-radius:10px;"></div>
@@ -490,7 +499,7 @@
 
     <div class="toast" id="toast"></div>
 
-    <script>
+    <script>    
     // ================================================================
     //  角色与权限配置
     // ================================================================
@@ -509,10 +518,9 @@
     var TEACHER_ABNORMAL = ['空堂', '上课玩手机', '上课迟到', '课堂有待提高'];
 
     // ================================================================
-    //  全局状态 & 工具函数
+    //  全局状态
     // ================================================================
     var USERS = {};
-    var selectedDate = getTodayStr();  // 保留供补录内部参考
     var CLASS_DATA_LIST = {};
     var seatStatus = {};
     var teacherStatus = {};
@@ -527,10 +535,11 @@
     var dinerCanEdit = true;
     var dinerDeadline = '09:00';
     var _selectedSeatIndex = null;
-    var _backfillDate = getTodayStr();
+    var _backfillDate = '';
     var _backfillData = {};
     var _editingClassKey = null;
     var _batchTab = 'create';
+    var _loadedMonths = {};   // 已加载的月份缓存 { "班级_YYYY-MM": true }_batchTab = 'create';
 
     function $(id) { return document.getElementById(id); }
 
@@ -546,8 +555,10 @@
     function refreshStats() {
         showToast('🔄 正在刷新数据...');
         loadAllDataFromServer().then(function() {
+            restoreSeatStatusFromRecords(getTodayStr());
             updateStats();
             updateSeatStatus();
+            updateHeaderStats();
             if (currentUser && (currentUser.role === '超级管理员' || currentUser.role === '管理员' || currentUser.role === '校委会' || currentUser.role === '级委会')) {
                 renderDashboard();
             }
@@ -576,7 +587,12 @@
 
     function getCurrentStudents() { return getCurrentData().students || []; }
     function getCurrentTeachers() { return getCurrentData().teachers || []; }
-    function getCurrentSchedule() { return getCurrentData().schedule || [ ['','','','',''], ['','','','',''], ['','','','',''], ['','','','',''], ['','','','',''], ['','','','',''] ]; }
+    function getCurrentSchedule() {
+        return getCurrentData().schedule || [
+            ['','','','',''], ['','','','',''], ['','','','',''],
+            ['','','','',''], ['','','','',''], ['','','','','']
+        ];
+    }
 
     function mapGradeNum(n) {
         var map = { 1:'一年级',2:'二年级',3:'三年级',4:'四年级',5:'五年级',6:'六年级',7:'七年级',8:'八年级',9:'九年级',0:'高一年级' };
@@ -586,21 +602,18 @@
     function getClassGrade(classKey) {
         if (!classKey) return '';
         var s = String(classKey);
-        // 格式1：2024-301 / 2024-0301 / 2024-31
         var m = s.match(/(\d{4})-(\d{1,4})/);
         if (m) {
             var num = m[2];
             var first = num.charAt(0) === '0' ? num.charAt(1) : num.charAt(0);
             return mapGradeNum(parseInt(first));
         }
-        // 格式2：纯数字 301 / 0301
         m = s.match(/^(\d{3,4})$/);
         if (m) {
             var num2 = m[1];
             var first2 = num2.charAt(0) === '0' ? num2.charAt(1) : num2.charAt(0);
             return mapGradeNum(parseInt(first2));
         }
-        // 格式3：含"一年级"等中文
         var grades = ['一年级','二年级','三年级','四年级','五年级','六年级','七年级','八年级','九年级','高一年级'];
         for (var i = 0; i < grades.length; i++) {
             if (s.indexOf(grades[i]) !== -1) return grades[i];
@@ -609,6 +622,115 @@
     }
 
     function getUserRoleLevel(user) { return user ? ROLE_LEVELS[user.role] || 0 : 0; }
+
+    // ================================================================
+    //  每日状态读写（每日覆盖优先，长期资格兜底）
+    // ================================================================
+    function getDayDiner(date, classKey, name) {
+        if (!name || !classKey) return false;
+        var rec = attendanceRecords[date] && attendanceRecords[date][classKey];
+        if (rec && rec['_diner_' + name] !== undefined) return rec['_diner_' + name];
+        var cls = CLASS_DATA_LIST[classKey];
+        return cls && cls.diners ? (cls.diners[name] || false) : false;
+    }
+
+    function getDayAfter1(date, classKey, name) {
+        if (!name || !classKey) return false;
+        var rec = attendanceRecords[date] && attendanceRecords[date][classKey];
+        if (rec && rec['_after1_' + name] !== undefined) return rec['_after1_' + name];
+        var cls = CLASS_DATA_LIST[classKey];
+        return cls && cls.afterClass1 ? (cls.afterClass1[name] || false) : false;
+    }
+
+    function getDayAfter2(date, classKey, name) {
+        if (!name || !classKey) return false;
+        var rec = attendanceRecords[date] && attendanceRecords[date][classKey];
+        if (rec && rec['_after2_' + name] !== undefined) return rec['_after2_' + name];
+        var cls = CLASS_DATA_LIST[classKey];
+        return cls && cls.afterClass2 ? (cls.afterClass2[name] || false) : false;
+    }
+
+    function setDayDiner(date, classKey, name, value) {
+        if (!attendanceRecords[date]) attendanceRecords[date] = {};
+        if (!attendanceRecords[date][classKey]) attendanceRecords[date][classKey] = {};
+        attendanceRecords[date][classKey]['_diner_' + name] = !!value;
+    }
+
+    function setDayAfter1(date, classKey, name, value) {
+        if (!attendanceRecords[date]) attendanceRecords[date] = {};
+        if (!attendanceRecords[date][classKey]) attendanceRecords[date][classKey] = {};
+        attendanceRecords[date][classKey]['_after1_' + name] = !!value;
+    }
+
+    function setDayAfter2(date, classKey, name, value) {
+        if (!attendanceRecords[date]) attendanceRecords[date] = {};
+        if (!attendanceRecords[date][classKey]) attendanceRecords[date][classKey] = {};
+        attendanceRecords[date][classKey]['_after2_' + name] = !!value;
+    }
+
+    // ================================================================
+    //  与长期资格比较：相同则删除覆盖键，不同则写入
+    // ================================================================
+    function applyDayDiner(date, classKey, name, value) {
+        var cls = CLASS_DATA_LIST[classKey];
+        var longVal = cls && cls.diners ? (cls.diners[name] || false) : false;
+        if (!!value === longVal) {
+            if (attendanceRecords[date] && attendanceRecords[date][classKey]) {
+                delete attendanceRecords[date][classKey]['_diner_' + name];
+            }
+        } else {
+            setDayDiner(date, classKey, name, value);
+        }
+    }
+
+    function applyDayAfter1(date, classKey, name, value) {
+        var cls = CLASS_DATA_LIST[classKey];
+        var longVal = cls && cls.afterClass1 ? (cls.afterClass1[name] || false) : false;
+        if (!!value === longVal) {
+            if (attendanceRecords[date] && attendanceRecords[date][classKey]) {
+                delete attendanceRecords[date][classKey]['_after1_' + name];
+            }
+        } else {
+            setDayAfter1(date, classKey, name, value);
+        }
+    }
+
+    function applyDayAfter2(date, classKey, name, value) {
+        var cls = CLASS_DATA_LIST[classKey];
+        var longVal = cls && cls.afterClass2 ? (cls.afterClass2[name] || false) : false;
+        if (!!value === longVal) {
+            if (attendanceRecords[date] && attendanceRecords[date][classKey]) {
+                delete attendanceRecords[date][classKey]['_after2_' + name];
+            }
+        } else {
+            setDayAfter2(date, classKey, name, value);
+        }
+    }
+
+    function hasAnyDayOverride(year, mon, daysInMonth, classKey, name, prefix) {
+        for (var d = 1; d <= daysInMonth; d++) {
+            var ds = year + '-' + String(mon).padStart(2, '0') + '-' + String(d).padStart(2, '0');
+            var rec = attendanceRecords[ds] && attendanceRecords[ds][classKey];
+            if (rec && rec[prefix + name] !== undefined) return true;
+        }
+        return false;
+    }
+
+    function isStatusStop(status) {
+        return status === 'leave' || status === 'absent';
+    }
+
+    // 从 attendanceRecords[日期] 恢复 seatStatus
+    function restoreSeatStatusFromRecords(date) {
+        var students = getCurrentStudents();
+        var rec = attendanceRecords[date] && attendanceRecords[date][currentClassKey]
+            ? attendanceRecords[date][currentClassKey] : {};
+        seatStatus = {};
+        for (var i = 0; i < students.length; i++) {
+            var n = students[i];
+            if (n && typeof rec[n] === 'string') seatStatus[i] = rec[n];
+        }
+    }
 
     // ================================================================
     //  权限判断
@@ -635,6 +757,7 @@
     }
 
     function canManageUsers(user) { return hasFullAccess(user); }
+
     function canManageClasses(user) {
         if (!user) return false;
         if (hasFullAccess(user)) return true;
@@ -662,7 +785,7 @@
     // ================================================================
     //  云端数据同步
     // ================================================================
-    function loadAllDataFromServer() {
+        function loadAllDataFromServer() {
         return fetch(API_BASE + '/api/data')
             .then(function(response) { return response.json(); })
             .then(function(result) {
@@ -672,7 +795,6 @@
                     if (d.users) USERS = d.users;
                     if (d.seatStatus && currentClassKey && d.seatStatus[currentClassKey]) seatStatus = d.seatStatus[currentClassKey];
                     if (d.teacherStatus && currentClassKey && d.teacherStatus[currentClassKey]) teacherStatus = d.teacherStatus[currentClassKey];
-                    if (d.attendanceRecords) attendanceRecords = d.attendanceRecords;
                     if (Object.keys(USERS).length === 0) {
                         USERS['admin'] = { name: '超级管理员', role: '超级管理员', role_level: 5, password: 'admin123' };
                         saveAllDataToServer();
@@ -695,8 +817,7 @@
             classDataList: CLASS_DATA_LIST,
             users: USERS,
             seatStatus: {},
-            teacherStatus: {},
-            attendanceRecords: attendanceRecords
+            teacherStatus: {}
         };
         if (currentClassKey) {
             dataToSave.seatStatus[currentClassKey] = seatStatus;
@@ -709,8 +830,85 @@
         })
         .then(function(response) { return response.json(); })
         .then(function(result) {
-            if (result.success) { return true; }
-            else { console.error('❌ 同步失败:', result.error); return false; }
+            if (result.success) return true;
+            console.error('❌ 同步失败:', result.error);
+            return false;
+        })
+        .catch(function(e) { console.error('❌ 网络错误:', e); return false; });
+    }
+
+    // ================================================================
+    //  考勤按需加载（按班+月）
+    // ================================================================
+    function loadAttendanceMonth(classKey, month) {
+        if (!classKey || !month) return Promise.resolve();
+        var cacheKey = classKey + '_' + month;
+        if (_loadedMonths[cacheKey]) return Promise.resolve();
+
+        return fetch(API_BASE + '/api/attendance?classKey=' + encodeURIComponent(classKey) + '&month=' + month)
+            .then(function(r) { return r.json(); })
+            .then(function(result) {
+                if (result.success && result.data) {
+                    for (var date in result.data) {
+                        if (!attendanceRecords[date]) attendanceRecords[date] = {};
+                        attendanceRecords[date][classKey] = result.data[date];
+                    }
+                    _loadedMonths[cacheKey] = true;
+                }
+                return true;
+            })
+            .catch(function(e) { console.error('加载考勤失败:', e); return false; });
+    }
+
+    // 加载一段日期范围（覆盖的月份逐个加载）
+    function loadAttendanceRange(classKey, start, end) {
+        var months = [];
+        var d = new Date(start);
+        var endD = new Date(end);
+        while (d <= endD) {
+            var m = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+            if (months.indexOf(m) === -1) months.push(m);
+            d.setMonth(d.getMonth() + 1);
+        }
+        var chain = Promise.resolve();
+        months.forEach(function(m) {
+            chain = chain.then(function() { return loadAttendanceMonth(classKey, m); });
+        });
+        return chain;
+    }
+
+    // 加载最近 N 个月
+    function loadRecentMonths(classKey, n) {
+        var months = [];
+        var now = new Date();
+        for (var i = 0; i < n; i++) {
+            var d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+            months.push(d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0'));
+        }
+        var chain = Promise.resolve();
+        months.forEach(function(m) {
+            chain = chain.then(function() { return loadAttendanceMonth(classKey, m); });
+        });
+        return chain;
+    }
+
+    // ================================================================
+    //  保存单天考勤
+    // ================================================================
+    function saveDayAttendance(classKey, date) {
+        if (!classKey || !date) return Promise.resolve(false);
+        var dayData = attendanceRecords[date] && attendanceRecords[date][classKey]
+            ? attendanceRecords[date][classKey] : {};
+        return fetch(API_BASE + '/api/attendance/save', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ classKey: classKey, date: date, data: dayData })
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(result) {
+            if (result.success) return true;
+            console.error('❌ 考勤保存失败:', result.error);
+            return false;
         })
         .catch(function(e) { console.error('❌ 网络错误:', e); return false; });
     }
@@ -742,7 +940,7 @@
     }
 
     // ================================================================
-    //  登录/退出
+    //  登录 / 退出
     // ================================================================
     function initLogin() {
         var select = $('loginUserSelect');
@@ -869,13 +1067,13 @@
         attendanceRecords[today]._holiday = checked;
         if (checked) {
             attendanceRecords[today]._overtime = false;
-            var overtimeToggle = document.getElementById('overtimeToggle');
-            if (overtimeToggle) overtimeToggle.checked = false;
+            var ot = $('overtimeToggle');
+            if (ot) ot.checked = false;
         }
         saveAllDataToServer().then(function() {
             updateStats();
             updateSeatStatus();
-            showToast(checked ? '📅 今日已设为放假，数据不计入统计' : '📅 今日已取消放假，恢复正常统计');
+            showToast(checked ? '📅 今日已设为放假' : '📅 今日已取消放假');
             renderHolidayBar();
         });
     }
@@ -886,13 +1084,13 @@
         attendanceRecords[today]._overtime = checked;
         if (checked) {
             attendanceRecords[today]._holiday = false;
-            var holidayToggle = document.getElementById('holidayToggle');
-            if (holidayToggle) holidayToggle.checked = false;
+            var ht = $('holidayToggle');
+            if (ht) ht.checked = false;
         }
         saveAllDataToServer().then(function() {
             updateStats();
             updateSeatStatus();
-            showToast(checked ? '📚 今日设为调休上课，按正常工作日统计' : '📚 已取消调休上课');
+            showToast(checked ? '📚 今日设为调休上课' : '📚 已取消调休上课');
             renderHolidayBar();
         });
     }
@@ -919,9 +1117,8 @@
             (isOvertime ? '<span class="holiday-active" style="color:#4A90D9;">✅ 调休上课</span>' : '') +
             '</div>';
     }
-
-    // ================================================================
-    //  渲染函数
+            // ================================================================
+    //  渲染：教师团队
     // ================================================================
     function renderTeachers() {
         var teachers = getCurrentTeachers();
@@ -958,9 +1155,11 @@
         if (badge) badge.textContent = canEdit ? '点击可点评' : '仅领导可评';
     }
 
+    // ================================================================
+    //  渲染：课程表
+    // ================================================================
     function renderSchedule() {
         var schedule = getCurrentSchedule();
-        var days = ['周一', '周二', '周三', '周四', '周五'];
         var periods = [];
         for (var i = 1; i <= schedule.length; i++) periods.push('第' + i + '节');
         var html = '';
@@ -972,10 +1171,11 @@
         }
         var body = $('scheduleBody');
         if (body) body.innerHTML = html;
-        var se = $('scheduleAdminEntry');
-        if (se) se.classList.add('hidden');
     }
 
+    // ================================================================
+    //  渲染：座位表
+    // ================================================================
     function renderSeats() {
         var students = getCurrentStudents();
         var columns = getCurrentData().seatColumns || 8;
@@ -986,6 +1186,7 @@
         var rows = Math.ceil(students.length / columns);
         var info = $('seatInfo');
         if (info) info.textContent = '共' + total + '人 · ' + columns + '列 × ' + rows + '行';
+
         var canEdit = canEditClass(currentUser, currentClassKey);
         var grid = $('seatGrid');
         if (grid) {
@@ -1001,10 +1202,10 @@
                         '🪑<span class="status-dot"></span><span class="seat-hint">' + hint + '</span></div>';
                     continue;
                 }
-                var disabledClass = canEdit ? '' : ' disabled';
-                var hint = canEdit ? '' : '<span class="seat-hint">🔒</span>';
-                html += '<div class="seat' + disabledClass + '" data-index="' + i + '" style="font-size:10px;padding:4px 2px;min-height:36px;">' +
-                    name + '<span class="status-dot"></span>' + hint + '</div>';
+                var disabledClass2 = canEdit ? '' : ' disabled';
+                var hint2 = canEdit ? '' : '<span class="seat-hint">🔒</span>';
+                html += '<div class="seat' + disabledClass2 + '" data-index="' + i + '" style="font-size:10px;padding:4px 2px;min-height:36px;">' +
+                    name + '<span class="status-dot"></span>' + hint2 + '</div>';
             }
             grid.innerHTML = html;
             var seats = document.querySelectorAll('.seat:not(.disabled)');
@@ -1018,14 +1219,17 @@
             }
         }
         updateSeatStatus();
+
         var lock = $('seatLockIcon');
         if (lock) lock.textContent = canEdit ? '🔓' : '🔒';
+
         var btns = ['classOverallBtn', 'resetAttendanceBtn', 'reportBtn', 'backfillBtn'];
         var canCommentFlag = canComment(currentUser, currentClassKey);
         for (var i = 0; i < btns.length; i++) {
             var btn = $(btns[i]);
             if (btn) { btn.disabled = !canCommentFlag; btn.style.opacity = canCommentFlag ? '1' : '0.5'; }
         }
+
         var se = $('studentAdminEntry');
         if (se) {
             if (canEditClass(currentUser, currentClassKey) || getUserRoleLevel(currentUser) >= 2) se.classList.remove('hidden');
@@ -1059,12 +1263,12 @@
             var status = seatStatus[idx] || 'present';
             el.classList.remove('present', 'late', 'absent', 'leave', 'not-in-room');
             var dot = el.querySelector('.status-dot');
-            if (status === 'present') { el.classList.add('present'); dot.textContent = '✅'; }
-            else if (status === 'late') { el.classList.add('late'); dot.textContent = '⏰'; }
-            else if (status === 'absent') { el.classList.add('absent'); dot.textContent = '❌'; }
-            else if (status === 'leave') { el.classList.add('leave'); dot.textContent = '📝'; }
-            else if (status === 'not-in-room') { el.classList.add('not-in-room'); dot.textContent = '🚪'; }
-            else { el.classList.add('present'); dot.textContent = '✅'; }
+            if (status === 'present') { el.classList.add('present'); if (dot) dot.textContent = '✅'; }
+            else if (status === 'late') { el.classList.add('late'); if (dot) dot.textContent = '⏰'; }
+            else if (status === 'absent') { el.classList.add('absent'); if (dot) dot.textContent = '❌'; }
+            else if (status === 'leave') { el.classList.add('leave'); if (dot) dot.textContent = '📝'; }
+            else if (status === 'not-in-room') { el.classList.add('not-in-room'); if (dot) dot.textContent = '🚪'; }
+            else { el.classList.add('present'); if (dot) dot.textContent = '✅'; }
         }
         var emptySeats = document.querySelectorAll('.seat.empty');
         for (var i = 0; i < emptySeats.length; i++) {
@@ -1072,17 +1276,19 @@
             if (dot) dot.textContent = '';
         }
         updateStats();
-        saveDataToServer();
     }
 
+    // ================================================================
+    //  统计
+    // ================================================================
     function updateStats() {
         var students = getCurrentStudents();
         var today = getTodayStr();
         var isHoliday = attendanceRecords[today] && attendanceRecords[today]._holiday === true;
         var isOvertime = attendanceRecords[today] && attendanceRecords[today]._overtime === true;
         if (isHoliday && !isOvertime) {
-            var statEls = ['statPresent', 'statLate', 'statAbsent', 'statLeave', 'statNotInRoom'];
-            for (var i = 0; i < statEls.length; i++) { var el = $(statEls[i]); if (el) el.textContent = '—'; }
+            var statEls0 = ['statPresent', 'statLate', 'statAbsent', 'statLeave', 'statNotInRoom'];
+            for (var i = 0; i < statEls0.length; i++) { var el0 = $(statEls0[i]); if (el0) el0.textContent = '—'; }
             return;
         }
         var p = 0, l = 0, a = 0, le = 0, n = 0;
@@ -1104,6 +1310,7 @@
     function updateHeaderStats() {
         var role = currentUser ? currentUser.role : '';
         var isLeader = (role === '超级管理员' || role === '管理员' || role === '校委会' || role === '级委会');
+        var today = getTodayStr();
         var totalDiner = 0, totalAfter = 0;
         if (isLeader) {
             var keys = getVisibleClassKeys();
@@ -1111,27 +1318,21 @@
                 var cls = CLASS_DATA_LIST[keys[i]];
                 if (!cls) continue;
                 var students = cls.students || [];
-                var diners = cls.diners || {};
-                var afterClass1 = cls.afterClass1 || {};
-                var afterClass2 = cls.afterClass2 || {};
                 for (var j = 0; j < students.length; j++) {
                     var name = students[j];
                     if (!name || name.trim() === '') continue;
-                    if (diners[name]) totalDiner++;
-                    if (afterClass1[name] || afterClass2[name]) totalAfter++;
+                    if (getDayDiner(today, keys[i], name)) totalDiner++;
+                    if (getDayAfter1(today, keys[i], name) || getDayAfter2(today, keys[i], name)) totalAfter++;
                 }
             }
         } else {
             var data = getCurrentData();
             var students = data.students || [];
-            var diners = data.diners || {};
-            var afterClass1 = data.afterClass1 || {};
-            var afterClass2 = data.afterClass2 || {};
             for (var i = 0; i < students.length; i++) {
                 var name = students[i];
                 if (!name || name.trim() === '') continue;
-                if (diners[name]) totalDiner++;
-                if (afterClass1[name] || afterClass2[name]) totalAfter++;
+                if (getDayDiner(today, currentClassKey, name)) totalDiner++;
+                if (getDayAfter1(today, currentClassKey, name) || getDayAfter2(today, currentClassKey, name)) totalAfter++;
             }
         }
         var dinerEl = $('headerDinerStats');
@@ -1139,8 +1340,6 @@
         var afterEl = $('headerAfterStats');
         if (afterEl) afterEl.textContent = '📚 课后: ' + totalAfter + '人';
     }
-
-    function saveDataToServer() { saveAllDataToServer(); }
 
     // ================================================================
     //  快捷点评
@@ -1217,23 +1416,42 @@
         $('studentModalInfo').textContent = data.className + ' · 座位号 ' + (index + 1);
         $('studentComment').value = '';
         $('studentComment').style.height = 'auto';
+
+        var today = getTodayStr();
         var dinerCheck = $('studentDinerCheck');
         var afterCheck1 = $('studentAfterCheck1');
         var afterCheck2 = $('studentAfterCheck2');
-        var diners = data.diners || {};
-        var afterSchool = data.afterSchool || {};
-        var hasOldAfter = afterSchool[name] !== undefined;
-        var after1 = false, after2 = false;
-        if (hasOldAfter) {
-            after1 = afterSchool[name] || false;
-            after2 = afterSchool[name] || false;
-        } else {
-            after1 = data.afterClass1 && data.afterClass1[name] || false;
-            after2 = data.afterClass2 && data.afterClass2[name] || false;
+
+        var todayDiner = getDayDiner(today, currentClassKey, name);
+        var todayAfter1 = getDayAfter1(today, currentClassKey, name);
+        var todayAfter2 = getDayAfter2(today, currentClassKey, name);
+
+        var hasOverride = false;
+        var rec = attendanceRecords[today] && attendanceRecords[today][currentClassKey];
+        if (rec && (rec['_diner_' + name] !== undefined ||
+                    rec['_after1_' + name] !== undefined ||
+                    rec['_after2_' + name] !== undefined)) {
+            hasOverride = true;
         }
-        if (dinerCheck) dinerCheck.checked = diners[name] || false;
-        if (afterCheck1) afterCheck1.checked = after1;
-        if (afterCheck2) afterCheck2.checked = after2;
+
+        if (dinerCheck) dinerCheck.checked = todayDiner;
+        if (afterCheck1) afterCheck1.checked = todayAfter1;
+        if (afterCheck2) afterCheck2.checked = todayAfter2;
+
+        var dinerHint = $('dinerDayHint');
+        if (dinerHint) {
+            if (hasOverride) {
+                var longDiner = (data.diners && data.diners[name]) ? '订餐' : '未订餐';
+                var longAfter = ((data.afterClass1 && data.afterClass1[name]) || (data.afterClass2 && data.afterClass2[name])) ? '参加' : '不参加';
+                dinerHint.textContent = '📌 今天已单独调整（本月资格：' + longDiner + ' / 课后：' + longAfter + '）';
+                dinerHint.style.color = '#E67E22';
+            } else {
+                dinerHint.textContent = '💡 默认按本月资格，可单独调整今天';
+                dinerHint.style.color = '#999';
+            }
+            dinerHint.style.display = 'block';
+        }
+
         var dinerLabel = $('dinerLabel');
         var lockTip = $('dinerLockTip');
         if (!dinerCanEdit) {
@@ -1245,6 +1463,7 @@
             if (dinerLabel) dinerLabel.className = '';
             if (lockTip) lockTip.style.display = 'none';
         }
+
         var canEdit = canEditClass(currentUser, currentClassKey);
         var canCommentFlag = canComment(currentUser, currentClassKey);
         var btns = document.querySelectorAll('#studentStatusGrid .status-btn');
@@ -1261,35 +1480,21 @@
         for (var i = 0; i < btns.length; i++) {
             if (btns[i].dataset.status === currentStatus) btns[i].classList.add('active');
         }
+
         var praiseGrid = $('praiseGrid');
         if (praiseGrid) praiseGrid.style.display = canCommentFlag ? '' : 'none';
         var negGrid = $('negativeGrid');
         if (negGrid) negGrid.style.display = canCommentFlag ? '' : 'none';
         if (canCommentFlag) renderQuickComments();
+
         $('studentModal').classList.add('active');
+
         setTimeout(function() {
             var submitBtn = $('studentSubmitBtn');
             if (submitBtn) {
                 submitBtn.onclick = function() {
                     var activeBtn = document.querySelector('#studentStatusGrid .status-btn.active');
                     var status = activeBtn ? activeBtn.dataset.status : 'present';
-                    var dinerChecked = $('studentDinerCheck') ? $('studentDinerCheck').checked : false;
-                    var after1Checked = $('studentAfterCheck1') ? $('studentAfterCheck1').checked : false;
-                    var after2Checked = $('studentAfterCheck2') ? $('studentAfterCheck2').checked : false;
-                    if (selectedStudentIndex !== null) {
-                        var data2 = getCurrentData();
-                        var name2 = data2.students[selectedStudentIndex];
-                        if (!data2.diners) data2.diners = {};
-                        if (!data2.afterClass1) data2.afterClass1 = {};
-                        if (!data2.afterClass2) data2.afterClass2 = {};
-                        data2.diners[name2] = dinerChecked;
-                        data2.afterClass1[name2] = after1Checked;
-                        data2.afterClass2[name2] = after2Checked;
-                        if (!data2.afterSchool) data2.afterSchool = {};
-                        data2.afterSchool[name2] = after1Checked || after2Checked;
-                        CLASS_DATA_LIST[currentClassKey] = data2;
-                        saveAllDataToServer().then(function() { updateHeaderStats(); });
-                    }
                     submitStudent(status);
                 };
             }
@@ -1299,6 +1504,26 @@
     }
 
     function closeStudentModal() { $('studentModal').classList.remove('active'); selectedStudentIndex = null; }
+
+    function resetTodayDinerAfter() {
+        if (selectedStudentIndex === null) return;
+        var students = getCurrentStudents();
+        var name = students[selectedStudentIndex];
+        if (!name) return;
+        var data = getCurrentData();
+        var dinerCheck = $('studentDinerCheck');
+        var afterCheck1 = $('studentAfterCheck1');
+        var afterCheck2 = $('studentAfterCheck2');
+        if (dinerCheck) dinerCheck.checked = (data.diners && data.diners[name]) || false;
+        if (afterCheck1) afterCheck1.checked = (data.afterClass1 && data.afterClass1[name]) || false;
+        if (afterCheck2) afterCheck2.checked = (data.afterClass2 && data.afterClass2[name]) || false;
+        var dinerHint = $('dinerDayHint');
+        if (dinerHint) {
+            dinerHint.textContent = '💡 已恢复按本月资格（点"提交"保存）';
+            dinerHint.style.color = '#28A745';
+        }
+        showToast('💡 已恢复默认，点"提交"保存');
+    }
 
     function submitStudent(status) {
         if (selectedStudentIndex === null || selectedStudentIndex === undefined) {
@@ -1310,14 +1535,33 @@
         var name = students[selectedStudentIndex];
         if (!name || name.trim() === '') { showToast('🪑 该座位为空'); closeStudentModal(); return; }
         var comment = $('studentComment') ? $('studentComment').value.trim() : '';
+        var today = getTodayStr();
+
+        if (!attendanceRecords[today]) attendanceRecords[today] = {};
+        if (!attendanceRecords[today][currentClassKey]) attendanceRecords[today][currentClassKey] = {};
+
         if (status) {
             seatStatus[selectedStudentIndex] = status;
-            var today = getTodayStr();
-            if (!attendanceRecords[today]) attendanceRecords[today] = {};
-            if (!attendanceRecords[today][currentClassKey]) attendanceRecords[today][currentClassKey] = {};
             attendanceRecords[today][currentClassKey][name] = status;
         }
+
+        var dinerChecked = $('studentDinerCheck') ? $('studentDinerCheck').checked : false;
+        var after1Checked = $('studentAfterCheck1') ? $('studentAfterCheck1').checked : false;
+        var after2Checked = $('studentAfterCheck2') ? $('studentAfterCheck2').checked : false;
+
+        applyDayDiner(today, currentClassKey, name, dinerChecked);
+        applyDayAfter1(today, currentClassKey, name, after1Checked);
+        applyDayAfter2(today, currentClassKey, name, after2Checked);
+
+        // 清理空的班级记录
+        var clsRec = attendanceRecords[today][currentClassKey];
+        var hasAnyData = false;
+        for (var k in clsRec) { hasAnyData = true; break; }
+        if (!hasAnyData) delete attendanceRecords[today][currentClassKey];
+
+        saveDayAttendance(currentClassKey, today).then(function() { updateHeaderStats(); });
         updateSeatStatus();
+
         if (canComment(currentUser, currentClassKey) && comment) {
             var statusMap = { present:'✅ 到课', late:'⏰ 迟到', absent:'❌ 缺勤', leave:'📝 请假', 'not-in-room':'🚪 未在教室' };
             var statusLabel = status ? (statusMap[status] || status) : '✅ 到课';
@@ -1326,10 +1570,9 @@
             showToast('✅ 已点评 ' + name);
         } else {
             var statusMap2 = { present:'✅ 到课', late:'⏰ 迟到', absent:'❌ 缺勤', leave:'📝 请假', 'not-in-room':'🚪 未在教室' };
-            showToast('✅ 已更新 ' + name + ' 状态：' + (statusMap2[status] || status));
+            showToast('✅ 已更新 ' + name + '：' + (statusMap2[status] || status));
         }
         closeStudentModal();
-        updateHeaderStats();
     }
 
     // ================================================================
@@ -1397,8 +1640,8 @@
         var statusMap = { empty:'🕳️ 空堂（教师不在教室）', phone:'📱 上课玩手机', late:'⏰ 上课迟到', needImprove:'📉 课堂有待提高' };
         teacherStatus[selectedTeacherIndex] = status;
         renderTeachers();
-        var msg = '🚨 **教学异常通报**\n\n🏫 班级：' + data.className + '\n👨‍🏫 教师：' + t.name + '（' + t.role.replace('班主任 · ', '') + '）\n⚠️ 问题：' + (statusMap[status] || status) + '\n' + (comment ? '📝 备注：' + comment + '\n' : '') + '👨‍🏫 报告人：' + currentUser.name + '（' + currentUser.role + '）\n🕐 时间：' + getNowStr();
-        sendDingTalk(msg, true);
+        var msg2 = '🚨 **教学异常通报**\n\n🏫 班级：' + data.className + '\n👨‍🏫 教师：' + t.name + '（' + t.role.replace('班主任 · ', '') + '）\n⚠️ 问题：' + (statusMap[status] || status) + '\n' + (comment ? '📝 备注：' + comment + '\n' : '') + '👨‍🏫 报告人：' + currentUser.name + '（' + currentUser.role + '）\n🕐 时间：' + getNowStr();
+        sendDingTalk(msg2, true);
         showToast('🚨 已通报：' + t.name);
         closeTeacherModal();
     }
@@ -1478,7 +1721,6 @@
         if (!canEditClass(currentUser, currentClassKey)) { showToast('🔒 您无权重置该班出勤'); return; }
         if (confirm('确认将全班状态重置为"到课"吗？')) {
             seatStatus = {};
-            updateSeatStatus();
             var today = getTodayStr();
             if (!attendanceRecords[today]) attendanceRecords[today] = {};
             attendanceRecords[today][currentClassKey] = {};
@@ -1488,13 +1730,15 @@
                     attendanceRecords[today][currentClassKey][students[i]] = 'present';
                 }
             }
-            saveAllDataToServer();
-            showToast('✅ 已重置今日出勤状态');
+            saveDayAttendance(currentClassKey, today).then(function() {
+                showToast('✅ 已重置今日出勤状态');
+            });
+            updateSeatStatus();
         }
     }
 
     // ================================================================
-    //  出勤报表
+    //  出勤报表（今日文本）
     // ================================================================
     function openReport() {
         if (!currentUser) { showToast('🔒 请先登录'); return; }
@@ -1553,7 +1797,7 @@
     }
 
     // ================================================================
-    //  补录历史考勤
+    //  补录历史（出勤 + 就餐 + 课后）
     // ================================================================
     function openBackfillModal() {
         if (!currentUser) { showToast('🔒 请先登录'); return; }
@@ -1569,6 +1813,7 @@
             dateInput.max = getTodayStr();
         }
         _backfillDate = getTodayStr();
+        _backfillData = {};
         loadBackfillList();
         $('backfillModal').classList.add('active');
     }
@@ -1585,10 +1830,17 @@
         if (!date) { showToast('请选择日期'); return; }
         if (date > getTodayStr()) { showToast('⚠️ 不能补录未来日期'); return; }
         _backfillDate = date;
+        _backfillData = {};
+
         var data = getCurrentData();
         var students = data.students || [];
         var existing = attendanceRecords[date] && attendanceRecords[date][currentClassKey]
             ? attendanceRecords[date][currentClassKey] : {};
+        var cls = CLASS_DATA_LIST[currentClassKey] || {};
+        var longDiners = cls.diners || {};
+        var longAfter1 = cls.afterClass1 || {};
+        var longAfter2 = cls.afterClass2 || {};
+
         var nameSet = {};
         var list = [];
         for (var i = 0; i < students.length; i++) {
@@ -1596,41 +1848,98 @@
             if (n && n.trim() !== '' && !nameSet[n]) { nameSet[n] = true; list.push(n); }
         }
         for (var n2 in existing) {
+            if (n2.indexOf('_diner_') === 0 || n2.indexOf('_after1_') === 0 || n2.indexOf('_after2_') === 0) continue;
             if (typeof existing[n2] === 'string' && !nameSet[n2]) { nameSet[n2] = true; list.push(n2); }
         }
-        _backfillData = {};
-        var html = '<table class="admin-table"><thead><tr><th>姓名</th><th>当前状态</th><th>改为</th></tr></thead><tbody>';
-        var statusMap = { present:'✅ 到课', late:'⏰ 迟到', absent:'❌ 缺勤', leave:'📝 请假', 'not-in-room':'🚪 未在教室' };
+        for (var n3 in existing) {
+            if (n3.indexOf('_diner_') === 0) {
+                var nm = n3.substring(7);
+                if (!nameSet[nm]) { nameSet[nm] = true; list.push(nm); }
+            }
+        }
+
+        var html = '<table class="admin-table"><thead><tr>' +
+            '<th style="min-width:60px;">姓名</th>' +
+            '<th style="min-width:80px;">出勤</th>' +
+            '<th style="text-align:center;">🍱 就餐</th>' +
+            '<th style="text-align:center;">📚 课1</th>' +
+            '<th style="text-align:center;">📚 课2</th>' +
+            '</tr></thead><tbody>';
+
+        var overrideCount = 0;
         for (var i = 0; i < list.length; i++) {
             var name = list[i];
             var cur = existing[name] || '';
-            _backfillData[name] = cur;
-            var curLabel = cur ? (statusMap[cur] || cur) : '— 未记录';
-            html += '<tr><td>' + name + '</td><td style="color:#888;">' + curLabel + '</td><td>' +
-                '<select data-name="' + name + '" onchange="onBackfillChange(this)" style="width:100%;padding:4px 6px;border:1px solid #E5E7EB;border-radius:4px;font-size:13px;font-family:inherit;">' +
-                '<option value="">— 未记录 —</option>' +
-                '<option value="present"' + (cur === 'present' ? ' selected' : '') + '>✅ 到课</option>' +
-                '<option value="late"' + (cur === 'late' ? ' selected' : '') + '>⏰ 迟到</option>' +
-                '<option value="absent"' + (cur === 'absent' ? ' selected' : '') + '>❌ 缺勤</option>' +
-                '<option value="leave"' + (cur === 'leave' ? ' selected' : '') + '>📝 请假</option>' +
-                '<option value="not-in-room"' + (cur === 'not-in-room' ? ' selected' : '') + '>🚪 未在教室</option>' +
-                '</select></td></tr>';
+            var dKey = '_diner_' + name;
+            var a1Key = '_after1_' + name;
+            var a2Key = '_after2_' + name;
+
+            var dHasOv = existing[dKey] !== undefined;
+            var a1HasOv = existing[a1Key] !== undefined;
+            var a2HasOv = existing[a2Key] !== undefined;
+            if (dHasOv || a1HasOv || a2HasOv || cur) overrideCount++;
+
+            var dVal = dHasOv ? existing[dKey] : (longDiners[name] || false);
+            var a1Val = a1HasOv ? existing[a1Key] : (longAfter1[name] || false);
+            var a2Val = a2HasOv ? existing[a2Key] : (longAfter2[name] || false);
+
+            _backfillData[name] = {
+                status: cur,
+                diner: !!dVal,
+                after1: !!a1Val,
+                after2: !!a2Val
+            };
+
+            var lbl = function(hasOv) {
+                return hasOv
+                    ? '<span style="font-size:9px;color:#E67E22;background:#fdf5ed;border-radius:3px;padding:0 3px;margin-left:2px;">调</span>'
+                    : '<span style="font-size:9px;color:#999;background:#f5f5f5;border-radius:3px;padding:0 3px;margin-left:2px;">本</span>';
+            };
+
+            html += '<tr>' +
+                '<td>' + name + '</td>' +
+                '<td>' +
+                    '<select data-name="' + name + '" data-field="status" onchange="onBackfillChange(this)" style="width:100%;padding:3px 4px;border:1px solid #E5E7EB;border-radius:4px;font-size:11px;font-family:inherit;">' +
+                    '<option value="">— 未记录 —</option>' +
+                    '<option value="present"' + (cur === 'present' ? ' selected' : '') + '>✅ 到课</option>' +
+                    '<option value="late"' + (cur === 'late' ? ' selected' : '') + '>⏰ 迟到</option>' +
+                    '<option value="absent"' + (cur === 'absent' ? ' selected' : '') + '>❌ 缺勤</option>' +
+                    '<option value="leave"' + (cur === 'leave' ? ' selected' : '') + '>📝 请假</option>' +
+                    '<option value="not-in-room"' + (cur === 'not-in-room' ? ' selected' : '') + '>🚪 未在教室</option>' +
+                    '</select>' +
+                '</td>' +
+                '<td style="text-align:center;"><input type="checkbox" data-name="' + name + '" data-field="diner" ' + (dVal ? 'checked' : '') + ' onchange="onBackfillCheck(this)" style="width:18px;height:18px;">' + lbl(dHasOv) + '</td>' +
+                '<td style="text-align:center;"><input type="checkbox" data-name="' + name + '" data-field="after1" ' + (a1Val ? 'checked' : '') + ' onchange="onBackfillCheck(this)" style="width:18px;height:18px;">' + lbl(a1HasOv) + '</td>' +
+                '<td style="text-align:center;"><input type="checkbox" data-name="' + name + '" data-field="after2" ' + (a2Val ? 'checked' : '') + ' onchange="onBackfillCheck(this)" style="width:18px;height:18px;">' + lbl(a2HasOv) + '</td>' +
+                '</tr>';
         }
         html += '</tbody></table>';
         $('backfillList').innerHTML = html;
+
         var tip = $('backfillTip');
         if (tip) {
-            var count = 0;
-            for (var n3 in existing) { if (typeof existing[n3] === 'string') count++; }
-            if (count === 0) tip.textContent = '💡 该日期暂无记录，修改后将新增记录';
-            else tip.textContent = '📊 该日期已有 ' + count + ' 条记录，修改后将覆盖';
+            var baseInfo = '📅 ' + date + '：共 ' + list.length + ' 名学生';
+            if (overrideCount === 0) {
+                tip.innerHTML = baseInfo + '，<span style="color:#4A90D9;">暂无记录</span>';
+            } else {
+                tip.innerHTML = baseInfo + '，<span style="color:#E67E22;">已有 ' + overrideCount + ' 名学生有记录</span>';
+            }
             tip.style.display = 'block';
         }
     }
 
     function onBackfillChange(sel) {
         var name = sel.dataset.name;
-        _backfillData[name] = sel.value;
+        var field = sel.dataset.field;
+        if (!_backfillData[name]) _backfillData[name] = { status: '', diner: false, after1: false, after2: false };
+        _backfillData[name][field] = sel.value;
+    }
+
+    function onBackfillCheck(chk) {
+        var name = chk.dataset.name;
+        var field = chk.dataset.field;
+        if (!_backfillData[name]) _backfillData[name] = { status: '', diner: false, after1: false, after2: false };
+        _backfillData[name][field] = chk.checked;
     }
 
     function submitBackfill() {
@@ -1639,34 +1948,88 @@
         if (!attendanceRecords[_backfillDate]) attendanceRecords[_backfillDate] = {};
         if (!attendanceRecords[_backfillDate][currentClassKey]) attendanceRecords[_backfillDate][currentClassKey] = {};
         var target = attendanceRecords[_backfillDate][currentClassKey];
+
+        var cls = CLASS_DATA_LIST[currentClassKey] || {};
+        var longDiners = cls.diners || {};
+        var longAfter1 = cls.afterClass1 || {};
+        var longAfter2 = cls.afterClass2 || {};
+
         var changed = 0;
         for (var name in _backfillData) {
-            var newVal = _backfillData[name];
-            if (newVal === '') {
+            var item = _backfillData[name];
+
+            // 出勤
+            var newStatus = item.status || '';
+            if (newStatus === '') {
                 if (target[name] !== undefined) { delete target[name]; changed++; }
             } else {
-                if (target[name] !== newVal) { target[name] = newVal; changed++; }
+                if (target[name] !== newStatus) { target[name] = newStatus; changed++; }
+            }
+
+            // 就餐
+            var dKey = '_diner_' + name;
+            var dVal = !!item.diner;
+            var dLong = longDiners[name] || false;
+            if (dVal === dLong) {
+                if (target[dKey] !== undefined) { delete target[dKey]; changed++; }
+            } else {
+                if (target[dKey] !== dVal) { target[dKey] = dVal; changed++; }
+            }
+
+            // 课后1
+            var a1Key = '_after1_' + name;
+            var a1Val = !!item.after1;
+            var a1Long = longAfter1[name] || false;
+            if (a1Val === a1Long) {
+                if (target[a1Key] !== undefined) { delete target[a1Key]; changed++; }
+            } else {
+                if (target[a1Key] !== a1Val) { target[a1Key] = a1Val; changed++; }
+            }
+
+            // 课后2
+            var a2Key = '_after2_' + name;
+            var a2Val = !!item.after2;
+            var a2Long = longAfter2[name] || false;
+            if (a2Val === a2Long) {
+                if (target[a2Key] !== undefined) { delete target[a2Key]; changed++; }
+            } else {
+                if (target[a2Key] !== a2Val) { target[a2Key] = a2Val; changed++; }
             }
         }
+
         if (changed === 0) { showToast('没有修改'); return; }
-        saveAllDataToServer().then(function() {
-            showToast('✅ 已补录 ' + changed + ' 条记录（' + _backfillDate + '）');
+
+        // 清理空记录
+        var hasAnyData = false;
+        for (var k in target) { hasAnyData = true; break; }
+        if (!hasAnyData) {
+            delete attendanceRecords[_backfillDate][currentClassKey];
+            var dateRec = attendanceRecords[_backfillDate];
+            var hasDateData = false;
+            for (var k2 in dateRec) {
+                if (k2 === '_holiday' || k2 === '_overtime') continue;
+                hasDateData = true;
+                break;
+            }
+            if (!hasDateData && !dateRec._holiday && !dateRec._overtime) {
+                delete attendanceRecords[_backfillDate];
+            }
+        }
+
+        saveDayAttendance(currentClassKey, _backfillDate).then(function() {
+            showToast('✅ 已补录 ' + changed + ' 项（' + _backfillDate + '）');
             closeBackfillModal();
             if (_backfillDate === getTodayStr()) {
-                var students = data.students || [];
-                var todayRecords = attendanceRecords[_backfillDate][currentClassKey] || {};
-                seatStatus = {};
-                for (var i = 0; i < students.length; i++) {
-                    if (todayRecords[students[i]]) seatStatus[i] = todayRecords[students[i]];
-                }
+                restoreSeatStatusFromRecords(getTodayStr());
                 updateSeatStatus();
                 updateStats();
             }
+            updateHeaderStats();
         });
     }
 
     // ================================================================
-    //  管理弹窗
+    //  管理弹窗框架
     // ================================================================
     function openAdminModal(tab) {
         if (!currentUser) { showToast('🔒 请先登录'); return; }
@@ -1711,6 +2074,7 @@
             tabsHtml += '<button class="' + active + '" data-tab="' + tabs[i].key + '" onclick="switchAdminTab(\'' + tabs[i].key + '\')">' + tabs[i].label + '</button>';
         }
         $('adminTabs').innerHTML = tabsHtml;
+
         var html = '';
         if (adminTab === 'student') html = renderAdminStudents(data);
         else if (adminTab === 'schedule') html = renderAdminSchedule(data);
@@ -1725,7 +2089,7 @@
     function switchAdminTab(tab) { _selectedSeatIndex = null; adminTab = tab; renderAdminContent(); }
 
     // ================================================================
-    //  学生管理
+    //  学生管理（长期资格）
     // ================================================================
     function renderAdminStudents(data) {
         var students = data.students || [];
@@ -1745,8 +2109,9 @@
             html += '💡 勾选两名学生，点击"交换座位"即可调座';
         }
         html += '</div>';
+        html += '<div style="font-size:12px;color:#E67E22;background:#fdf5ed;border-radius:6px;padding:6px 10px;margin-bottom:8px;">📌 此处的"就餐/课后"是<b>本月长期资格</b>；座位表里改的是<b>当天实际</b>，两者独立。</div>';
         html += '<div class="admin-table-wrap"><table class="admin-table"><thead><tr>' +
-            '<th style="width:30px;">选</th><th>序号</th><th>姓名</th><th>🍱 就餐</th><th>📚 课后1</th><th>📚 课后2</th><th>操作</th></tr></thead><tbody>';
+            '<th style="width:30px;">选</th><th>序号</th><th>姓名</th><th>🍱 本月就餐</th><th>📚 本月课1</th><th>📚 本月课2</th><th>操作</th></tr></thead><tbody>';
         for (var i = 0; i < students.length; i++) {
             var name = students[i];
             var isEmpty = !name || name.trim() === '';
@@ -1773,9 +2138,9 @@
         html += '<div class="admin-add-row">' +
             '<input type="text" id="newStudentName" placeholder="姓名" style="flex:2;min-width:80px;">' +
             '<input type="number" id="newStudentSeat" placeholder="座位号" style="width:70px;min-width:60px;">' +
-            '<label style="display:flex;align-items:center;gap:4px;font-size:13px;color:#666;"><input type="checkbox" id="newStudentDiner" checked> 就餐</label>' +
-            '<label style="display:flex;align-items:center;gap:4px;font-size:13px;color:#666;"><input type="checkbox" id="newStudentAfter1" checked> 课后1</label>' +
-            '<label style="display:flex;align-items:center;gap:4px;font-size:13px;color:#666;"><input type="checkbox" id="newStudentAfter2" checked> 课后2</label>' +
+            '<label style="display:flex;align-items:center;gap:4px;font-size:13px;color:#666;"><input type="checkbox" id="newStudentDiner" checked> 本月就餐</label>' +
+            '<label style="display:flex;align-items:center;gap:4px;font-size:13px;color:#666;"><input type="checkbox" id="newStudentAfter1" checked> 本月课1</label>' +
+            '<label style="display:flex;align-items:center;gap:4px;font-size:13px;color:#666;"><input type="checkbox" id="newStudentAfter2" checked> 本月课2</label>' +
             '<button onclick="addStudent()">➕ 添加</button>' +
             '</div>' +
             '<div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap;">' +
@@ -1799,19 +2164,6 @@
             var secondName = studentsArr[secondIdx];
             studentsArr[firstIdx] = secondName;
             studentsArr[secondIdx] = firstName;
-            var diners = data.diners || {};
-            var afterSchool = data.afterSchool || {};
-            var newDiners = {};
-            var newAfterSchool = {};
-            for (var i = 0; i < studentsArr.length; i++) {
-                var name = studentsArr[i];
-                if (name && name.trim() !== '') {
-                    if (diners[name] !== undefined) newDiners[name] = diners[name];
-                    if (afterSchool[name] !== undefined) newAfterSchool[name] = afterSchool[name];
-                }
-            }
-            data.diners = newDiners;
-            data.afterSchool = newAfterSchool;
             CLASS_DATA_LIST[currentClassKey] = data;
             saveAllDataToServer().then(function() {
                 _selectedSeatIndex = null;
@@ -1836,19 +2188,6 @@
             students[i] = students[j];
             students[j] = temp;
         }
-        var diners = data.diners || {};
-        var afterSchool = data.afterSchool || {};
-        var newDiners = {};
-        var newAfterSchool = {};
-        for (var i = 0; i < students.length; i++) {
-            var name = students[i];
-            if (name && name.trim() !== '') {
-                if (diners[name] !== undefined) newDiners[name] = diners[name];
-                if (afterSchool[name] !== undefined) newAfterSchool[name] = afterSchool[name];
-            }
-        }
-        data.diners = newDiners;
-        data.afterSchool = newAfterSchool;
         CLASS_DATA_LIST[currentClassKey] = data;
         saveAllDataToServer().then(function() {
             renderAdminContent();
@@ -1908,8 +2247,8 @@
         if (names === '') { showToast('⚠️ 请输入姓名'); return; }
         var list = names.split(/[,，、\s\n]+/).filter(function(s) { return s.trim() !== ''; });
         if (list.length === 0) { showToast('⚠️ 未识别到有效姓名'); return; }
-        var eatDiner = confirm('这批学生是否都在校就餐？\n点击"确定"全部在校就餐，"取消"则全部不在校就餐');
-        var eatAfter = confirm('这批学生是否都参加课后服务？\n点击"确定"全部参加，"取消"则全部不参加');
+        var eatDiner = confirm('这批学生本月是否在校就餐？\n确定=全部就餐，取消=全部不就餐');
+        var eatAfter = confirm('这批学生本月是否参加课后服务？\n确定=全部参加，取消=全部不参加');
         var data = getCurrentData();
         if (!data.diners) data.diners = {};
         if (!data.afterSchool) data.afterSchool = {};
@@ -1998,7 +2337,7 @@
         if (!data.diners) data.diners = {};
         data.diners[name] = checked;
         CLASS_DATA_LIST[currentClassKey] = data;
-        saveAllDataToServer().then(function() { showToast('✅ 已更新就餐状态'); updateHeaderStats(); });
+        saveAllDataToServer().then(function() { showToast('✅ 已更新本月就餐资格'); updateHeaderStats(); });
     }
 
     function updateStudentAfterClass(index, classNum, checked) {
@@ -2014,7 +2353,7 @@
         data.afterSchool[name] = after1 || after2;
         CLASS_DATA_LIST[currentClassKey] = data;
         saveAllDataToServer().then(function() {
-            showToast('✅ 已更新课后服务状态');
+            showToast('✅ 已更新本月课后资格');
             updateHeaderStats();
         });
     }
@@ -2023,7 +2362,10 @@
     //  课程表管理
     // ================================================================
     function renderAdminSchedule(data) {
-        var schedule = data.schedule || [ ['','','','',''], ['','','','',''], ['','','','',''], ['','','','',''], ['','','','',''], ['','','','',''] ];
+        var schedule = data.schedule || [
+            ['','','','',''], ['','','','',''], ['','','','',''],
+            ['','','','',''], ['','','','',''], ['','','','','']
+        ];
         var days = ['周一','周二','周三','周四','周五'];
         var html = '<div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>节次</th>';
         for (var i = 0; i < days.length; i++) html += '<th>' + days[i] + '</th>';
@@ -2118,37 +2460,55 @@
     }
 
     // ================================================================
-    //  就餐统计
+    //  就餐统计面板（入口）
     // ================================================================
     function renderAdminDiner(data) {
         var students = data.students || [];
-        var diners = data.diners || {};
         var today = getTodayStr();
-        var stopKey = today + '_stop';
-        var stopRecords = attendanceRecords[stopKey] && attendanceRecords[stopKey][currentClassKey] ? attendanceRecords[stopKey][currentClassKey] : {};
         var isHoliday = attendanceRecords[today] && attendanceRecords[today]._holiday === true;
         var totalDiners = 0, presentDiners = 0, stopDiners = 0;
+        var totalAfter = 0, afterPresent = 0, afterAbsent = 0;
         if (!isHoliday) {
             for (var i = 0; i < students.length; i++) {
                 var name = students[i];
                 if (!name || name.trim() === '') continue;
-                if (diners[name]) {
+                var dayDiner = getDayDiner(today, currentClassKey, name);
+                var dayA1 = getDayAfter1(today, currentClassKey, name);
+                var dayA2 = getDayAfter2(today, currentClassKey, name);
+                var status = 'present';
+                var todayRec = attendanceRecords[today] && attendanceRecords[today][currentClassKey];
+                if (todayRec && typeof todayRec[name] === 'string') status = todayRec[name];
+                if (dayDiner) {
                     totalDiners++;
-                    if (stopRecords[name]) stopDiners++;
+                    if (isStatusStop(status)) stopDiners++;
                     else presentDiners++;
+                }
+                if (dayA1 || dayA2) {
+                    totalAfter++;
+                    if (isStatusStop(status) || status === 'not-in-room') afterAbsent++;
+                    else afterPresent++;
                 }
             }
         }
-        var html = '<div style="font-size:14px;color:#555;margin-bottom:10px;">🍱 <strong>' + getCurrentData().className + '</strong> 今日就餐统计（' + today + '）<br>';
-        if (isHoliday) html += '📅 今日放假，就餐数据不计入统计';
-        else html += '🍽️ 在校就餐人数：<strong>' + totalDiners + '</strong> 人 | ✅ 正常就餐：<strong style="color:#28A745;">' + presentDiners + '</strong> 人 | ⚠️ 停餐：<strong style="color:#DC3545;">' + stopDiners + '</strong> 人';
+        var html = '<div style="font-size:14px;color:#555;margin-bottom:10px;">🍱 <strong>' + getCurrentData().className + '</strong> 今日就餐/课后（' + today + '）<br>';
+        if (isHoliday) html += '📅 今日放假，数据不计入统计';
+        else {
+            html += '🍽️ 在校就餐：<strong>' + totalDiners + '</strong> 人 | ✅ 正常：<strong style="color:#28A745;">' + presentDiners + '</strong> | ⚠️ 停餐：<strong style="color:#DC3545;">' + stopDiners + '</strong><br>';
+            html += '📚 参加课后：<strong>' + totalAfter + '</strong> 人 | ✅ 已到：<strong style="color:#28A745;">' + afterPresent + '</strong> | ⚠️ 缺：<strong style="color:#DC3545;">' + afterAbsent + '</strong>';
+        }
         html += '</div>';
         var month = today.substring(0, 7);
-        html += '<div class="stats-month-selector"><label style="font-size:13px;color:#666;">📅 月份：</label><input type="month" id="dinerMonth" value="' + month + '"><button onclick="loadMonthlyDinerStats()">📊 统计</button><button onclick="exportDinerReport()" style="background:#28A745;">📥 导出报账单</button></div>';
+        html += '<div class="stats-month-selector"><label style="font-size:13px;color:#666;">📅 月份：</label><input type="month" id="dinerMonth" value="' + month + '"><button onclick="loadMonthlyDinerStats()">📊 统计</button></div>';
+        html += '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;">';
+        html += '<button onclick="exportDinerReport()" style="padding:8px 16px;border:none;border-radius:8px;background:#28A745;color:#fff;font-size:13px;cursor:pointer;">📥 导出就餐报账单</button>';
+        html += '<button onclick="exportAttendanceReport()" style="padding:8px 16px;border:none;border-radius:8px;background:#4A90D9;color:#fff;font-size:13px;cursor:pointer;">📊 导出考勤统计</button>';
+        html += '</div>';
         html += '<div id="monthlyDinerResult"><div style="color:#999;font-size:13px;padding:10px;text-align:center;">请点击"统计"查看月度数据</div></div>';
         return html;
     }
-
+            // ================================================================
+    //  月度就餐/课后统计
+    // ================================================================
     function loadMonthlyDinerStats() {
         var monthInput = $('dinerMonth');
         if (!monthInput) return;
@@ -2157,47 +2517,69 @@
         var data = getCurrentData();
         var students = data.students || [];
         var diners = data.diners || {};
+        var afterClass1 = data.afterClass1 || {};
+        var afterClass2 = data.afterClass2 || {};
         var afterSchool = data.afterSchool || {};
         var year = parseInt(month.substring(0, 4));
         var mon = parseInt(month.substring(5, 7));
         var daysInMonth = new Date(year, mon, 0).getDate();
+
         var html = '<div class="stats-table-wrap"><table class="stats-table"><thead><tr><th style="min-width:50px;">姓名</th><th style="min-width:40px;">就餐</th><th style="min-width:40px;">课后</th>';
         for (var d = 1; d <= daysInMonth; d++) {
-            var dateStr = year + '-' + String(mon).padStart(2,'0') + '-' + String(d).padStart(2,'0');
+            var dateStr = year + '-' + String(mon).padStart(2, '0') + '-' + String(d).padStart(2, '0');
             var isHoliday = attendanceRecords[dateStr] && attendanceRecords[dateStr]._holiday === true;
             var label = isHoliday ? '放假' : d;
             var style = isHoliday ? 'color:#ccc;' : '';
             html += '<th style="font-weight:400;font-size:10px;' + style + '">' + label + '</th>';
         }
         html += '<th>正常</th><th>停餐</th><th>课后到</th><th>课后缺</th></tr></thead><tbody>';
+
         var totalNormal = 0, totalStop = 0, totalAfterP = 0, totalAfterA = 0;
         for (var i = 0; i < students.length; i++) {
             var name = students[i];
             if (!name || name.trim() === '') continue;
-            var isDiner = diners[name] || false;
-            var isAfter = afterSchool[name] || false;
-            if (!isDiner && !isAfter) continue;
-            html += '<tr><td class="student-name">' + name + '</td><td>' + (isDiner ? '✅' : '—') + '</td><td>' + (isAfter ? '📚' : '—') + '</td>';
+
+            var isDinerLong = diners[name] || false;
+            var hasAfterLong = (afterClass1[name] || afterClass2[name] || afterSchool[name]) || false;
+            var hasDinerOverride = hasAnyDayOverride(year, mon, daysInMonth, currentClassKey, name, '_diner_');
+            var hasAfterOverride = hasAnyDayOverride(year, mon, daysInMonth, currentClassKey, name, '_after1_') ||
+                                   hasAnyDayOverride(year, mon, daysInMonth, currentClassKey, name, '_after2_');
+
+            var showDiner = isDinerLong || hasDinerOverride;
+            var showAfter = hasAfterLong || hasAfterOverride;
+            if (!showDiner && !showAfter) continue;
+
+            html += '<tr><td class="student-name">' + name + '</td>' +
+                '<td>' + (showDiner ? '✅' : '—') + '</td>' +
+                '<td>' + (showAfter ? '📚' : '—') + '</td>';
+
             var normalCount = 0, stopCount = 0, afterP = 0, afterA = 0;
             for (var d = 1; d <= daysInMonth; d++) {
-                var dateStr = year + '-' + String(mon).padStart(2,'0') + '-' + String(d).padStart(2,'0');
+                var dateStr = year + '-' + String(mon).padStart(2, '0') + '-' + String(d).padStart(2, '0');
                 var isHoliday = attendanceRecords[dateStr] && attendanceRecords[dateStr]._holiday === true;
                 if (isHoliday) { html += '<td style="color:#ccc;">-</td>'; continue; }
                 var dayOfWeek = new Date(year, mon - 1, d).getDay();
                 var isOvertimeDay = attendanceRecords[dateStr] && attendanceRecords[dateStr]._overtime === true;
                 if ((dayOfWeek === 0 || dayOfWeek === 6) && !isOvertimeDay) { html += '<td>-</td>'; continue; }
+
                 var status = 'present';
-                if (attendanceRecords[dateStr] && attendanceRecords[dateStr][currentClassKey] && attendanceRecords[dateStr][currentClassKey][name]) {
-                    status = attendanceRecords[dateStr][currentClassKey][name];
-                }
-                if (status === 'leave' || status === 'absent') {
-                    html += '<td class="status-stop">⚠️</td>';
-                    if (isDiner) stopCount++;
-                    if (isAfter) afterA++;
+                var rec = attendanceRecords[dateStr] && attendanceRecords[dateStr][currentClassKey];
+                if (rec && typeof rec[name] === 'string') status = rec[name];
+
+                var dayDiner = getDayDiner(dateStr, currentClassKey, name);
+                var dayA1 = getDayAfter1(dateStr, currentClassKey, name);
+                var dayA2 = getDayAfter2(dateStr, currentClassKey, name);
+                var dayAfter = dayA1 || dayA2;
+
+                if (dayDiner) {
+                    if (isStatusStop(status)) { html += '<td class="status-stop">⚠️</td>'; stopCount++; }
+                    else { html += '<td class="status-present">✅</td>'; normalCount++; }
                 } else {
-                    html += '<td class="status-present">✅</td>';
-                    if (isDiner) normalCount++;
-                    if (isAfter) afterP++;
+                    html += '<td style="color:#ccc;">—</td>';
+                }
+                if (dayAfter) {
+                    if (isStatusStop(status) || status === 'not-in-room') afterA++;
+                    else afterP++;
                 }
             }
             html += '<td>' + normalCount + '</td><td style="color:#DC3545;">' + stopCount + '</td><td>' + afterP + '</td><td style="color:#DC3545;">' + afterA + '</td></tr>';
@@ -2208,7 +2590,7 @@
         }
         html += '<tr class="stats-total-row"><td colspan="3">📊 合计</td>';
         for (var d = 1; d <= daysInMonth; d++) {
-            var dateStr = year + '-' + String(mon).padStart(2,'0') + '-' + String(d).padStart(2,'0');
+            var dateStr = year + '-' + String(mon).padStart(2, '0') + '-' + String(d).padStart(2, '0');
             var isHoliday = attendanceRecords[dateStr] && attendanceRecords[dateStr]._holiday === true;
             var dayOfWeek = new Date(year, mon - 1, d).getDay();
             html += '<td>' + (isHoliday ? '放' : (dayOfWeek === 0 || dayOfWeek === 6 ? '-' : '·')) + '</td>';
@@ -2221,11 +2603,10 @@
         showToast('✅ 已加载 ' + month + ' 统计');
     }
 
-    function exportDinerReport() {
-        var monthInput = $('dinerMonth');
-        if (!monthInput) { showToast('请先选择月份'); return; }
-        var month = monthInput.value;
-        if (!month) { showToast('请选择月份'); return; }
+    // ================================================================
+    //  导出工具
+    // ================================================================
+    function getExportTargets() {
         var role = currentUser ? currentUser.role : '';
         var targetKeys = [];
         var allClassNames = '';
@@ -2239,39 +2620,62 @@
                 if (getClassGrade(allKeys[i]) === grade) targetKeys.push(allKeys[i]);
             }
             allClassNames = grade || '本年级';
-        } else if (role === '班主任' || role === '科任老师') {
-            if (currentClassKey) {
-                targetKeys = [currentClassKey];
-                var cls = CLASS_DATA_LIST[currentClassKey];
-                allClassNames = cls ? cls.className : '本班';
-            }
         } else {
             if (currentClassKey) {
                 targetKeys = [currentClassKey];
-                var cls2 = CLASS_DATA_LIST[currentClassKey];
-                allClassNames = cls2 ? cls2.className : '当前班级';
+                var cls = CLASS_DATA_LIST[currentClassKey];
+                allClassNames = cls ? cls.className : '当前班级';
             }
         }
-        if (targetKeys.length === 0) { showToast('⚠️ 没有可导出的班级数据'); return; }
+        return { targetKeys: targetKeys, allClassNames: allClassNames };
+    }
+
+    function getStudentGrade(studentName, classKey) {
+        var cls = CLASS_DATA_LIST[classKey];
+        if (!cls || !cls.className) return '';
+        var gradeMap = ['一年级','二年级','三年级','四年级','五年级','六年级','七年级','八年级','九年级','高一年级'];
+        for (var i = 0; i < gradeMap.length; i++) {
+            if (cls.className.indexOf(gradeMap[i]) !== -1) return gradeMap[i];
+        }
+        return '';
+    }
+
+    function getGradeFees(grade) {
         var gradeFees = window.gradeFees || {};
         var defaultMeal = window.mealPrice || 10;
         var defaultAfter = window.afterSchoolFee || 5;
-        function getStudentGrade(studentName, classKey) {
-            var cls = CLASS_DATA_LIST[classKey];
-            if (!cls || !cls.className) return '';
-            var gradeMap = ['一年级','二年级','三年级','四年级','五年级','六年级','七年级','八年级','九年级','高一年级'];
-            for (var i = 0; i < gradeMap.length; i++) {
-                if (cls.className.indexOf(gradeMap[i]) !== -1) return gradeMap[i];
-            }
-            return '';
-        }
-        function getGradeFees(grade) {
-            var fee = gradeFees[grade] || {};
-            return {
-                meal: fee.meal !== undefined ? fee.meal : defaultMeal,
-                after: fee.after !== undefined ? fee.after : defaultAfter
-            };
-        }
+        var fee = gradeFees[grade] || {};
+        return {
+            meal: fee.meal !== undefined ? fee.meal : defaultMeal,
+            after: fee.after !== undefined ? fee.after : defaultAfter
+        };
+    }
+
+    // ================================================================
+    //  导出就餐/课后报账单
+    // ================================================================
+    function exportDinerReport(monthArg) {
+        var month = monthArg || ($('dinerMonth') ? $('dinerMonth').value : '');
+        if (!month) { showToast('请先选择月份'); return; }
+        if (!/^\d{4}-\d{2}$/.test(month)) { showToast('⚠️ 月份格式应为 2026-09'); return; }
+
+        var targetKeys = targets.targetKeys;
+        var allClassNames = targets.allClassNames;
+
+        showToast('⏳ 正在加载数据...');
+        var chain = Promise.resolve();
+        targetKeys.forEach(function(k) {
+            chain = chain.then(function() { return loadAttendanceMonth(k, month); });
+        });
+        chain.then(function() {
+            doExportDinerReport(month, targets);
+        });
+    }
+        
+    function doExportDinerReport(month, targets) {
+        var targetKeys = targets.targetKeys;
+        var allClassNames = targets.allClassNames;
+
         var year = parseInt(month.substring(0, 4));
         var mon = parseInt(month.substring(5, 7));
         var daysInMonth = new Date(year, mon, 0).getDate();
@@ -2280,6 +2684,7 @@
         var totalAfter1P = 0, totalAfter1A = 0, totalAfter2P = 0, totalAfter2A = 0;
         var totalMealFee = 0, totalAfterFee = 0;
         var allStudentCount = 0;
+
         for (var t = 0; t < targetKeys.length; t++) {
             var classKey = targetKeys[t];
             var cls = CLASS_DATA_LIST[classKey];
@@ -2289,53 +2694,72 @@
             var diners = cls.diners || {};
             var afterClass1 = cls.afterClass1 || {};
             var afterClass2 = cls.afterClass2 || {};
+
             var hasStudent = false;
             for (var s = 0; s < students.length; s++) {
                 if (students[s] && students[s].trim() !== '') { hasStudent = true; break; }
             }
             if (!hasStudent) continue;
+
             if (csvRows.length > 0) csvRows.push('');
             csvRows.push('【' + className + '】');
+
+            // 表头：工作日 + 调休日
             var header = ['姓名', '类型'];
             for (var d = 1; d <= daysInMonth; d++) {
-                var dateStr = year + '-' + String(mon).padStart(2,'0') + '-' + String(d).padStart(2,'0');
+                var dateStr = year + '-' + String(mon).padStart(2, '0') + '-' + String(d).padStart(2, '0');
                 var isHoliday = attendanceRecords[dateStr] && attendanceRecords[dateStr]._holiday === true;
                 var dayOfWeek = new Date(year, mon - 1, d).getDay();
+                var isOvertimeDay = attendanceRecords[dateStr] && attendanceRecords[dateStr]._overtime === true;
+                var isWeekend = (dayOfWeek === 0 || dayOfWeek === 6) && !isOvertimeDay;
                 if (isHoliday) header.push(d + '日(放)');
-                else if (dayOfWeek !== 0 && dayOfWeek !== 6) header.push(d + '日');
+                else if (!isWeekend) header.push(d + '日');
             }
             header.push('正常', '停餐/缺', '天数', '费用');
             csvRows.push(header.join(','));
+
             var classDinerNormal = 0, classDinerStop = 0;
             var classAfter1P = 0, classAfter1A = 0, classAfter2P = 0, classAfter2A = 0;
             var classMealTotal = 0, classAfterTotal = 0;
             var classStudentCount = 0;
+
             for (var i = 0; i < students.length; i++) {
                 var name = students[i];
                 if (!name || name.trim() === '') continue;
                 classStudentCount++;
                 allStudentCount++;
-                var isDiner = diners[name] || false;
-                var isAfter1 = afterClass1[name] || false;
-                var isAfter2 = afterClass2[name] || false;
+
                 var studentGrade = getStudentGrade(name, classKey);
                 var fees = getGradeFees(studentGrade);
-                if (isDiner) {
+
+                var isDinerLong = diners[name] || false;
+                var isAfter1Long = afterClass1[name] || false;
+                var isAfter2Long = afterClass2[name] || false;
+                var hasDinerOv = hasAnyDayOverride(year, mon, daysInMonth, classKey, name, '_diner_');
+                var hasA1Ov = hasAnyDayOverride(year, mon, daysInMonth, classKey, name, '_after1_');
+                var hasA2Ov = hasAnyDayOverride(year, mon, daysInMonth, classKey, name, '_after2_');
+
+                // ===== 就餐行 =====
+                if (isDinerLong || hasDinerOv) {
                     var row = [name, '就餐'];
                     var normalCount = 0, stopCount = 0;
                     for (var d = 1; d <= daysInMonth; d++) {
-                        var dateStr = year + '-' + String(mon).padStart(2,'0') + '-' + String(d).padStart(2,'0');
+                        var dateStr = year + '-' + String(mon).padStart(2, '0') + '-' + String(d).padStart(2, '0');
                         var isHoliday = attendanceRecords[dateStr] && attendanceRecords[dateStr]._holiday === true;
                         if (isHoliday) { row.push('放'); continue; }
                         var dayOfWeek = new Date(year, mon - 1, d).getDay();
                         var isOvertimeDay = attendanceRecords[dateStr] && attendanceRecords[dateStr]._overtime === true;
                         if ((dayOfWeek === 0 || dayOfWeek === 6) && !isOvertimeDay) { continue; }
-                        var status = 'present';
-                        if (attendanceRecords[dateStr] && attendanceRecords[dateStr][classKey] && attendanceRecords[dateStr][classKey][name]) {
-                            status = attendanceRecords[dateStr][classKey][name];
+                        var dayDiner = getDayDiner(dateStr, classKey, name);
+                        if (dayDiner) {
+                            var status = 'present';
+                            var rec = attendanceRecords[dateStr] && attendanceRecords[dateStr][classKey];
+                            if (rec && typeof rec[name] === 'string') status = rec[name];
+                            if (isStatusStop(status)) { row.push('停'); stopCount++; }
+                            else { row.push('正'); normalCount++; }
+                        } else {
+                            row.push('-');
                         }
-                        if (status === 'leave' || status === 'absent') { row.push('停'); stopCount++; }
-                        else { row.push('正'); normalCount++; }
                     }
                     var totalDays = normalCount + stopCount;
                     var mealFee = normalCount * fees.meal;
@@ -2344,106 +2768,82 @@
                     classDinerNormal += normalCount;
                     classDinerStop += stopCount;
                     classMealTotal += mealFee;
-                } else {
-                    var row = [name, '就餐(不在校)'];
-                    for (var d = 1; d <= daysInMonth; d++) {
-                        var dateStr = year + '-' + String(mon).padStart(2,'0') + '-' + String(d).padStart(2,'0');
-                        var isHoliday = attendanceRecords[dateStr] && attendanceRecords[dateStr]._holiday === true;
-                        if (isHoliday) { row.push('放'); continue; }
-                        var dayOfWeek = new Date(year, mon - 1, d).getDay();
-                        var isOvertimeDay = attendanceRecords[dateStr] && attendanceRecords[dateStr]._overtime === true;
-                        if ((dayOfWeek === 0 || dayOfWeek === 6) && !isOvertimeDay) { continue; }
-                        row.push('-');
-                    }
-                    row.push(0, 0, 0, 0);
-                    csvRows.push(row.join(','));
                 }
-                if (isAfter1) {
-                    var row = [name, '课后1'];
+
+                // ===== 课后1行 =====
+                if (isAfter1Long || hasA1Ov) {
+                    var row1 = [name, '课后1'];
                     var p1 = 0, a1 = 0;
                     for (var d = 1; d <= daysInMonth; d++) {
-                        var dateStr = year + '-' + String(mon).padStart(2,'0') + '-' + String(d).padStart(2,'0');
+                        var dateStr = year + '-' + String(mon).padStart(2, '0') + '-' + String(d).padStart(2, '0');
                         var isHoliday = attendanceRecords[dateStr] && attendanceRecords[dateStr]._holiday === true;
-                        if (isHoliday) { row.push('放'); continue; }
+                        if (isHoliday) { row1.push('放'); continue; }
                         var dayOfWeek = new Date(year, mon - 1, d).getDay();
                         var isOvertimeDay = attendanceRecords[dateStr] && attendanceRecords[dateStr]._overtime === true;
                         if ((dayOfWeek === 0 || dayOfWeek === 6) && !isOvertimeDay) { continue; }
-                        var status = 'present';
-                        if (attendanceRecords[dateStr] && attendanceRecords[dateStr][classKey] && attendanceRecords[dateStr][classKey][name]) {
-                            status = attendanceRecords[dateStr][classKey][name];
+                        var dayA1 = getDayAfter1(dateStr, classKey, name);
+                        if (dayA1) {
+                            var status1 = 'present';
+                            var rec1 = attendanceRecords[dateStr] && attendanceRecords[dateStr][classKey];
+                            if (rec1 && typeof rec1[name] === 'string') status1 = rec1[name];
+                            if (isStatusStop(status1) || status1 === 'not-in-room') { row1.push('缺'); a1++; }
+                            else { row1.push('到'); p1++; }
+                        } else {
+                            row1.push('-');
                         }
-                        if (status === 'leave' || status === 'absent') { row.push('缺'); a1++; }
-                        else { row.push('到'); p1++; }
                     }
                     var total1 = p1 + a1;
                     var fee1 = p1 * fees.after;
-                    row.push(p1, a1, total1, fee1);
-                    csvRows.push(row.join(','));
+                    row1.push(p1, a1, total1, fee1);
+                    csvRows.push(row1.join(','));
                     classAfter1P += p1;
                     classAfter1A += a1;
                     classAfterTotal += fee1;
-                } else {
-                    var row = [name, '课后1(不参加)'];
-                    for (var d = 1; d <= daysInMonth; d++) {
-                        var dateStr = year + '-' + String(mon).padStart(2,'0') + '-' + String(d).padStart(2,'0');
-                        var isHoliday = attendanceRecords[dateStr] && attendanceRecords[dateStr]._holiday === true;
-                        if (isHoliday) { row.push('放'); continue; }
-                        var dayOfWeek = new Date(year, mon - 1, d).getDay();
-                        var isOvertimeDay = attendanceRecords[dateStr] && attendanceRecords[dateStr]._overtime === true;
-                        if ((dayOfWeek === 0 || dayOfWeek === 6) && !isOvertimeDay) { continue; }
-                        row.push('-');
-                    }
-                    row.push(0, 0, 0, 0);
-                    csvRows.push(row.join(','));
                 }
-                if (isAfter2) {
-                    var row = [name, '课后2'];
+
+                // ===== 课后2行 =====
+                if (isAfter2Long || hasA2Ov) {
+                    var row2 = [name, '课后2'];
                     var p2 = 0, a2 = 0;
                     for (var d = 1; d <= daysInMonth; d++) {
-                        var dateStr = year + '-' + String(mon).padStart(2,'0') + '-' + String(d).padStart(2,'0');
+                        var dateStr = year + '-' + String(mon).padStart(2, '0') + '-' + String(d).padStart(2, '0');
                         var isHoliday = attendanceRecords[dateStr] && attendanceRecords[dateStr]._holiday === true;
-                        if (isHoliday) { row.push('放'); continue; }
+                        if (isHoliday) { row2.push('放'); continue; }
                         var dayOfWeek = new Date(year, mon - 1, d).getDay();
                         var isOvertimeDay = attendanceRecords[dateStr] && attendanceRecords[dateStr]._overtime === true;
                         if ((dayOfWeek === 0 || dayOfWeek === 6) && !isOvertimeDay) { continue; }
                         if ((studentGrade === '一年级' || studentGrade === '二年级') && dayOfWeek === 1) {
-                            row.push('无');
+                            row2.push('无');
                             continue;
                         }
-                        var status = 'present';
-                        if (attendanceRecords[dateStr] && attendanceRecords[dateStr][classKey] && attendanceRecords[dateStr][classKey][name]) {
-                            status = attendanceRecords[dateStr][classKey][name];
+                        var dayA2 = getDayAfter2(dateStr, classKey, name);
+                        if (dayA2) {
+                            var status2 = 'present';
+                            var rec2 = attendanceRecords[dateStr] && attendanceRecords[dateStr][classKey];
+                            if (rec2 && typeof rec2[name] === 'string') status2 = rec2[name];
+                            if (isStatusStop(status2) || status2 === 'not-in-room') { row2.push('缺'); a2++; }
+                            else { row2.push('到'); p2++; }
+                        } else {
+                            row2.push('-');
                         }
-                        if (status === 'leave' || status === 'absent') { row.push('缺'); a2++; }
-                        else { row.push('到'); p2++; }
                     }
                     var total2 = p2 + a2;
                     var fee2 = p2 * fees.after;
-                    row.push(p2, a2, total2, fee2);
-                    csvRows.push(row.join(','));
+                    row2.push(p2, a2, total2, fee2);
+                    csvRows.push(row2.join(','));
                     classAfter2P += p2;
                     classAfter2A += a2;
                     classAfterTotal += fee2;
-                } else {
-                    var row = [name, '课后2(不参加)'];
-                    for (var d = 1; d <= daysInMonth; d++) {
-                        var dateStr = year + '-' + String(mon).padStart(2,'0') + '-' + String(d).padStart(2,'0');
-                        var isHoliday = attendanceRecords[dateStr] && attendanceRecords[dateStr]._holiday === true;
-                        if (isHoliday) { row.push('放'); continue; }
-                        var dayOfWeek = new Date(year, mon - 1, d).getDay();
-                        var isOvertimeDay = attendanceRecords[dateStr] && attendanceRecords[dateStr]._overtime === true;
-                        if ((dayOfWeek === 0 || dayOfWeek === 6) && !isOvertimeDay) { continue; }
-                        row.push('-');
-                    }
-                    row.push(0, 0, 0, 0);
-                    csvRows.push(row.join(','));
                 }
             }
+
             var daysPlaceholder = ','.repeat(Math.max(0, daysInMonth - 2));
+            var classFees = getGradeFees(getStudentGrade('', classKey));
             csvRows.push('小计,就餐,' + daysPlaceholder + ',' + classDinerNormal + ',' + classDinerStop + ',' + (classDinerNormal + classDinerStop) + ',' + classMealTotal);
-            csvRows.push('小计,课后1,' + daysPlaceholder + ',' + classAfter1P + ',' + classAfter1A + ',' + (classAfter1P + classAfter1A) + ',' + (classAfter1P * getGradeFees(getStudentGrade('', classKey)).after));
-            csvRows.push('小计,课后2,' + daysPlaceholder + ',' + classAfter2P + ',' + classAfter2A + ',' + (classAfter2P + classAfter2A) + ',' + (classAfter2P * getGradeFees(getStudentGrade('', classKey)).after));
+            csvRows.push('小计,课后1,' + daysPlaceholder + ',' + classAfter1P + ',' + classAfter1A + ',' + (classAfter1P + classAfter1A) + ',' + (classAfter1P * classFees.after));
+            csvRows.push('小计,课后2,' + daysPlaceholder + ',' + classAfter2P + ',' + classAfter2A + ',' + (classAfter2P + classAfter2A) + ',' + (classAfter2P * classFees.after));
             csvRows.push('班级人数：' + classStudentCount + ' 人');
+
             totalDinerNormal += classDinerNormal;
             totalDinerStop += classDinerStop;
             totalAfter1P += classAfter1P;
@@ -2453,20 +2853,22 @@
             totalMealFee += classMealTotal;
             totalAfterFee += classAfterTotal;
         }
+
         if (targetKeys.length > 1) {
             csvRows.push('');
             csvRows.push('【合计】');
             var daysPlaceholder2 = ','.repeat(Math.max(0, daysInMonth - 2));
             csvRows.push('合计,就餐,' + daysPlaceholder2 + ',' + totalDinerNormal + ',' + totalDinerStop + ',' + (totalDinerNormal + totalDinerStop) + ',' + totalMealFee);
-            csvRows.push('合计,课后1,' + daysPlaceholder2 + ',' + totalAfter1P + ',' + totalAfter1A + ',' + (totalAfter1P + totalAfter1A) + ',' + (totalAfter1P * 5));
-            csvRows.push('合计,课后2,' + daysPlaceholder2 + ',' + totalAfter2P + ',' + totalAfter2A + ',' + (totalAfter2P + totalAfter2A) + ',' + (totalAfter2P * 5));
+            csvRows.push('合计,课后1,' + daysPlaceholder2 + ',' + totalAfter1P + ',' + totalAfter1A + ',' + (totalAfter1P + totalAfter1A) + ',' + (totalAfter1P * (window.afterSchoolFee || 5)));
+            csvRows.push('合计,课后2,' + daysPlaceholder2 + ',' + totalAfter2P + ',' + totalAfter2A + ',' + (totalAfter2P + totalAfter2A) + ',' + (totalAfter2P * (window.afterSchoolFee || 5)));
             csvRows.push('总人数：' + allStudentCount + ' 人');
         }
-        // 数据完整度统计
+
+        // 数据完整度
         var totalDays = 0, daysWithRecord = 0;
         var today = getTodayStr();
         for (var d = 1; d <= daysInMonth; d++) {
-            var dateStr = year + '-' + String(mon).padStart(2,'0') + '-' + String(d).padStart(2,'0');
+            var dateStr = year + '-' + String(mon).padStart(2, '0') + '-' + String(d).padStart(2, '0');
             if (dateStr > today) continue;
             var isHoliday = attendanceRecords[dateStr] && attendanceRecords[dateStr]._holiday === true;
             if (isHoliday) continue;
@@ -2477,10 +2879,18 @@
             var hasRecord = false;
             for (var t = 0; t < targetKeys.length; t++) {
                 var k = targetKeys[t];
-                if (attendanceRecords[dateStr] && attendanceRecords[dateStr][k] && Object.keys(attendanceRecords[dateStr][k]).length > 0) {
-                    hasRecord = true;
-                    break;
+                var rec = attendanceRecords[dateStr] && attendanceRecords[dateStr][k];
+                if (rec) {
+                    for (var key in rec) {
+                        if (key === '_holiday' || key === '_overtime') continue;
+                        if (key.indexOf('_diner_') === 0) continue;
+                        if (key.indexOf('_after1_') === 0) continue;
+                        if (key.indexOf('_after2_') === 0) continue;
+                        hasRecord = true;
+                        break;
+                    }
                 }
+                if (hasRecord) break;
             }
             if (hasRecord) daysWithRecord++;
         }
@@ -2490,16 +2900,157 @@
         csvRows.push('应考勤天数,' + totalDays);
         csvRows.push('有记录天数,' + daysWithRecord);
         csvRows.push('数据完整度,' + completeness + '%');
-        if (completeness < 60) {
-            csvRows.push('⚠️ 数据完整度偏低，未记录日期按"到课"计，报账单仅供参考');
-        }
+        if (completeness < 60) csvRows.push('⚠️ 数据完整度偏低，未记录日期按本月资格计，报账单仅供参考');
+
         var csvContent = csvRows.join('\n');
         var blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
         var link = document.createElement('a');
         link.href = URL.createObjectURL(blob);
-        link.download = allClassNames + '_' + month + '_统计报账单(参考).csv';
+        link.download = allClassNames + '_' + month + '_就餐课后报账单(参考).csv';
         link.click();
         showToast('✅ ' + allClassNames + ' 导出成功！共 ' + allStudentCount + ' 名学生');
+    }
+
+    // ================================================================
+    //  导出考勤统计（逐日）
+    // ================================================================
+    function exportAttendanceReport(monthArg) {
+        var month = monthArg || ($('dinerMonth') ? $('dinerMonth').value : '');
+        if (!month) { showToast('请先选择月份'); return; }
+        if (!/^\d{4}-\d{2}$/.test(month)) { showToast('⚠️ 月份格式应为 2026-09'); return; }
+
+        var targets = getExportTargets();
+        var targetKeys = targets.targetKeys;
+        var allClassNames = targets.allClassNames;
+        if (targetKeys.length === 0) { showToast('⚠️ 没有可导出的班级数据'); return; }
+
+        var year = parseInt(month.substring(0, 4));
+        var mon = parseInt(month.substring(5, 7));
+        var daysInMonth = new Date(year, mon, 0).getDate();
+        var csvRows = [];
+        var today = getTodayStr();
+        var totalStudents = 0;
+        var grandPresent = 0, grandLate = 0, grandAbsent = 0, grandLeave = 0, grandNotIn = 0, grandNoRec = 0;
+
+        for (var t = 0; t < targetKeys.length; t++) {
+            var classKey = targetKeys[t];
+            var cls = CLASS_DATA_LIST[classKey];
+            if (!cls) continue;
+            var className = cls.className || classKey;
+            var students = cls.students || [];
+
+            var hasStudent = false;
+            for (var s = 0; s < students.length; s++) {
+                if (students[s] && students[s].trim() !== '') { hasStudent = true; break; }
+            }
+            if (!hasStudent) continue;
+
+            csvRows.push('');
+            csvRows.push('【' + className + '】 考勤统计');
+
+            var header = ['姓名'];
+            for (var d = 1; d <= daysInMonth; d++) {
+                var dateStr = year + '-' + String(mon).padStart(2, '0') + '-' + String(d).padStart(2, '0');
+                var isHoliday = attendanceRecords[dateStr] && attendanceRecords[dateStr]._holiday === true;
+                var dayOfWeek = new Date(year, mon - 1, d).getDay();
+                var isOvertimeDay = attendanceRecords[dateStr] && attendanceRecords[dateStr]._overtime === true;
+                var isWeekend = (dayOfWeek === 0 || dayOfWeek === 6) && !isOvertimeDay;
+                if (isHoliday) header.push(d + '放');
+                else if (isWeekend) header.push('-');
+                else if (dateStr > today) header.push('·');
+                else header.push(d);
+            }
+            header.push('到课', '迟到', '缺勤', '请假', '未在教室', '未记录', '应出勤', '出勤率');
+            csvRows.push(header.join(','));
+
+            var classStudentCount = 0;
+            var classTotalPresent = 0, classTotalLate = 0, classTotalAbsent = 0, classTotalLeave = 0, classTotalNotIn = 0, classTotalNoRec = 0;
+
+            for (var i = 0; i < students.length; i++) {
+                var name = students[i];
+                if (!name || name.trim() === '') continue;
+                classStudentCount++;
+                totalStudents++;
+
+                var row = [name];
+                var p = 0, l = 0, a = 0, le = 0, n = 0, noRec = 0;
+                var shouldAttend = 0;
+
+                for (var d = 1; d <= daysInMonth; d++) {
+                    var dateStr = year + '-' + String(mon).padStart(2, '0') + '-' + String(d).padStart(2, '0');
+                    var isHoliday = attendanceRecords[dateStr] && attendanceRecords[dateStr]._holiday === true;
+                    var dayOfWeek = new Date(year, mon - 1, d).getDay();
+                    var isOvertimeDay = attendanceRecords[dateStr] && attendanceRecords[dateStr]._overtime === true;
+                    var isWeekend = (dayOfWeek === 0 || dayOfWeek === 6) && !isOvertimeDay;
+                    if (isHoliday) { row.push('放'); continue; }
+                    if (isWeekend) { row.push('-'); continue; }
+                    if (dateStr > today) { row.push('·'); continue; }
+
+                    shouldAttend++;
+                    var rec = attendanceRecords[dateStr] && attendanceRecords[dateStr][classKey];
+                    var status = rec && typeof rec[name] === 'string' ? rec[name] : '';
+                    if (status === 'present') { row.push('正'); p++; }
+                    else if (status === 'late') { row.push('迟'); l++; }
+                    else if (status === 'absent') { row.push('缺'); a++; }
+                    else if (status === 'leave') { row.push('请'); le++; }
+                    else if (status === 'not-in-room') { row.push('离'); n++; }
+                    else { row.push('—'); noRec++; }
+                }
+
+                var actualDays = shouldAttend - noRec;
+                var attendRate = actualDays > 0 ? Math.round((p + l) / actualDays * 100) : 0;
+                row.push(p, l, a, le, n, noRec, shouldAttend, attendRate + '%');
+                csvRows.push(row.join(','));
+
+                classTotalPresent += p;
+                classTotalLate += l;
+                classTotalAbsent += a;
+                classTotalLeave += le;
+                classTotalNotIn += n;
+                classTotalNoRec += noRec;
+            }
+
+            var classActual = (classTotalPresent + classTotalLate + classTotalAbsent + classTotalLeave + classTotalNotIn);
+            var classRate = classActual > 0 ? Math.round((classTotalPresent + classTotalLate) / classActual * 100) : 0;
+            csvRows.push('小计,' + ','.repeat(Math.max(0, daysInMonth - 1)) +
+                classTotalPresent + ',' + classTotalLate + ',' + classTotalAbsent + ',' + classTotalLeave + ',' + classTotalNotIn + ',' + classTotalNoRec + ',' + classActual + ',' + classRate + '%');
+            csvRows.push('班级人数：' + classStudentCount + ' 人');
+
+            grandPresent += classTotalPresent;
+            grandLate += classTotalLate;
+            grandAbsent += classTotalAbsent;
+            grandLeave += classTotalLeave;
+            grandNotIn += classTotalNotIn;
+            grandNoRec += classTotalNoRec;
+        }
+
+        if (targetKeys.length > 1) {
+            csvRows.push('');
+            csvRows.push('【全校/全年级合计】');
+            var grandActual = grandPresent + grandLate + grandAbsent + grandLeave + grandNotIn;
+            var grandRate = grandActual > 0 ? Math.round((grandPresent + grandLate) / grandActual * 100) : 0;
+            csvRows.push('合计到课,' + grandPresent);
+            csvRows.push('合计迟到,' + grandLate);
+            csvRows.push('合计缺勤,' + grandAbsent);
+            csvRows.push('合计请假,' + grandLeave);
+            csvRows.push('合计未在教室,' + grandNotIn);
+            csvRows.push('合计未记录,' + grandNoRec);
+            csvRows.push('总出勤率,' + grandRate + '%');
+            csvRows.push('总人数：' + totalStudents + ' 人');
+        }
+
+        csvRows.push('');
+        csvRows.push('【说明】');
+        csvRows.push('正=到课, 迟=迟到, 缺=缺勤, 请=请假, 离=未在教室, —=未记录, 放=放假, -=周末, ·=未来');
+        csvRows.push('出勤率 =（到课 + 迟到）/（应出勤 - 未记录）');
+
+        var csvContent = csvRows.join('\n');
+        var blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
+        var link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = allClassNames + '_' + month + '_考勤统计.csv';
+        link.click();
+        showToast('✅ ' + allClassNames + ' 考勤统计导出成功！共 ' + totalStudents + ' 名学生');
     }
 
     // ================================================================
@@ -2531,9 +3082,9 @@
                 if (students[j] && students[j].trim() !== '') actualCount++;
             }
             var editBtns = '';
-            if (!isClassTeacher && !isSubjectTeacher) {
-                editBtns = '<button class="edit-btn" onclick="openClassEditModal(\'' + key + '\')">✏️</button>' +
-                           '<button class="del-btn" onclick="deleteClass(\'' + key + '\')">✕</button>';
+            if (!isSubjectTeacher) {
+                editBtns = '<button class="edit-btn" onclick="openClassEditModal(\'' + key + '\')">✏️</button>';
+                if (canCreateDelete) editBtns += '<button class="del-btn" onclick="deleteClass(\'' + key + '\')">✕</button>';
             }
             html += '<tr><td><strong>' + key + '</strong></td><td>' + (cls.className || '') + '</td><td>' + grade + '</td><td>' + teacherName + '</td>' +
                 '<td>' + seatCols + '</td>' +
@@ -2542,11 +3093,7 @@
         }
         html += '</tbody></table></div>';
         if (canCreateDelete) {
-            html += '<div style="margin-top:10px;display:flex;flex-wrap:wrap;gap:8px;">' +
-                '<button onclick="openBatchModal()" style="padding:6px 16px;background:#4A90D9;color:#fff;border:none;border-radius:6px;cursor:pointer;">📋 批量操作</button>' +
-                '</div>';
-        }
-        if (canCreateDelete) {
+            html += '<div style="margin-top:10px;"><button onclick="openBatchModal()" style="padding:6px 16px;background:#4A90D9;color:#fff;border:none;border-radius:6px;cursor:pointer;">📋 批量操作</button></div>';
             html += '<div class="admin-add-row">' +
                 '<input type="text" id="newClassKey" placeholder="班级编号 如:2024-301" style="flex:1;min-width:100px;">' +
                 '<input type="text" id="newClassName" placeholder="班级名称" style="flex:1;min-width:80px;">' +
@@ -2554,8 +3101,6 @@
                 '<button onclick="addClass()">🏫 创建</button>' +
                 '</div>' +
                 '<div id="classCreateResult" style="margin-top:8px;font-size:13px;color:#666;"></div>';
-        } else if (isClassTeacher) {
-            html += '<div style="margin-top:8px;font-size:13px;color:#999;text-align:center;">📌 您只能管理本班的座位列数</div>';
         }
         return html;
     }
@@ -2587,27 +3132,26 @@
             afterClass1: {},
             afterClass2: {}
         };
+        var resultEl = $('classCreateResult');
         if (currentUser && currentUser.role === '级委会') {
             var newGrade = getClassGrade(key);
             var myGrade = currentUser.grade || '';
             if (newGrade && myGrade && newGrade !== myGrade) {
                 saveAllDataToServer().then(function() {
-                    showToast('✅ 已创建，但不在您管辖的年级，列表中可能看不到');
-                    var resultEl = $('classCreateResult');
+                    showToast('✅ 已创建，但不在您管辖的年级');
                     if (resultEl) resultEl.innerHTML = '⚠️ 已创建：' + name + '（编号：' + key + '）<br>但该班级属于' + newGrade + '，您管辖' + myGrade + '，列表中不可见';
-                    renderAdminClasses();
+                    renderAdminContent();
                 });
                 return;
             }
         }
         saveAllDataToServer().then(function() {
             showToast('✅ 班级 ' + name + ' 创建成功！共 ' + totalSeats + ' 个座位');
-            var resultEl = $('classCreateResult');
             if (resultEl) resultEl.innerHTML = '✅ 已创建：' + name + '（编号：' + key + '，座位：' + totalSeats + '个）';
             keyInput.value = '';
             nameInput.value = '';
             seatsInput.value = '45';
-            renderAdminClasses();
+            renderAdminContent();
         });
     }
 
@@ -2675,7 +3219,7 @@
         saveAllDataToServer().then(function() {
             showToast('✅ 已更新 ' + name);
             closeClassEditModal();
-            renderAdminClasses();
+            renderAdminContent();
             if (currentClassKey === key) {
                 renderSeats();
                 renderTeachers();
@@ -2686,17 +3230,14 @@
     function editClass(key) { openClassEditModal(key); }
 
     function deleteClass(key) {
-        if (currentUser && currentUser.role === '班主任') {
-            showToast('🔒 班主任无权删除班级');
-            return;
-        }
+        if (currentUser && currentUser.role === '班主任') { showToast('🔒 班主任无权删除班级'); return; }
         if (!confirm('确认删除班级 ' + key + ' 吗？此操作不可撤销！')) return;
         delete CLASS_DATA_LIST[key];
         if (currentClassKey === key) {
             var keys = Object.keys(CLASS_DATA_LIST);
             currentClassKey = keys.length > 0 ? keys[0] : null;
         }
-        saveAllDataToServer().then(function() { renderAdminClasses(); showToast('✅ 已删除'); });
+        saveAllDataToServer().then(function() { renderAdminContent(); showToast('✅ 已删除'); });
     }
 
     // ================================================================
@@ -2729,7 +3270,7 @@
 
     function renderBatchCreate() {
         var html = '';
-        html += '<div style="font-size:13px;color:#666;margin-bottom:10px;">💡 编号格式：<code>2024-301</code>（年份-年级班级），自动生成连续班级</div>';
+        html += '<div style="font-size:13px;color:#666;margin-bottom:10px;">💡 编号格式：<code>2024-301</code>，自动生成连续班级</div>';
         html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">';
         html += '<div><div class="section-label">起始编号</div><input type="text" id="bcStartKey" placeholder="2024-301" style="width:100%;padding:8px;border:1px solid #E5E7EB;border-radius:6px;font-size:13px;"></div>';
         html += '<div><div class="section-label">数量</div><input type="number" id="bcCount" value="5" min="1" max="50" style="width:100%;padding:8px;border:1px solid #E5E7EB;border-radius:6px;font-size:13px;"></div>';
@@ -2781,7 +3322,7 @@
         .then(function(result) {
             if (result.success) {
                 showToast('✅ ' + result.message);
-                loadAllDataFromServer().then(function() { renderBatchContent(); renderAdminClasses(); });
+                loadAllDataFromServer().then(function() { renderBatchContent(); renderAdminContent(); });
             } else { showToast('❌ ' + result.error); }
         })
         .catch(function(e) { showToast('❌ 网络错误'); });
@@ -2827,7 +3368,7 @@
         .then(function(result) {
             if (result.success) {
                 showToast('✅ ' + result.message);
-                loadAllDataFromServer().then(function() { renderBatchContent(); renderAdminClasses(); });
+                loadAllDataFromServer().then(function() { renderBatchContent(); renderAdminContent(); });
             } else { showToast('❌ ' + result.error); }
         })
         .catch(function(e) { showToast('❌ 网络错误'); });
@@ -2880,7 +3421,7 @@
         .then(function(result) {
             if (result.success) {
                 showToast('✅ ' + result.message);
-                loadAllDataFromServer().then(function() { renderBatchContent(); renderAdminClasses(); });
+                loadAllDataFromServer().then(function() { renderBatchContent(); renderAdminContent(); });
             } else { showToast('❌ ' + result.error); }
         })
         .catch(function(e) { showToast('❌ 网络错误'); });
@@ -2888,7 +3429,7 @@
 
     function renderBatchStudent() {
         var html = '';
-        html += '<div style="font-size:13px;color:#666;margin-bottom:10px;">💡 向多个班级批量添加学生（按逗号/空格分隔姓名）</div>';
+        html += '<div style="font-size:13px;color:#666;margin-bottom:10px;">💡 向多个班级批量添加学生</div>';
         html += '<div class="section-label">选择班级</div>';
         html += '<div style="max-height:180px;overflow-y:auto;border:1px solid #E5E7EB;border-radius:8px;padding:6px;margin-bottom:10px;">';
         var keys = Object.keys(CLASS_DATA_LIST);
@@ -2903,9 +3444,9 @@
         html += '<div class="section-label">学生姓名（逗号/空格分隔）</div>';
         html += '<textarea id="bsNames" placeholder="张三、李四、王五" style="width:100%;height:80px;padding:8px;border:1px solid #E5E7EB;border-radius:6px;font-size:13px;font-family:inherit;"></textarea>';
         html += '<div style="display:flex;gap:16px;margin-top:10px;font-size:13px;color:#555;flex-wrap:wrap;">';
-        html += '<label style="display:flex;align-items:center;gap:6px;"><input type="checkbox" id="bsDiner" checked> 在校就餐</label>';
-        html += '<label style="display:flex;align-items:center;gap:6px;"><input type="checkbox" id="bsAfter1" checked> 课后1</label>';
-        html += '<label style="display:flex;align-items:center;gap:6px;"><input type="checkbox" id="bsAfter2" checked> 课后2</label>';
+        html += '<label style="display:flex;align-items:center;gap:6px;"><input type="checkbox" id="bsDiner" checked> 本月就餐</label>';
+        html += '<label style="display:flex;align-items:center;gap:6px;"><input type="checkbox" id="bsAfter1" checked> 本月课1</label>';
+        html += '<label style="display:flex;align-items:center;gap:6px;"><input type="checkbox" id="bsAfter2" checked> 本月课2</label>';
         html += '</div>';
         html += '<div class="submit-row" style="margin-top:12px;"><button class="submit-btn primary" onclick="batchAddStudentsToClasses()">➕ 添加</button></div>';
         return html;
@@ -2947,13 +3488,13 @@
         saveAllDataToServer().then(function() {
             showToast('✅ 已向 ' + keys.length + ' 个班级各添加 ' + names.length + ' 名学生');
             closeBatchModal();
-            renderAdminClasses();
+            renderAdminContent();
             if (currentClassKey) renderSeats();
         });
     }
 
     // ================================================================
-    //  教师账号管理
+    //  账号管理
     // ================================================================
     function renderAdminUsers() {
         var html = '<div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>账号</th><th>姓名</th><th>角色</th><th>年级</th><th>班级</th><th>操作</th></tr></thead><tbody>';
@@ -3009,7 +3550,7 @@
         var user = { name: name, role: role, role_level: ROLE_LEVELS[role] || 1, grade: role === '级委会' ? grade : null, class: role === '班主任' ? cls : null, password: password };
         USERS[username] = user;
         saveAllDataToServer().then(function() {
-            renderAdminUsers();
+            renderAdminContent();
             showToast('✅ 教师账号 ' + name + ' 创建成功！');
             usernameInput.value = '';
             nameInput.value = '';
@@ -3024,23 +3565,23 @@
         var newName = prompt('修改姓名（当前：' + user.name + '）：', user.name);
         if (newName !== null && newName.trim() !== '') {
             user.name = newName.trim();
-            saveAllDataToServer().then(function() { renderAdminUsers(); if (currentUser && currentUser.username === username) $('displayName').textContent = user.name; showToast('✅ 已更新'); });
+            saveAllDataToServer().then(function() { renderAdminContent(); if (currentUser && currentUser.username === username) $('displayName').textContent = user.name; showToast('✅ 已更新'); });
         }
         var newRole = prompt('修改角色（当前：' + user.role + '）可选：班主任/级委会/校委会/管理员/科任老师：', user.role);
         if (newRole !== null && newRole.trim() !== '') {
             user.role = newRole.trim();
             user.role_level = ROLE_LEVELS[newRole.trim()] || 1;
-            saveAllDataToServer().then(function() { renderAdminUsers(); if (currentUser && currentUser.username === username) $('displayRole').textContent = '· ' + user.role; showToast('✅ 已更新'); });
+            saveAllDataToServer().then(function() { renderAdminContent(); if (currentUser && currentUser.username === username) $('displayRole').textContent = '· ' + user.role; showToast('✅ 已更新'); });
         }
         var newClass = prompt('修改关联班级（当前：' + (user.class || '无') + '）：', user.class || '');
         if (newClass !== null) {
             user.class = newClass.trim() || null;
-            saveAllDataToServer().then(function() { renderAdminUsers(); showToast('✅ 已更新'); });
+            saveAllDataToServer().then(function() { renderAdminContent(); showToast('✅ 已更新'); });
         }
         var newGrade = prompt('修改年级（当前：' + (user.grade || '无') + '）：', user.grade || '');
         if (newGrade !== null) {
             user.grade = newGrade.trim() || null;
-            saveAllDataToServer().then(function() { renderAdminUsers(); showToast('✅ 已更新'); });
+            saveAllDataToServer().then(function() { renderAdminContent(); showToast('✅ 已更新'); });
         }
     }
 
@@ -3049,7 +3590,7 @@
         if (!user) { showToast('用户不存在'); return; }
         if (!confirm('确认重置 ' + user.name + ' 的密码为 123456 吗？')) return;
         user.password = '123456';
-        saveAllDataToServer().then(function() { renderAdminUsers(); showToast('✅ 已重置 ' + user.name + ' 的密码为 123456'); });
+        saveAllDataToServer().then(function() { renderAdminContent(); showToast('✅ 已重置为 123456'); });
     }
 
     function deleteUser(username) {
@@ -3058,7 +3599,7 @@
         if (!user) { showToast('用户不存在'); return; }
         if (!confirm('确认删除用户 ' + user.name + ' 吗？')) return;
         delete USERS[username];
-        saveAllDataToServer().then(function() { renderAdminUsers(); showToast('✅ 已删除'); });
+        saveAllDataToServer().then(function() { renderAdminContent(); showToast('✅ 已删除'); });
     }
 
     // ================================================================
@@ -3070,8 +3611,6 @@
         var afterFee = window.afterSchoolFee !== undefined ? window.afterSchoolFee : 5;
         var dinerDeadlineVal = window.dinerDeadline || dinerDeadline || '09:00';
         var grades = ['一年级', '二年级', '三年级', '四年级', '五年级', '六年级', '七年级', '八年级', '九年级', '高一年级'];
-        var defaultMealPrice = 10;
-        var defaultAfterFee = 5;
         var html = '<div style="padding:6px 0;">';
         html += '<div style="font-weight:600;margin:10px 0 4px;color:#4A90D9;">👨‍🎓 学生点评</div>';
         html += '<div style="font-weight:600;margin:10px 0 4px;">🌟 学生表扬词（逗号分隔）</div>';
@@ -3087,18 +3626,17 @@
         html += '<div style="font-weight:600;margin:10px 0 4px;">⏰ 就餐截止时间（格式 HH:MM）</div>';
         html += '<input type="text" id="configDeadline" value="' + dinerDeadlineVal + '" style="width:100%;padding:8px;border:1px solid #E5E7EB;border-radius:6px;font-size:13px;">';
         html += '<div style="font-weight:600;margin:10px 0 4px;color:#28A745;">💰 餐费与课后服务费</div>';
-        html += '<div style="font-weight:600;margin:10px 0 4px;">🍱 餐费标准（元/餐）</div>';
+        html += '<div style="font-weight:600;margin:10px 0 4px;">🍱 默认餐费（元/餐）</div>';
         html += '<input type="number" id="configMealPrice" value="' + mealPrice + '" style="width:100%;padding:8px;border:1px solid #E5E7EB;border-radius:6px;font-size:13px;">';
-        html += '<div style="font-weight:600;margin:10px 0 4px;">📚 课后服务费（元/节）</div>';
+        html += '<div style="font-weight:600;margin:10px 0 4px;">📚 默认课后服务费（元/节）</div>';
         html += '<input type="number" id="configAfterFee" value="' + afterFee + '" style="width:100%;padding:8px;border:1px solid #E5E7EB;border-radius:6px;font-size:13px;">';
-        html += '<div style="font-weight:600;margin:14px 0 8px 0;color:#4A90D9;">📊 各年级餐费与课后服务费设置</div>';
-        html += '<div style="font-size:12px;color:#999;margin-bottom:8px;">💡 导出报账单时按学生所在年级自动计算费用（留空则使用上方默认值）</div>';
+        html += '<div style="font-weight:600;margin:14px 0 8px 0;color:#4A90D9;">📊 各年级费用（留空用默认值）</div>';
         html += '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;font-size:13px;font-weight:600;color:#555;padding:4px 0;">';
-        html += '<span>年级</span><span>餐费（元/餐）</span><span>课后费（元/节）</span></div>';
+        html += '<span>年级</span><span>餐费</span><span>课后费</span></div>';
         for (var i = 0; i < grades.length; i++) {
             var g = grades[i];
-            var meal = gradeFees[g] && gradeFees[g].meal !== undefined ? gradeFees[g].meal : defaultMealPrice;
-            var after = gradeFees[g] && gradeFees[g].after !== undefined ? gradeFees[g].after : defaultAfterFee;
+            var meal = gradeFees[g] && gradeFees[g].meal !== undefined ? gradeFees[g].meal : 10;
+            var after = gradeFees[g] && gradeFees[g].after !== undefined ? gradeFees[g].after : 5;
             html += '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;padding:4px 0;border-bottom:1px solid #f5f5f5;">';
             html += '<span style="font-size:13px;color:#333;">' + g + '</span>';
             html += '<input type="number" id="fee_meal_' + g + '" value="' + meal + '" min="0" step="0.5" style="width:100%;padding:4px 6px;border:1px solid #E5E7EB;border-radius:4px;font-size:13px;">';
@@ -3113,14 +3651,14 @@
     }
 
     function saveSystemConfig() {
-        var praiseInput = document.getElementById('configPraise');
-        var negativeInput = document.getElementById('configNegative');
-        var teacherPraiseInput = document.getElementById('configTeacherPraise');
-        var teacherAbnormalInput = document.getElementById('configTeacherAbnormal');
-        var deadlineInput = document.getElementById('configDeadline');
-        var thresholdInput = document.getElementById('configThreshold');
-        var mealPriceInput = document.getElementById('configMealPrice');
-        var afterFeeInput = document.getElementById('configAfterFee');
+        var praiseInput = $('configPraise');
+        var negativeInput = $('configNegative');
+        var teacherPraiseInput = $('configTeacherPraise');
+        var teacherAbnormalInput = $('configTeacherAbnormal');
+        var deadlineInput = $('configDeadline');
+        var thresholdInput = $('configThreshold');
+        var mealPriceInput = $('configMealPrice');
+        var afterFeeInput = $('configAfterFee');
         if (!praiseInput || !negativeInput || !teacherPraiseInput || !teacherAbnormalInput || !deadlineInput || !thresholdInput || !mealPriceInput || !afterFeeInput) {
             alert('输入框不存在，请刷新页面重试');
             return;
@@ -3133,9 +3671,8 @@
         var threshold = parseInt(thresholdInput.value) || 20;
         var mealPrice = parseFloat(mealPriceInput.value) || 10;
         var afterFee = parseFloat(afterFeeInput.value) || 5;
-        if (deadline && !/^\d{2}:\d{2}$/.test(deadline)) { showToast('⚠️ 截止时间格式错误，应为 HH:MM'); return; }
-        if (mealPrice < 0) { showToast('⚠️ 餐费不能为负数'); return; }
-        if (afterFee < 0) { showToast('⚠️ 课后服务费不能为负数'); return; }
+        if (deadline && !/^\d{2}:\d{2}$/.test(deadline)) { showToast('⚠️ 截止时间格式错误'); return; }
+        if (mealPrice < 0 || afterFee < 0) { showToast('⚠️ 费用不能为负数'); return; }
         var grades = ['一年级', '二年级', '三年级', '四年级', '五年级', '六年级', '七年级', '八年级', '九年级', '高一年级'];
         var gradeFees = {};
         for (var i = 0; i < grades.length; i++) {
@@ -3172,18 +3709,14 @@
         })
         .then(function(r) { return r.json(); })
         .then(function(result) {
-            if (result.success) {
-                showToast('✅ 配置已保存');
-                renderTeacherComments();
-            } else {
-                showToast('❌ 保存失败: ' + (result.error || '未知错误'));
-            }
+            if (result.success) { showToast('✅ 配置已保存'); renderTeacherComments(); }
+            else { showToast('❌ 保存失败: ' + (result.error || '未知错误')); }
         })
-        .catch(function(e) { showToast('❌ 网络错误，请重试'); });
+        .catch(function(e) { showToast('❌ 网络错误'); });
     }
 
     // ================================================================
-    //  优秀班级榜单
+    //  优秀班级
     // ================================================================
     function getTopClasses() {
         var classKeys = Object.keys(CLASS_DATA_LIST);
@@ -3195,44 +3728,25 @@
             var key = classKeys[i];
             var cls = CLASS_DATA_LIST[key];
             var students = cls.students || [];
-            if (students.length === 0) continue;
-            var todayRecords = attendanceRecords[today] && attendanceRecords[today][key] ? attendanceRecords[today][key] : {};
+            var actualCount = 0;
+            for (var j = 0; j < students.length; j++) {
+                if (students[j] && students[j].trim() !== '') actualCount++;
+            }
+            if (actualCount === 0) continue;
+            var todayRec = attendanceRecords[today] && attendanceRecords[today][key] ? attendanceRecords[today][key] : {};
             var presentCount = 0;
             for (var j = 0; j < students.length; j++) {
                 var name = students[j];
                 if (!name || name.trim() === '') continue;
-                var status = todayRecords[name] || 'present';
+                var status = typeof todayRec[name] === 'string' ? todayRec[name] : 'present';
                 if (status === 'present') presentCount++;
             }
-            var attendanceRate = students.length > 0 ? presentCount / students.length : 0;
-            var praiseCount = 0, totalComments = 0;
-            var weekAgo = new Date();
-            weekAgo.setDate(weekAgo.getDate() - 7);
-            for (var d = new Date(weekAgo); d <= new Date(); d.setDate(d.getDate() + 1)) {
-                var dateStr = d.toISOString().split('T')[0];
-                var dayHoliday = attendanceRecords[dateStr] && attendanceRecords[dateStr]._holiday === true;
-                if (dayHoliday) continue;
-                var dayData = attendanceRecords[dateStr] && attendanceRecords[dateStr][key];
-                if (dayData) {
-                    for (var name in dayData) {
-                        var record = dayData[name];
-                        if (typeof record === 'object' && record.comment) {
-                            totalComments++;
-                            if (record.type === 'praise' || record.comment.indexOf('🌟') !== -1 || record.comment.indexOf('表扬') !== -1) {
-                                praiseCount++;
-                            }
-                        }
-                    }
-                }
-            }
-            var praiseRate = totalComments > 0 ? praiseCount / totalComments : 0.5;
-            var score = attendanceRate * 0.5 + praiseRate * 0.5;
+            var attendanceRate = actualCount > 0 ? presentCount / actualCount : 0;
             results.push({
                 classKey: key,
                 className: cls.className || key,
                 attendanceRate: Math.round(attendanceRate * 100),
-                praiseRate: Math.round(praiseRate * 100),
-                score: Math.round(score * 100)
+                score: Math.round(attendanceRate * 100)
             });
         }
         results.sort(function(a, b) { return b.score - a.score; });
@@ -3243,6 +3757,34 @@
     //  数据面板
     // ================================================================
     function renderDashboard() {
+        var grid = $('seatGrid');
+        if (!grid) return;
+        var today = getTodayStr();
+
+        // 领导/级委会视图：先加载所有可见班最近 1 个月
+        if (currentUser && getUserRoleLevel(currentUser) >= 2) {
+            var thisMonth = today.substring(0, 7);
+            var keys = getVisibleClassKeys();
+            var needLoad = false;
+            for (var i = 0; i < keys.length; i++) {
+                if (!_loadedMonths[keys[i] + '_' + thisMonth]) { needLoad = true; break; }
+            }
+            if (needLoad) {
+                grid.innerHTML = '<div style="text-align:center;padding:40px;color:#999;font-size:14px;">⏳ 正在加载数据...</div>';
+                var chain = Promise.resolve();
+                keys.forEach(function(k) {
+                    chain = chain.then(function() { return loadAttendanceMonth(k, thisMonth); });
+                });
+                chain.then(function() {
+                    doRenderDashboard();
+                });
+                return;
+            }
+        }
+        doRenderDashboard();
+    }
+
+    function doRenderDashboard() {
         var grid = $('seatGrid');
         if (!grid) return;
         var today = getTodayStr();
@@ -3269,57 +3811,43 @@
             grid.innerHTML = '<div style="text-align:center;padding:30px;color:#999;font-size:14px;">📭 您还没有关联的班级</div>';
             return;
         }
-        var totalStudents = 0, totalDiners = 0, totalPresent = 0, totalLate = 0, totalAbsent = 0, totalLeave = 0, totalNotInRoom = 0;
-        var totalAfter = 0, totalAfterPresent = 0, totalAfterAbsent = 0, totalStop = 0;
+        var totalStudents = 0, totalDiners = 0, totalPresent = 0;
+        var totalAfter = 0, totalAfterPresent = 0, totalStop = 0;
         var classStats = [];
         for (var i = 0; i < filteredKeys.length; i++) {
             var key = filteredKeys[i];
             var cls = CLASS_DATA_LIST[key];
             var students = cls.students || [];
-            var diners = cls.diners || {};
-            var afterSchool = cls.afterSchool || {};
-            var afterClass1 = cls.afterClass1 || {};
-            var afterClass2 = cls.afterClass2 || {};
-            var todayRecords = attendanceRecords[today] && attendanceRecords[today][key] ? attendanceRecords[today][key] : {};
-            var p = 0, l = 0, a = 0, le = 0, n = 0;
+            var todayRec = attendanceRecords[today] && attendanceRecords[today][key] ? attendanceRecords[today][key] : {};
+            var p = 0;
             var dinerCount = 0, eatenCount = 0, stopCount = 0;
             var afterCount = 0, afterP = 0, afterA = 0;
             var actualCount = 0;
             for (var j = 0; j < students.length; j++) {
                 var name = students[j];
-                if (name && name.trim() !== '') actualCount++;
-                else continue;
-                var status = todayRecords[name] || 'present';
+                if (!name || name.trim() === '') continue;
+                actualCount++;
+                var status = typeof todayRec[name] === 'string' ? todayRec[name] : 'present';
                 if (status === 'present') p++;
-                else if (status === 'late') l++;
-                else if (status === 'absent') a++;
-                else if (status === 'leave') le++;
-                else if (status === 'not-in-room') n++;
-                if (diners[name]) {
+                var dayDiner = getDayDiner(today, key, name);
+                if (dayDiner) {
                     dinerCount++;
-                    if (status === 'leave' || status === 'absent') stopCount++;
+                    if (isStatusStop(status)) stopCount++;
                     else eatenCount++;
                 }
-                var hasAfter = false;
-                if (afterSchool[name]) hasAfter = true;
-                if (afterClass1[name]) hasAfter = true;
-                if (afterClass2[name]) hasAfter = true;
-                if (hasAfter) {
+                var dayA1 = getDayAfter1(today, key, name);
+                var dayA2 = getDayAfter2(today, key, name);
+                if (dayA1 || dayA2) {
                     afterCount++;
-                    if (status === 'leave' || status === 'absent' || status === 'not-in-room') afterA++;
+                    if (isStatusStop(status) || status === 'not-in-room') afterA++;
                     else afterP++;
                 }
             }
             totalStudents += actualCount;
             totalDiners += dinerCount;
             totalPresent += p;
-            totalLate += l;
-            totalAbsent += a;
-            totalLeave += le;
-            totalNotInRoom += n;
             totalAfter += afterCount;
             totalAfterPresent += afterP;
-            totalAfterAbsent += afterA;
             totalStop += stopCount;
             classStats.push({
                 key: key,
@@ -3330,18 +3858,9 @@
                 stop: stopCount,
                 after: afterCount,
                 afterP: afterP,
-                afterA: afterA,
-                present: p,
-                late: l,
-                absent: a,
-                leave: le,
-                notInRoom: n,
-                rate: actualCount > 0 ? Math.round((p / actualCount) * 100) : 0
+                present: p
             });
         }
-        var statEls = ['statPresent', 'statLate', 'statAbsent', 'statLeave', 'statNotInRoom'];
-        var statVals = [totalPresent, totalLate, totalAbsent, totalLeave, totalNotInRoom];
-        for (var i = 0; i < statEls.length; i++) { var el = $(statEls[i]); if (el) el.textContent = statVals[i]; }
         var statsBar = $('statsBar');
         if (statsBar) statsBar.style.display = '';
         var title = isGradeLeader ? ('📊 ' + (gradeFilter || '本年级') + ' 数据总览') : '📊 全校数据总览';
@@ -3351,6 +3870,7 @@
         $('teacherGrid').innerHTML = '';
         $('teacherBadge').textContent = isGradeLeader ? '本年级概览' : '全校概览';
         $('scheduleBody').innerHTML = '';
+
         var html = '';
         html += '<div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px;margin-bottom:14px;">' +
             '<div style="background:linear-gradient(135deg,#4A90D9,#357ABD);color:white;border-radius:12px;padding:14px;text-align:center;"><div style="font-size:24px;font-weight:700;">' + totalStudents + '</div><div style="font-size:12px;opacity:0.8;">' + (isGradeLeader ? '本年级学生' : '在校学生') + '</div></div>' +
@@ -3358,16 +3878,7 @@
             '<div style="background:linear-gradient(135deg,#FFC107,#d39e00);color:#333;border-radius:12px;padding:14px;text-align:center;"><div style="font-size:24px;font-weight:700;">' + totalDiners + '</div><div style="font-size:12px;opacity:0.8;">在校就餐</div></div>' +
             '<div style="background:linear-gradient(135deg,#9B59B6,#7D3C98);color:white;border-radius:12px;padding:14px;text-align:center;"><div style="font-size:24px;font-weight:700;">' + totalAfter + '</div><div style="font-size:12px;opacity:0.8;">参加课后</div></div>' +
             '</div>';
-        var totalEaten = totalDiners - totalStop;
-        html += '<div style="background:#f8f9fa;border-radius:10px;padding:10px;margin-bottom:14px;font-size:13px;color:#555;display:flex;flex-wrap:wrap;gap:8px 16px;">' +
-            '<span>🍱 在校就餐：<strong>' + totalDiners + '</strong> 人</span>' +
-            '<span>✅ 已就餐：<strong style="color:#28A745;">' + totalEaten + '</strong> 人</span>' +
-            '<span>⚠️ 停餐：<strong style="color:#DC3545;">' + totalStop + '</strong> 人</span>' +
-            '<span>|</span>' +
-            '<span>📚 参加课后：<strong>' + totalAfter + '</strong> 人</span>' +
-            '<span>✅ 已到：<strong style="color:#28A745;">' + totalAfterPresent + '</strong> 人</span>' +
-            '<span>⚠️ 缺勤：<strong style="color:#DC3545;">' + (totalAfter - totalAfterPresent) + '</strong> 人</span>' +
-            '</div>';
+
         html += '<div style="font-size:14px;font-weight:600;color:#333;margin-bottom:10px;">📋 ' + (isGradeLeader ? '本年级各班今日数据' : '各班级今日数据') + '</div>';
         html += '<div class="admin-table-wrap"><table class="admin-table"><thead><tr>' +
             '<th>班级</th><th>总人数</th><th>到课</th><th>🍱就餐</th><th>✅已就餐</th><th>⚠️停餐</th><th>📚课后</th><th>✅已到</th><th>操作</th></tr></thead><tbody>';
@@ -3390,16 +3901,18 @@
             }
         }
         html += '</tbody></table></div>';
+
         var topClasses = getTopClasses();
         if (topClasses.length > 0) {
-            html += '<div style="margin-top:14px;padding:12px;background:#E8F5E9;border-radius:10px;font-size:13px;color:#2E7D32;">🏆 优秀班级榜单（出勤率50% + 点评优秀率50%）<br>';
+            html += '<div style="margin-top:14px;padding:12px;background:#E8F5E9;border-radius:10px;font-size:13px;color:#2E7D32;">🏆 优秀班级（出勤率）<br>';
             for (var i = 0; i < topClasses.length; i++) {
                 var c = topClasses[i];
                 var medal = ['🥇', '🥈', '🥉'][i] || (i + 1 + '.');
-                html += medal + ' ' + c.className + '（综合得分' + c.score + '分，出勤' + c.attendanceRate + '%，点评优秀' + c.praiseRate + '%） ';
+                html += medal + ' ' + c.className + '（出勤' + c.attendanceRate + '%） ';
             }
             html += '</div>';
         }
+
         if (canManageUsers(currentUser) || canManageClasses(currentUser)) {
             html += '<div style="margin-top:14px;display:flex;gap:10px;flex-wrap:wrap;">';
             if (canManageClasses(currentUser)) {
@@ -3410,14 +3923,10 @@
             }
             html += '</div>';
         }
-        html += '<div style="margin-top:14px;display:flex;gap:8px;flex-wrap:wrap;">';
-        for (var i = 0; i < classStats.length; i++) {
-            html += '<button onclick="switchToClass(\'' + classStats[i].key + '\')" style="padding:6px 14px;border-radius:8px;border:1px solid #E5E7EB;background:white;font-size:12px;cursor:pointer;">' + classStats[i].name + '</button>';
-        }
-        html += '</div>';
+
         grid.innerHTML = html;
     }
-
+        
     function switchToClass(classKey) {
         if (!CLASS_DATA_LIST[classKey]) { showToast('⚠️ 班级不存在'); return; }
         currentClassKey = classKey;
@@ -3487,9 +3996,9 @@
     }
 
     // ================================================================
-    //  加载班级数据
+    //  加载班级数据（主入口）
     // ================================================================
-    function loadClassData() {
+        function loadClassData() {
         loadSystemConfig().then(function() {
             fetch(API_BASE + '/api/diner-check')
                 .then(function(r) { return r.json(); })
@@ -3500,17 +4009,26 @@
                     }
                 })
                 .catch(function(e) { console.error('获取就餐锁失败:', e); });
-            loadAllDataFromServer()
-                .then(function() {
-                    if (!currentClassKey || !CLASS_DATA_LIST[currentClassKey]) {
-                        if (currentUser && (currentUser.role === '班主任' || currentUser.role === '科任老师')) {
-                            if (currentUser.class && CLASS_DATA_LIST[currentUser.class]) currentClassKey = currentUser.class;
-                        }
-                        if (!currentClassKey || !CLASS_DATA_LIST[currentClassKey]) {
-                            var keys = Object.keys(CLASS_DATA_LIST);
-                            currentClassKey = keys.length > 0 ? keys[0] : null;
-                        }
+
+            loadAllDataFromServer().then(function() {
+                // 确定 currentClassKey
+                if (!currentClassKey || !CLASS_DATA_LIST[currentClassKey]) {
+                    if (currentUser && (currentUser.role === '班主任' || currentUser.role === '科任老师')) {
+                        if (currentUser.class && CLASS_DATA_LIST[currentUser.class]) currentClassKey = currentUser.class;
                     }
+                    if (!currentClassKey || !CLASS_DATA_LIST[currentClassKey]) {
+                        var keys = Object.keys(CLASS_DATA_LIST);
+                        currentClassKey = keys.length > 0 ? keys[0] : null;
+                    }
+                }
+
+                // 加载当前班最近 3 个月考勤
+                var loadChain = Promise.resolve();
+                if (currentClassKey) {
+                    loadChain = loadRecentMonths(currentClassKey, 3);
+                }
+
+                loadChain.then(function() {
                     var data = getCurrentData();
                     var level = getUserRoleLevel(currentUser);
                     var isLeader = (currentUser && level >= 3);
@@ -3519,6 +4037,7 @@
                     var isSubjectTeacher = (currentUser && currentUser.role === '科任老师');
                     var urlParams = new URLSearchParams(window.location.search);
                     var isScanMode = urlParams.has('class');
+
                     if (isScanMode) {
                         var classKey = urlParams.get('class');
                         var classData = CLASS_DATA_LIST[classKey] || null;
@@ -3526,9 +4045,9 @@
                             var className = classData.className || '未知班级';
                             var classSub = classData.classSub || '🏫 扫码查看班级信息';
                             var teacherName = '未设置';
-                            var keys = Object.keys(USERS);
-                            for (var i = 0; i < keys.length; i++) {
-                                var u = USERS[keys[i]];
+                            var uKeys = Object.keys(USERS);
+                            for (var i = 0; i < uKeys.length; i++) {
+                                var u = USERS[uKeys[i]];
                                 if (u.class === classKey && u.role === '班主任') { teacherName = u.name; break; }
                             }
                             var actualCount = 0;
@@ -3549,38 +4068,40 @@
                     } else if (isLeader) {
                         $('className').textContent = '📊 全校数据总览';
                         $('classSub').textContent = '👤 ' + currentUser.role + ' · 共 ' + Object.keys(CLASS_DATA_LIST).length + ' 个班级';
-                        var manageBtn = $('manageClassBtn');
-                        if (manageBtn) manageBtn.style.display = 'none';
+                        var manageBtn2 = $('manageClassBtn');
+                        if (manageBtn2) manageBtn2.style.display = 'none';
                     } else if (isGradeLeader) {
                         $('className').textContent = '📊 ' + (currentUser.grade || '本年级') + ' 数据总览';
                         $('classSub').textContent = '👤 ' + currentUser.role + ' · ' + currentUser.name;
-                        var manageBtn = $('manageClassBtn');
-                        if (manageBtn) manageBtn.style.display = 'none';
+                        var manageBtn3 = $('manageClassBtn');
+                        if (manageBtn3) manageBtn3.style.display = 'none';
                     } else {
                         var data2 = getCurrentData();
                         var teacherName2 = '未设置';
-                        var keys2 = Object.keys(USERS);
-                        for (var i = 0; i < keys2.length; i++) {
-                            var u = USERS[keys2[i]];
-                            if (u.class === currentClassKey && u.role === '班主任') { teacherName2 = u.name; break; }
+                        var uKeys2 = Object.keys(USERS);
+                        for (var i = 0; i < uKeys2.length; i++) {
+                            var u2 = USERS[uKeys2[i]];
+                            if (u2.class === currentClassKey && u2.role === '班主任') { teacherName2 = u2.name; break; }
                         }
                         var actualCount2 = 0;
                         if (data2.students) {
-                            for (var si = 0; si < data2.students.length; si++) {
-                                if (data2.students[si] && data2.students[si].trim() !== '') actualCount2++;
+                            for (var si2 = 0; si2 < data2.students.length; si2++) {
+                                if (data2.students[si2] && data2.students[si2].trim() !== '') actualCount2++;
                             }
                         }
                         $('className').textContent = data2.className || '未知班级';
                         $('classSub').textContent = (data2.classSub || '🏫 扫码查看班级信息') + ' ｜ 班主任：' + teacherName2 + ' ｜ 总人数：' + actualCount2 + ' 人';
-                        var manageBtn = $('manageClassBtn');
-                        if (manageBtn && !isSubjectTeacher) {
-                            manageBtn.style.display = '';
-                            manageBtn.onclick = function() { openAdminModal('student'); };
-                        } else if (manageBtn && isSubjectTeacher) {
-                            manageBtn.style.display = 'none';
+                        var manageBtn4 = $('manageClassBtn');
+                        if (manageBtn4 && !isSubjectTeacher) {
+                            manageBtn4.style.display = '';
+                            manageBtn4.onclick = function() { openAdminModal('student'); };
+                        } else if (manageBtn4 && isSubjectTeacher) {
+                            manageBtn4.style.display = 'none';
                         }
                     }
+
                     updateHeaderStats();
+
                     var isClassMode = false;
                     if (isScanMode) isClassMode = true;
                     else if (isTeacher) isClassMode = true;
@@ -3588,12 +4109,14 @@
                     else if (window.forceClassView) { isClassMode = true; window.forceClassView = false; }
                     else if (isLeader || isGradeLeader) isClassMode = false;
                     else isClassMode = true;
+
                     var cards = document.querySelectorAll('.card');
                     var seatCard = document.querySelector('.card:last-of-type');
                     var actionRow = document.querySelector('.action-row');
                     var adminEntries = document.querySelectorAll('.admin-entry');
                     var legend = document.querySelector('.seat-legend');
                     var backBtn = $('backToHomeBtn');
+
                     if (backBtn) {
                         var hasClassParam = new URLSearchParams(window.location.search).has('class');
                         if (hasClassParam && currentClassKey) {
@@ -3613,6 +4136,7 @@
                             backBtn.style.display = 'none';
                         }
                     }
+
                     if (isClassMode) {
                         window.forceClassView = false;
                         for (var i = 0; i < cards.length; i++) cards[i].style.display = 'block';
@@ -3623,6 +4147,9 @@
                         $('teacherBadge').textContent = '点击可点评';
                         $('seatGrid').innerHTML = '';
                         $('statsBar').style.display = '';
+
+                        restoreSeatStatusFromRecords(getTodayStr());
+
                         renderTeachers();
                         renderSchedule();
                         renderSeats();
@@ -3650,6 +4177,7 @@
                         $('seatGrid').innerHTML = '';
                         renderDashboard();
                     }
+
                     var se = $('studentAdminEntry');
                     var superEntry = $('superAdminEntry');
                     if (se) {
@@ -3660,14 +4188,17 @@
                         if (canManageUsers(currentUser) || canManageClasses(currentUser)) superEntry.classList.remove('hidden');
                         else superEntry.classList.add('hidden');
                     }
+
                     if (isSubjectTeacher) {
                         var allManageBtns = document.querySelectorAll('.admin-entry .admin-btn, #manageClassBtn');
                         for (var i = 0; i < allManageBtns.length; i++) allManageBtns[i].style.display = 'none';
                         var adminEntriesAll = document.querySelectorAll('.admin-entry');
                         for (var i = 0; i < adminEntriesAll.length; i++) adminEntriesAll[i].style.display = 'none';
                     }
+
                     initLogin();
                 });
+            });
         });
     }
 
