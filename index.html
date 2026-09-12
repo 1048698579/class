@@ -50,12 +50,12 @@
         .card-title{font-size:15px;font-weight:600;color:#333;margin-bottom:12px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
         .card-title .badge{font-size:11px;background:#E8F0FE;color:#4A90D9;padding:0 10px;border-radius:10px;font-weight:400}
         .card-title .lock-icon{font-size:12px;color:#999;margin-left:auto}
-        .teacher-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-        .teacher-item{background:#F8FAFC;border-radius:8px;padding:10px 12px;text-align:center;cursor:pointer;border:2px solid transparent;position:relative}
+        .teacher-grid{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:4px}
+        .teacher-item{background:#F8FAFC;border-radius:5px;padding:4px 2px;text-align:center;cursor:pointer;border:2px solid transparent;position:relative;overflow:hidden}
         .teacher-item:active{transform:scale(0.96)}
-        .teacher-item .name{font-size:16px;font-weight:600;color:#222}
-        .teacher-item .role{font-size:12px;color:#888}
-        .teacher-item .click-hint{font-size:10px;color:#aaa;margin-top:2px}
+        .teacher-item .name{font-size:12px;font-weight:600;color:#222;line-height:1.1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+        .teacher-item .role{font-size:9px;color:#888;line-height:1.1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+        .teacher-item .click-hint{display:none}
         .teacher-item.warning-empty{border-color:#DC3545;background:#fdf0f2}
         .teacher-item.warning-phone{border-color:#E67E22;background:#fdf5ed}
         .teacher-item.warning-late{border-color:#F59E0B;background:#FFFBEB}
@@ -243,10 +243,10 @@
     <div id="holidayBarContainer"></div>
 
     <!-- 教师团队 -->
-    <div class="card">
-        <div class="card-title">👨‍🏫 教师团队 <span class="badge" id="teacherBadge">点击可点评</span><span class="lock-icon" id="teacherLockIcon">🔒</span></div>
-        <div class="teacher-grid" id="teacherGrid"></div>
-    </div>
+    <div class="card" style="padding:10px 12px;margin-bottom:10px;">
+    <div class="card-title" style="margin-bottom:6px;font-size:14px;">👨‍🏫 教师团队 <span class="lock-icon" id="teacherLockIcon">🔒</span></div>
+    <div class="teacher-grid" id="teacherGrid"></div>
+</div>
 
     <!-- 课程表 -->
     <div class="card">
@@ -274,7 +274,7 @@
         </div>
         <div class="admin-entry hidden" id="studentAdminEntry">
             <button class="admin-btn" onclick="openAdminModal('student')">📝 管理学生名单</button>
-            <button class="admin-btn" onclick="openAdminModal('diner')">🍱 就餐统计</button>
+            <button class="admin-btn" onclick="openAdminModal('diner')">🍱 数据管理统计</button>
         </div>
         <div class="admin-entry hidden" id="superAdminEntry">
             <button class="admin-btn" onclick="openAdminModal('class')">🏫 班级管理</button>
@@ -719,7 +719,25 @@
     function isStatusStop(status) {
         return status === 'leave' || status === 'absent';
     }
-   
+
+    // ================================================================
+    //  点评存储工具
+    // ================================================================
+    function appendComment(date, classKey, key, item) {
+        if (!attendanceRecords[date]) attendanceRecords[date] = {};
+        if (!attendanceRecords[date][classKey]) attendanceRecords[date][classKey] = {};
+        var arr = attendanceRecords[date][classKey][key];
+        if (!Array.isArray(arr)) arr = [];
+        arr.push(item);
+        attendanceRecords[date][classKey][key] = arr;
+    }
+
+    function isCommentKey(key) {
+        return key.indexOf('_comment_') === 0 ||
+               key.indexOf('_teacher_') === 0 ||
+               key === '_classoverall';
+    }
+        
     function isHolidayDay(date) {
         var rec = attendanceRecords[date] && attendanceRecords[date]['__holiday__'];
         return !!(rec && rec._holiday === true);
@@ -1155,8 +1173,6 @@
             if (teacherStatus[i] === 'empty') warnClass = 'warning-empty';
             else if (teacherStatus[i] === 'phone') warnClass = 'warning-phone';
             else if (teacherStatus[i] === 'late') warnClass = 'warning-late';
-            var disabledClass = canEdit ? '' : ' disabled';
-            var hint = canEdit ? '点击点评' : '🔒 仅领导可评';
             html += '<div class="teacher-item ' + warnClass + disabledClass + '" data-index="' + i + '">' +
                 '<div class="name">' + t.name + '</div>' +
                 '<div class="role">' + t.role + '</div>' +
@@ -1590,8 +1606,17 @@
         if (canComment(currentUser, currentClassKey) && comment) {
             var statusMap = { present:'✅ 到课', late:'⏰ 迟到', absent:'❌ 缺勤', leave:'📝 请假', 'not-in-room':'🚪 未在教室' };
             var statusLabel = status ? (statusMap[status] || status) : '✅ 到课';
-            var msg = '📢 **学生课堂点评**\n\n🏫 班级：' + data.className + '\n👤 学生：' + name + '\n📊 出勤：' + statusLabel + '\n💬 点评：' + comment + '\n👨‍🏫 点评人：' + currentUser.name + '（' + currentUser.role + '）\n🕐 时间：' + getNowStr();
-            sendDingTalk(msg, false);
+            // 保存点评
+            appendComment(today, currentClassKey, '_comment_' + name, {
+                text: comment,
+                operator: currentUser.name,
+                operatorRole: currentUser.role,
+                time: getNowStr()
+            });
+            saveDayAttendance(currentClassKey, today).then(function() {
+                var msg = '📢 **学生课堂点评**\n\n🏫 班级：' + data.className + '\n👤 学生：' + name + '\n📊 出勤：' + statusLabel + '\n💬 点评：' + comment + '\n👨‍🏫 点评人：' + currentUser.name + '（' + currentUser.role + '）\n🕐 时间：' + getNowStr();
+                sendDingTalk(msg, false);
+            });
             showToast('✅ 已点评 ' + name);
         } else {
             var statusMap2 = { present:'✅ 到课', late:'⏰ 迟到', absent:'❌ 缺勤', leave:'📝 请假', 'not-in-room':'🚪 未在教室' };
@@ -1653,10 +1678,22 @@
         var data = getCurrentData();
         var t = teachers[selectedTeacherIndex];
         var comment = $('teacherComment') ? $('teacherComment').value.trim() : '';
+        var today = getTodayStr();
+
         if (praiseBtn) {
             var praiseText = praiseBtn.dataset.praise;
-            var msg = '🌟 **教师表扬**\n\n🏫 班级：' + data.className + '\n👨‍🏫 教师：' + t.name + '\n💬 表扬：' + praiseText + '\n' + (comment ? '📝 备注：' + comment + '\n' : '') + '👤 表扬人：' + currentUser.name + '（' + currentUser.role + '）\n🕐 时间：' + getNowStr();
-            sendDingTalk(msg, false);
+            appendComment(today, currentClassKey, '_teacher_' + t.name, {
+                type: 'praise',
+                text: praiseText,
+                note: comment,
+                operator: currentUser.name,
+                operatorRole: currentUser.role,
+                time: getNowStr()
+            });
+            saveDayAttendance(currentClassKey, today).then(function() {
+                var msg = '🌟 **教师表扬**\n\n🏫 班级：' + data.className + '\n👨‍🏫 教师：' + t.name + '\n💬 表扬：' + praiseText + '\n' + (comment ? '📝 备注：' + comment + '\n' : '') + '👤 表扬人：' + currentUser.name + '（' + currentUser.role + '）\n🕐 时间：' + getNowStr();
+                sendDingTalk(msg, false);
+            });
             showToast('🌟 已表扬 ' + t.name);
             closeTeacherModal();
             return;
@@ -1665,12 +1702,22 @@
         var statusMap = { empty:'🕳️ 空堂（教师不在教室）', phone:'📱 上课玩手机', late:'⏰ 上课迟到', needImprove:'📉 课堂有待提高' };
         teacherStatus[selectedTeacherIndex] = status;
         renderTeachers();
-        var msg2 = '🚨 **教学异常通报**\n\n🏫 班级：' + data.className + '\n👨‍🏫 教师：' + t.name + '（' + t.role.replace('班主任 · ', '') + '）\n⚠️ 问题：' + (statusMap[status] || status) + '\n' + (comment ? '📝 备注：' + comment + '\n' : '') + '👨‍🏫 报告人：' + currentUser.name + '（' + currentUser.role + '）\n🕐 时间：' + getNowStr();
-        sendDingTalk(msg2, true);
+
+        appendComment(today, currentClassKey, '_teacher_' + t.name, {
+            type: 'abnormal',
+            text: statusMap[status] || status,
+            note: comment,
+            operator: currentUser.name,
+            operatorRole: currentUser.role,
+            time: getNowStr()
+        });
+        saveDayAttendance(currentClassKey, today).then(function() {
+            var msg2 = '🚨 **教学异常通报**\n\n🏫 班级：' + data.className + '\n👨‍🏫 教师：' + t.name + '（' + t.role.replace('班主任 · ', '') + '）\n⚠️ 问题：' + (statusMap[status] || status) + '\n' + (comment ? '📝 备注：' + comment + '\n' : '') + '👨‍🏫 报告人：' + currentUser.name + '（' + currentUser.role + '）\n🕐 时间：' + getNowStr();
+            sendDingTalk(msg2, true);
+        });
         showToast('🚨 已通报：' + t.name);
         closeTeacherModal();
     }
-
     // ================================================================
     //  班级整体表现
     // ================================================================
@@ -1733,12 +1780,23 @@
         var data = getCurrentData();
         var at = sa ? sa.dataset.value : '未评价';
         var dt = sd ? sd.dataset.value : '未评价';
-        var msg = '📢 **班级整体表现**\n\n🏫 班级：' + data.className + '\n🎯 课堂氛围：' + at + '\n📋 纪律情况：' + dt + '\n' + (comment ? '📝 补充：' + comment + '\n' : '') + '👨‍🏫 评价人：' + currentUser.name + '（' + currentUser.role + '）\n🕐 时间：' + getNowStr();
-        sendDingTalk(msg, false);
+        var today = getTodayStr();
+
+        appendComment(today, currentClassKey, '_classoverall', {
+            atmosphere: at,
+            discipline: dt,
+            note: comment,
+            operator: currentUser.name,
+            operatorRole: currentUser.role,
+            time: getNowStr()
+        });
+        saveDayAttendance(currentClassKey, today).then(function() {
+            var msg = '📢 **班级整体表现**\n\n🏫 班级：' + data.className + '\n🎯 课堂氛围：' + at + '\n📋 纪律情况：' + dt + '\n' + (comment ? '📝 补充：' + comment + '\n' : '') + '👨‍🏫 评价人：' + currentUser.name + '（' + currentUser.role + '）\n🕐 时间：' + getNowStr();
+            sendDingTalk(msg, false);
+        });
         showToast('✅ 整体评价已发送');
         closeClassOverallModal();
     }
-
     // ================================================================
     //  重置出勤
     // ================================================================
@@ -1874,6 +1932,7 @@
         }
         for (var n2 in existing) {
             if (n2.indexOf('_diner_') === 0 || n2.indexOf('_after1_') === 0 || n2.indexOf('_after2_') === 0) continue;
+            if (isCommentKey(n2)) continue;
             if (typeof existing[n2] === 'string' && !nameSet[n2]) { nameSet[n2] = true; list.push(n2); }
         }
         for (var n3 in existing) {
@@ -2527,6 +2586,7 @@
         html += '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;">';
         html += '<button onclick="exportDinerReport()" style="padding:8px 16px;border:none;border-radius:8px;background:#28A745;color:#fff;font-size:13px;cursor:pointer;">📥 导出就餐报账单</button>';
         html += '<button onclick="exportAttendanceReport()" style="padding:8px 16px;border:none;border-radius:8px;background:#4A90D9;color:#fff;font-size:13px;cursor:pointer;">📊 导出考勤统计</button>';
+        html += '<button onclick="exportCommentReport()" style="padding:8px 16px;border:none;border-radius:8px;background:#E67E22;color:#fff;font-size:13px;cursor:pointer;">💬 导出点评统计</button>';
         html += '</div>';
         html += '<div id="monthlyDinerResult"><div style="color:#999;font-size:13px;padding:10px;text-align:center;">请点击"统计"查看月度数据</div></div>';
         return html;
@@ -2969,6 +3029,217 @@
         link.click();
         showToast('✅ ' + allClassNames + ' 导出成功！共 ' + allStudentCount + ' 名学生');
     }
+
+        // ================================================================
+    //  导出点评统计
+    // ================================================================
+    function exportCommentReport(monthArg) {
+        var month = monthArg || ($('dinerMonth') ? $('dinerMonth').value : '');
+        if (!month) { showToast('请先选择月份'); return; }
+        if (!/^\d{4}-\d{2}$/.test(month)) { showToast('⚠️ 月份格式应为 2026-09'); return; }
+
+        var targets = getExportTargets();
+        var targetKeys = targets.targetKeys;
+        if (targetKeys.length === 0) { showToast('⚠️ 没有可导出的班级数据'); return; }
+
+        showToast('⏳ 正在加载数据...');
+        var chain = Promise.resolve();
+        targetKeys.forEach(function(k) {
+            chain = chain.then(function() { return loadAttendanceMonth(k, month); });
+        });
+        chain.then(function() {
+            doExportCommentReport(month, targets);
+        }).catch(function(e) {
+            console.error('导出失败:', e);
+            showToast('❌ 导出失败：' + e.message);
+        });
+    }
+
+    function doExportCommentReport(month, targets) {
+        var targetKeys = targets.targetKeys;
+        var allClassNames = targets.allClassNames;
+
+        var year = parseInt(month.substring(0, 4));
+        var mon = parseInt(month.substring(5, 7));
+        var daysInMonth = new Date(year, mon, 0).getDate();
+        var csvRows = [];
+        var totalComments = 0;
+
+        // ========== 明细 ==========
+        csvRows.push('【点评明细】');
+        csvRows.push('日期,班级,类型,对象,点评内容,备注,点评人,角色');
+
+        for (var t = 0; t < targetKeys.length; t++) {
+            var classKey = targetKeys[t];
+            var cls = CLASS_DATA_LIST[classKey];
+            if (!cls) continue;
+            var className = cls.className || classKey;
+
+            for (var d = 1; d <= daysInMonth; d++) {
+                var dateStr = year + '-' + String(mon).padStart(2, '0') + '-' + String(d).padStart(2, '0');
+                var rec = attendanceRecords[dateStr] && attendanceRecords[dateStr][classKey];
+                if (!rec) continue;
+
+                for (var key in rec) {
+                    if (key.indexOf('_comment_') === 0) {
+                        var studentName = key.substring(9);
+                        var list = rec[key];
+                        if (Array.isArray(list)) {
+                            for (var i = 0; i < list.length; i++) {
+                                var item = list[i];
+                                csvRows.push([
+                                    dateStr, className, '学生点评', studentName,
+                                    '"' + (item.text || '').replace(/"/g, '""') + '"',
+                                    '',
+                                    item.operator || '',
+                                    item.operatorRole || ''
+                                ].join(','));
+                                totalComments++;
+                            }
+                        }
+                    } else if (key.indexOf('_teacher_') === 0) {
+                        var teacherName = key.substring(9);
+                        var list = rec[key];
+                        if (Array.isArray(list)) {
+                            for (var i = 0; i < list.length; i++) {
+                                var item = list[i];
+                                var type = item.type === 'abnormal' ? '教师异常' : '教师表扬';
+                                csvRows.push([
+                                    dateStr, className, type, teacherName,
+                                    '"' + (item.text || '').replace(/"/g, '""') + '"',
+                                    '"' + (item.note || '').replace(/"/g, '""') + '"',
+                                    item.operator || '',
+                                    item.operatorRole || ''
+                                ].join(','));
+                                totalComments++;
+                            }
+                        }
+                    } else if (key === '_classoverall') {
+                        var list = rec[key];
+                        if (Array.isArray(list)) {
+                            for (var i = 0; i < list.length; i++) {
+                                var item = list[i];
+                                var txt = '氛围：' + (item.atmosphere || '未评价') + '；纪律：' + (item.discipline || '未评价');
+                                csvRows.push([
+                                    dateStr, className, '班级整体', className,
+                                    '"' + txt + '"',
+                                    '"' + (item.note || '').replace(/"/g, '""') + '"',
+                                    item.operator || '',
+                                    item.operatorRole || ''
+                                ].join(','));
+                                totalComments++;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        csvRows.push('');
+        csvRows.push('明细条数,' + totalComments);
+
+        // ========== 按学生汇总 ==========
+        csvRows.push('');
+        csvRows.push('【按学生汇总】');
+        csvRows.push('班级,学生,表扬次数,待改进次数,总次数,最近点评');
+
+        for (var t = 0; t < targetKeys.length; t++) {
+            var classKey = targetKeys[t];
+            var cls = CLASS_DATA_LIST[classKey];
+            if (!cls) continue;
+            var className = cls.className || classKey;
+            var studentStats = {};
+
+            for (var d = 1; d <= daysInMonth; d++) {
+                var dateStr = year + '-' + String(mon).padStart(2, '0') + '-' + String(d).padStart(2, '0');
+                var rec = attendanceRecords[dateStr] && attendanceRecords[dateStr][classKey];
+                if (!rec) continue;
+
+                for (var key in rec) {
+                    if (key.indexOf('_comment_') !== 0) continue;
+                    var studentName = key.substring(9);
+                    if (!studentStats[studentName]) {
+                        studentStats[studentName] = { praise: 0, negative: 0, total: 0, last: '' };
+                    }
+                    var list = rec[key];
+                    if (!Array.isArray(list)) continue;
+                    for (var i = 0; i < list.length; i++) {
+                        var item = list[i];
+                        studentStats[studentName].total++;
+                        var txt = item.text || '';
+                        var isNeg = txt.indexOf('💬') !== -1 || txt.indexOf('😴') !== -1 ||
+                                    txt.indexOf('🤫') !== -1 || txt.indexOf('📱') !== -1 ||
+                                    txt.indexOf('📢') !== -1 || txt.indexOf('待改进') !== -1 ||
+                                    txt.indexOf('走神') !== -1 || txt.indexOf('纪律差') !== -1;
+                        if (isNeg) studentStats[studentName].negative++;
+                        else studentStats[studentName].praise++;
+                        studentStats[studentName].last = dateStr + ' ' + txt;
+                    }
+                }
+            }
+
+            for (var sn in studentStats) {
+                var st = studentStats[sn];
+                csvRows.push([
+                    className, sn, st.praise, st.negative, st.total,
+                    '"' + st.last.replace(/"/g, '""') + '"'
+                ].join(','));
+            }
+        }
+
+        // ========== 按教师汇总 ==========
+        csvRows.push('');
+        csvRows.push('【按教师汇总】');
+        csvRows.push('班级,教师,表扬次数,异常通报次数,总次数,最近点评');
+
+        for (var t = 0; t < targetKeys.length; t++) {
+            var classKey = targetKeys[t];
+            var cls = CLASS_DATA_LIST[classKey];
+            if (!cls) continue;
+            var className = cls.className || classKey;
+            var teacherStats = {};
+
+            for (var d = 1; d <= daysInMonth; d++) {
+                var dateStr = year + '-' + String(mon).padStart(2, '0') + '-' + String(d).padStart(2, '0');
+                var rec = attendanceRecords[dateStr] && attendanceRecords[dateStr][classKey];
+                if (!rec) continue;
+
+                for (var key in rec) {
+                    if (key.indexOf('_teacher_') !== 0) continue;
+                    var teacherName = key.substring(9);
+                    if (!teacherStats[teacherName]) {
+                        teacherStats[teacherName] = { praise: 0, abnormal: 0, total: 0, last: '' };
+                    }
+                    var list = rec[key];
+                    if (!Array.isArray(list)) continue;
+                    for (var i = 0; i < list.length; i++) {
+                        var item = list[i];
+                        teacherStats[teacherName].total++;
+                        if (item.type === 'abnormal') teacherStats[teacherName].abnormal++;
+                        else teacherStats[teacherName].praise++;
+                        teacherStats[teacherName].last = dateStr + ' ' + (item.text || '');
+                    }
+                }
+            }
+
+            for (var tn in teacherStats) {
+                var st2 = teacherStats[tn];
+                csvRows.push([
+                    className, tn, st2.praise, st2.abnormal, st2.total,
+                    '"' + st2.last.replace(/"/g, '""') + '"'
+                ].join(','));
+            }
+        }
+
+        var csvContent = csvRows.join('\n');
+        var blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
+        var link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = allClassNames + '_' + month + '_点评统计.csv';
+        link.click();
+        showToast('✅ ' + allClassNames + ' 点评统计导出成功！共 ' + totalComments + ' 条');
+    }
+    
     // ================================================================
     //  导出考勤统计（逐日）
     // ================================================================
