@@ -2673,6 +2673,14 @@
             if (num >= 1 && num <= 9) return gradeMap[num - 1];
             if (num === 10) return '高一年级';
         }
+       
+        // 阿拉伯数字开头：1.(1) / 2.(3) / 10.(1)
+        var m = name.match(/^(\d{1,2})\s*[\.\(（]/);
+        if (m) {
+            var num = parseInt(m[1]);
+            if (num >= 1 && num <= 9) return gradeMap[num - 1];
+            if (num === 10) return '高一年级';
+        }
         
         // 纯数字班号：如 2024-101 → 取第 5 位
         var m2 = String(classKey).match(/(\d{4})-(\d+)/);
@@ -2686,6 +2694,7 @@
         
         return '';
     }
+   
     function getGradeFees(grade) {
         var gradeFees = window.gradeFees || {};
         var defaultMeal = window.mealPrice || 10;
