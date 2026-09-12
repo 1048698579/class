@@ -2659,8 +2659,9 @@
         if (!month) { showToast('请先选择月份'); return; }
         if (!/^\d{4}-\d{2}$/.test(month)) { showToast('⚠️ 月份格式应为 2026-09'); return; }
 
+        var targets = getExportTargets();
         var targetKeys = targets.targetKeys;
-        var allClassNames = targets.allClassNames;
+        if (targetKeys.length === 0) { showToast('⚠️ 没有可导出的班级数据'); return; }
 
         showToast('⏳ 正在加载数据...');
         var chain = Promise.resolve();
@@ -2669,6 +2670,9 @@
         });
         chain.then(function() {
             doExportDinerReport(month, targets);
+        }).catch(function(e) {
+            console.error('导出失败:', e);
+            showToast('❌ 导出失败：' + e.message);
         });
     }
         
@@ -2914,15 +2918,31 @@
     // ================================================================
     //  导出考勤统计（逐日）
     // ================================================================
-    function exportAttendanceReport(monthArg) {
+        function exportAttendanceReport(monthArg) {
         var month = monthArg || ($('dinerMonth') ? $('dinerMonth').value : '');
         if (!month) { showToast('请先选择月份'); return; }
         if (!/^\d{4}-\d{2}$/.test(month)) { showToast('⚠️ 月份格式应为 2026-09'); return; }
 
         var targets = getExportTargets();
         var targetKeys = targets.targetKeys;
-        var allClassNames = targets.allClassNames;
         if (targetKeys.length === 0) { showToast('⚠️ 没有可导出的班级数据'); return; }
+
+        showToast('⏳ 正在加载数据...');
+        var chain = Promise.resolve();
+        targetKeys.forEach(function(k) {
+            chain = chain.then(function() { return loadAttendanceMonth(k, month); });
+        });
+        chain.then(function() {
+            doExportAttendanceReport(month, targets);
+        }).catch(function(e) {
+            console.error('导出失败:', e);
+            showToast('❌ 导出失败：' + e.message);
+        });
+    }
+
+    function doExportAttendanceReport(month, targets) {
+        var targetKeys = targets.targetKeys;
+        var allClassNames = targets.allClassNames;
 
         var year = parseInt(month.substring(0, 4));
         var mon = parseInt(month.substring(5, 7));
@@ -2951,11 +2971,11 @@
             var header = ['姓名'];
             for (var d = 1; d <= daysInMonth; d++) {
                 var dateStr = year + '-' + String(mon).padStart(2, '0') + '-' + String(d).padStart(2, '0');
-                var isHoliday = attendanceRecords[dateStr] && attendanceRecords[dateStr]._holiday === true;
+                var _isHoliday = isHolidayDay(dateStr);
+                var _isOvertime = isOvertimeDay(dateStr);
                 var dayOfWeek = new Date(year, mon - 1, d).getDay();
-                var isOvertimeDay = attendanceRecords[dateStr] && attendanceRecords[dateStr]._overtime === true;
-                var isWeekend = (dayOfWeek === 0 || dayOfWeek === 6) && !isOvertimeDay;
-                if (isHoliday) header.push(d + '放');
+                var isWeekend = (dayOfWeek === 0 || dayOfWeek === 6) && !_isOvertime;
+                if (_isHoliday) header.push(d + '放');
                 else if (isWeekend) header.push('-');
                 else if (dateStr > today) header.push('·');
                 else header.push(d);
@@ -2978,11 +2998,11 @@
 
                 for (var d = 1; d <= daysInMonth; d++) {
                     var dateStr = year + '-' + String(mon).padStart(2, '0') + '-' + String(d).padStart(2, '0');
-                    var isHoliday = attendanceRecords[dateStr] && attendanceRecords[dateStr]._holiday === true;
+                    var _isHoliday = isHolidayDay(dateStr);
+                    var _isOvertime = isOvertimeDay(dateStr);
                     var dayOfWeek = new Date(year, mon - 1, d).getDay();
-                    var isOvertimeDay = attendanceRecords[dateStr] && attendanceRecords[dateStr]._overtime === true;
-                    var isWeekend = (dayOfWeek === 0 || dayOfWeek === 6) && !isOvertimeDay;
-                    if (isHoliday) { row.push('放'); continue; }
+                    var isWeekend = (dayOfWeek === 0 || dayOfWeek === 6) && !_isOvertime;
+                    if (_isHoliday) { row.push('放'); continue; }
                     if (isWeekend) { row.push('-'); continue; }
                     if (dateStr > today) { row.push('·'); continue; }
 
@@ -3052,7 +3072,7 @@
         link.click();
         showToast('✅ ' + allClassNames + ' 考勤统计导出成功！共 ' + totalStudents + ' 名学生');
     }
-
+        
     // ================================================================
     //  班级管理
     // ================================================================
