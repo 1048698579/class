@@ -855,19 +855,40 @@
         var cacheKey = classKey + '_' + month;
         if (_loadedMonths[cacheKey]) return Promise.resolve();
 
-        return fetch(API_BASE + '/api/attendance?classKey=' + encodeURIComponent(classKey) + '&month=' + month)
-            .then(function(r) { return r.json(); })
-            .then(function(result) {
-                if (result.success && result.data) {
-                    for (var date in result.data) {
-                        if (!attendanceRecords[date]) attendanceRecords[date] = {};
-                        attendanceRecords[date][classKey] = result.data[date];
+        // 先加载该月的放假/调休标记（每个班级每月只加载一次）
+        var holidayCacheKey = '__holiday___' + month;
+        var holidayPromise = Promise.resolve();
+        if (!_loadedMonths[holidayCacheKey]) {
+            holidayPromise = fetch(API_BASE + '/api/attendance?classKey=__holiday__&month=' + month)
+                .then(function(r) { return r.json(); })
+                .then(function(result) {
+                    if (result.success && result.data) {
+                        for (var date in result.data) {
+                            if (!attendanceRecords[date]) attendanceRecords[date] = {};
+                            attendanceRecords[date]['__holiday__'] = result.data[date];
+                        }
+                        _loadedMonths[holidayCacheKey] = true;
                     }
-                    _loadedMonths[cacheKey] = true;
-                }
-                return true;
-            })
-            .catch(function(e) { console.error('加载考勤失败:', e); return false; });
+                    return true;
+                })
+                .catch(function(e) { console.error('加载放假标记失败:', e); return false; });
+        }
+
+        return holidayPromise.then(function() {
+            return fetch(API_BASE + '/api/attendance?classKey=' + encodeURIComponent(classKey) + '&month=' + month)
+                .then(function(r) { return r.json(); })
+                .then(function(result) {
+                    if (result.success && result.data) {
+                        for (var date in result.data) {
+                            if (!attendanceRecords[date]) attendanceRecords[date] = {};
+                            attendanceRecords[date][classKey] = result.data[date];
+                        }
+                        _loadedMonths[cacheKey] = true;
+                    }
+                    return true;
+                })
+                .catch(function(e) { console.error('加载考勤失败:', e); return false; });
+        });
     }
 
     // 加载一段日期范围（覆盖的月份逐个加载）
