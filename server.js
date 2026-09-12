@@ -55,151 +55,116 @@ async function sendDingTalk(message, isEmergency, robot = 'main') {
     } catch (e) { console.error('钉钉发送失败:', e.message); return false; }
 }
 
+const SUPA_HEADERS = {
+    'apikey': SUPABASE_KEY,
+    'Authorization': 'Bearer ' + SUPABASE_KEY,
+    'Content-Type': 'application/json'
+};
+
 // ================================================================
-//  Supabase 操作
+//  system_data 读写（班级/用户，不含考勤）
 // ================================================================
-async function getData() {
+async function getSystemData() {
     try {
-        const r = await axios.get(SUPABASE_URL + '/rest/v1/system_data?id=eq.main', {
-            headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY }
-        });
+        const r = await axios.get(SUPABASE_URL + '/rest/v1/system_data?id=eq.main', { headers: SUPA_HEADERS });
         return r.data && r.data[0] || null;
-    } catch (e) { console.error('读取失败:', e.message); return null; }
+    } catch (e) { console.error('读取 system_data 失败:', e.message); return null; }
 }
 
-async function saveData(data) {
+async function saveSystemData(data) {
     try {
-        // 先读取数据库里现有的数据
-        const existing = await getData();
-        
-        // 准备要保存的数据
-        var payload = {
+        const existing = await getSystemData();
+
+        const payload = {
             class_data_list: data.classDataList || {},
             seat_status: data.seatStatus || {},
             teacher_status: data.teacherStatus || {},
-            users: data.users || {},
-            attendance_records: data.attendanceRecords || {}
+            users: data.users || {}
         };
-        
-        // 🔧 核心修复：如果前端传入了空数据，但数据库里有数据，保留数据库的
+
+        // 保护逻辑：前端传空时保留数据库的
         if (existing) {
-            // 保护班级数据
             if (existing.class_data_list && Object.keys(existing.class_data_list).length > 0) {
                 if (!payload.class_data_list || Object.keys(payload.class_data_list).length === 0) {
-                    console.log('🛡️ 防止覆盖：保留现有班级数据');
+                    console.log('🛡️ 保留现有班级数据');
                     payload.class_data_list = existing.class_data_list;
                 }
             }
-            // 保护座位数据
-            if (existing.seat_status && Object.keys(existing.seat_status).length > 0) {
-                if (!payload.seat_status || Object.keys(payload.seat_status).length === 0) {
-                    payload.seat_status = existing.seat_status;
-                }
-            }
-            // 保护教师状态数据
-            if (existing.teacher_status && Object.keys(existing.teacher_status).length > 0) {
-                if (!payload.teacher_status || Object.keys(payload.teacher_status).length === 0) {
-                    payload.teacher_status = existing.teacher_status;
-                }
-            }
-            // 用户数据也要保护（防止账号被清空）
             if (existing.users && Object.keys(existing.users).length > 0) {
                 if (!payload.users || Object.keys(payload.users).length === 0) {
-                    console.log('🛡️ 防止覆盖：保留现有用户数据');
+                    console.log('🛡️ 保留现有用户数据');
                     payload.users = existing.users;
                 }
             }
         }
-        
-        // 保存到 Supabase
-        if (existing) {
-            await axios.patch(SUPABASE_URL + '/rest/v1/system_data?id=eq.main', payload, {
-                headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY, 'Content-Type': 'application/json' }
-            });
-        } else {
-            await axios.post(SUPABASE_URL + '/rest/v1/system_data', { id: 'main', ...payload }, {
-                headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY, 'Content-Type': 'application/json' }
-            });
-        }
-        console.log('✅ 数据保存成功');
-        return true;
-    } catch (e) { 
-        console.error('❌ 保存失败:', e.message); 
-        return false; 
-    }
-}
 
-async function getSystemConfig() {
-    try {
-        const r = await axios.get(SUPABASE_URL + '/rest/v1/system_config?id=eq.main', {
-            headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY }
-        });
-        return r.data && r.data[0] || null;
-    } catch (e) { return null; }
-}
-
-async function saveSystemConfig(config) {
-    try {
-        // 先检查是否存在
-        const existing = await getSystemConfig();
-        
-        // 准备完整数据
-        const payload = {
-            id: 'main',
-            praise_comments: config.praise_comments || [],
-            negative_comments: config.negative_comments || [],
-            teacher_praise: config.teacher_praise || [],
-            teacher_abnormal: config.teacher_abnormal || [],
-            diner_deadline: config.diner_deadline || '09:00',
-            alert_threshold: config.alert_threshold || 20,
-            grade_fees: config.grade_fees || {},
-            meal_price: config.meal_price !== undefined ? config.meal_price : 10,
-            after_school_fee: config.after_school_fee !== undefined ? config.after_school_fee : 5
-        };
-        
         if (existing) {
-            // 更新：用 patch
-            await axios.patch(SUPABASE_URL + '/rest/v1/system_config?id=eq.main', payload, {
-                headers: { 
-                    'apikey': SUPABASE_KEY, 
-                    'Authorization': 'Bearer ' + SUPABASE_KEY, 
-                    'Content-Type': 'application/json' 
-                }
-            });
-            console.log('✅ 系统配置已更新');
+            await axios.patch(SUPABASE_URL + '/rest/v1/system_data?id=eq.main', payload, { headers: SUPA_HEADERS });
         } else {
-            // 插入：用 post
-            await axios.post(SUPABASE_URL + '/rest/v1/system_config', payload, {
-                headers: { 
-                    'apikey': SUPABASE_KEY, 
-                    'Authorization': 'Bearer ' + SUPABASE_KEY, 
-                    'Content-Type': 'application/json' 
-                }
-            });
-            console.log('✅ 系统配置已创建');
+            await axios.post(SUPABASE_URL + '/rest/v1/system_data', { id: 'main', ...payload }, { headers: SUPA_HEADERS });
         }
         return true;
-    } catch (e) { 
-        // 打印详细错误信息
-        console.error('❌ 保存系统配置失败:', e.message);
-        if (e.response) {
-            console.error('响应状态:', e.response.status);
-            console.error('响应数据:', e.response.data);
-        }
-        return false; 
+    } catch (e) {
+        console.error('❌ 保存 system_data 失败:', e.message);
+        if (e.response) console.error('响应:', e.response.status, e.response.data);
+        return false;
     }
 }
 
 // ================================================================
-//  🛡️ 爬虫防护（放在所有 API 路由之前）
+//  attendance_records 读写（每班每天一行）
 // ================================================================
-// 1. robots.txt - 告诉搜索引擎不要抓取
+async function getAttendanceByRange(classKey, start, end) {
+    try {
+        let url = SUPABASE_URL + '/rest/v1/attendance_records?select=*';
+        if (classKey && classKey !== 'all') {
+            url += '&class_key=eq.' + encodeURIComponent(classKey);
+        }
+        if (start) url += '&date=gte.' + start;
+        if (end) url += '&date=lte.' + end;
+        url += '&order=date.asc';
+
+        const r = await axios.get(url, { headers: SUPA_HEADERS });
+        return r.data || [];
+    } catch (e) {
+        console.error('读取考勤失败:', e.message);
+        return [];
+    }
+}
+
+async function saveAttendanceDay(classKey, date, data) {
+    try {
+        await axios.post(
+            SUPABASE_URL + '/rest/v1/attendance_records?on_conflict=class_key,date',
+            {
+                class_key: classKey,
+                date: date,
+                data: data || {},
+                updated_at: new Date().toISOString()
+            },
+            {
+                headers: {
+                    ...SUPA_HEADERS,
+                    'Prefer': 'resolution=merge-duplicates,return=minimal'
+                }
+            }
+        );
+        return true;
+    } catch (e) {
+        console.error('保存考勤失败:', e.message);
+        if (e.response) console.error('响应:', e.response.status, e.response.data);
+        return false;
+    }
+}
+
+// ================================================================
+//  🛡️ 爬虫防护
+// ================================================================
 app.get('/robots.txt', (req, res) => {
     res.type('text/plain');
     res.send('User-agent: *\nDisallow: /');
 });
 
-// 2. 屏蔽常见爬虫 UA 和敏感路径
 app.use((req, res, next) => {
     const ua = req.headers['user-agent'] || '';
     const blockedAgents = ['python-requests', 'Go-http-client', 'curl', 'Wget', 'Java', 'okhttp', 'Scrapy', 'HttpClient', 'Apache-HttpClient', 'python', 'PhantomJS', 'HeadlessChrome'];
@@ -222,28 +187,26 @@ app.use((req, res, next) => {
 });
 
 // ================================================================
-//  API 路由
+//  API: 班级/用户数据
 // ================================================================
 app.get('/api/data', async (req, res) => {
     try {
-        const d = await getData();
+        const d = await getSystemData();
         if (d) {
             res.json({ success: true, data: {
                 classDataList: d.class_data_list || {},
                 seatStatus: d.seat_status || {},
                 teacherStatus: d.teacher_status || {},
-                users: d.users || {},
-                attendanceRecords: d.attendance_records || {}
+                users: d.users || {}
             }});
         } else {
             const defaultData = {
                 classDataList: {},
                 seatStatus: {},
                 teacherStatus: {},
-                users: { admin: { name: '超级管理员', role: '超级管理员', role_level: 5, password: 'admin123', permissions: { can_manage_users: true, can_manage_all_classes: true, can_manage_all_grades: true, can_view_all: true, can_comment_all: true, can_export_data: true, can_send_notification: true, can_manage_permissions: true } } },
-                attendanceRecords: {}
+                users: { admin: { name: '超级管理员', role: '超级管理员', role_level: 5, password: 'admin123' } }
             };
-            await saveData(defaultData);
+            await saveSystemData(defaultData);
             res.json({ success: true, data: defaultData });
         }
     } catch (e) { res.status(500).json({ success: false, error: e.message }); }
@@ -251,47 +214,80 @@ app.get('/api/data', async (req, res) => {
 
 app.post('/api/data', async (req, res) => {
     try {
-        const ok = await saveData(req.body.data);
+        const ok = await saveSystemData(req.body.data);
         res.json({ success: ok, message: ok ? '保存成功' : '保存失败' });
     } catch (e) { res.status(500).json({ success: false, error: e.message }); }
 });
 
-app.post('/api/change-password', async (req, res) => {
+// ================================================================
+//  API: 考勤读取（按班+月）
+// ================================================================
+app.get('/api/attendance', async (req, res) => {
     try {
-        const { username, oldPassword, newPassword } = req.body;
-        if (!username || !oldPassword || !newPassword) return res.status(400).json({ success: false, error: '参数不全' });
-        if (newPassword.length < 6) return res.status(400).json({ success: false, error: '密码至少6位' });
-        const d = await getData();
-        if (!d || !d.users[username]) return res.status(404).json({ success: false, error: '用户不存在' });
-        if (d.users[username].password !== oldPassword) return res.status(401).json({ success: false, error: '原密码错误' });
-        d.users[username].password = newPassword;
-        await saveData(d);
-        res.json({ success: true, message: '密码修改成功' });
-    } catch (e) { res.status(500).json({ success: false, error: e.message }); }
-});
+        const { classKey, month, start, end } = req.query;
+        let s = start, e = end;
+        if (month) {
+            s = month + '-01';
+            // 计算月末
+            const [y, m] = month.split('-').map(Number);
+            const lastDay = new Date(y, m, 0).getDate();
+            e = month + '-' + String(lastDay).padStart(2, '0');
+        }
+        if (!s || !e) return res.status(400).json({ success: false, error: '缺少时间范围' });
+        if (!classKey) return res.status(400).json({ success: false, error: '缺少班级' });
 
-app.post('/api/update-permissions', async (req, res) => {
-    try {
-        const { username, permissions } = req.body;
-        if (!username || !permissions) {
-            return res.status(400).json({ success: false, error: '缺少用户名或权限数据' });
+        const rows = await getAttendanceByRange(classKey, s, e);
+        // 转为 { date: data } 格式
+        const result = {};
+        for (const row of rows) {
+            result[row.date] = row.data || {};
         }
-        const d = await getData();
-        if (!d || !d.users || !d.users[username]) {
-            return res.status(404).json({ success: false, error: '用户不存在' });
-        }
-        d.users[username].permissions = permissions;
-        await saveData(d);
-        console.log(`✅ 用户 ${username} 的权限已更新`);
-        res.json({ success: true, message: '权限更新成功' });
+        res.json({ success: true, data: result });
     } catch (e) {
-        console.error('更新权限失败:', e.message);
+        console.error('读取考勤失败:', e.message);
         res.status(500).json({ success: false, error: e.message });
     }
 });
 
 // ================================================================
-//  表扬接口
+//  API: 考勤保存（单天）
+// ================================================================
+app.post('/api/attendance/save', async (req, res) => {
+    try {
+        const { classKey, date, data } = req.body;
+        if (!classKey || !date) return res.status(400).json({ success: false, error: '缺少参数' });
+        const ok = await saveAttendanceDay(classKey, date, data || {});
+        res.json({ success: ok, message: ok ? '保存成功' : '保存失败' });
+    } catch (e) {
+        res.status(500).json({ success: false, error: e.message });
+    }
+});
+
+// ================================================================
+//  API: 修改密码
+// ================================================================
+app.post('/api/change-password', async (req, res) => {
+    try {
+        const { username, oldPassword, newPassword } = req.body;
+        if (!username || !oldPassword || !newPassword) return res.status(400).json({ success: false, error: '参数不全' });
+        if (newPassword.length < 6) return res.status(400).json({ success: false, error: '密码至少6位' });
+        const d = await getSystemData();
+        if (!d || !d.users || !d.users[username]) return res.status(404).json({ success: false, error: '用户不存在' });
+        if (d.users[username].password !== oldPassword) return res.status(401).json({ success: false, error: '原密码错误' });
+        d.users[username].password = newPassword;
+        const savePayload = {
+            classDataList: d.class_data_list,
+            users: d.users,
+            seatStatus: d.seat_status,
+            teacherStatus: d.teacher_status
+        };
+        await saveSystemData(savePayload);
+        res.json({ success: true, message: '密码修改成功' });
+    } catch (e) { res.status(500).json({ success: false, error: e.message }); }
+});
+
+// ================================================================
+//  API: 表扬
 // ================================================================
 app.post('/api/praise-teacher', async (req, res) => {
     try {
@@ -311,23 +307,26 @@ app.post('/api/praise-class', async (req, res) => {
     } catch (e) { res.status(500).json({ success: false, error: e.message }); }
 });
 
+// ================================================================
+//  API: 批量班级操作（基于 system_data）
+// ================================================================
 app.post('/api/batch-create-classes', async (req, res) => {
     try {
-        const { startKey, count, namePrefix, nameSuffix } = req.body;
+        const { startKey, count, namePrefix } = req.body;
         if (!startKey || !count || count < 1 || count > 50) return res.status(400).json({ success: false, error: '参数错误' });
-        const d = await getData();
+        const d = await getSystemData();
         if (!d) return res.status(404).json({ success: false, error: '数据不存在' });
-        if (!d.class_data_list) d.class_data_list = {};
+        const classData = d.class_data_list || {};
         const base = parseInt(startKey.split('-')[1]);
         const year = startKey.split('-')[0];
-        const gradeMap = { 1:'一年级',2:'二年级',3:'三年级',4:'四年级',5:'五年级',6:'六年级',7:'七年级',8:'八年级',9:'九年级',0:'高一年级' };
         let created = 0;
         for (let i = 0; i < count; i++) {
             const num = base + i;
-            const key = year + '-' + String(num).padStart(3,'0');
-            if (d.class_data_list[key]) continue;
+            const key = year + '-' + String(num).padStart(3, '0');
+            if (classData[key]) continue;
+            const gradeMap = { 1:'一年级',2:'二年级',3:'三年级',4:'四年级',5:'五年级',6:'六年级',7:'七年级',8:'八年级',9:'九年级',0:'高一年级' };
             const g = gradeMap[parseInt(String(num).charAt(0))] || '未知年级';
-            d.class_data_list[key] = {
+            classData[key] = {
                 className: (namePrefix || g) + '(' + (num % 100) + '班)',
                 classSub: '🏫 教室位置待设置',
                 seatColumns: 8,
@@ -335,11 +334,18 @@ app.post('/api/batch-create-classes', async (req, res) => {
                 schedule: [['','','','',''],['','','','',''],['','','','',''],['','','','',''],['','','','',''],['','','','','']],
                 students: [],
                 diners: {},
-                afterSchool: {}
+                afterSchool: {},
+                afterClass1: {},
+                afterClass2: {}
             };
             created++;
         }
-        await saveData(d);
+        await saveSystemData({
+            classDataList: classData,
+            users: d.users,
+            seatStatus: d.seat_status,
+            teacherStatus: d.teacher_status
+        });
         res.json({ success: true, message: '成功创建 ' + created + ' 个班级', created });
     } catch (e) { res.status(500).json({ success: false, error: e.message }); }
 });
@@ -348,11 +354,17 @@ app.post('/api/batch-delete-classes', async (req, res) => {
     try {
         const { classKeys } = req.body;
         if (!classKeys || classKeys.length === 0) return res.status(400).json({ success: false, error: '请选择班级' });
-        const d = await getData();
+        const d = await getSystemData();
         if (!d) return res.status(404).json({ success: false, error: '数据不存在' });
+        const classData = d.class_data_list || {};
         let deleted = 0;
-        classKeys.forEach(k => { if (d.class_data_list && d.class_data_list[k]) { delete d.class_data_list[k]; deleted++; } });
-        await saveData(d);
+        classKeys.forEach(k => { if (classData[k]) { delete classData[k]; deleted++; } });
+        await saveSystemData({
+            classDataList: classData,
+            users: d.users,
+            seatStatus: d.seat_status,
+            teacherStatus: d.teacher_status
+        });
         res.json({ success: true, message: '成功删除 ' + deleted + ' 个班级', deleted });
     } catch (e) { res.status(500).json({ success: false, error: e.message }); }
 });
@@ -361,20 +373,29 @@ app.post('/api/batch-update-classes', async (req, res) => {
     try {
         const { classKeys, oldText, newText, field } = req.body;
         if (!classKeys || classKeys.length === 0 || !oldText) return res.status(400).json({ success: false, error: '参数错误' });
-        const d = await getData();
+        const d = await getSystemData();
         if (!d) return res.status(404).json({ success: false, error: '数据不存在' });
+        const classData = d.class_data_list || {};
         let updated = 0;
         classKeys.forEach(k => {
-            const cls = d.class_data_list && d.class_data_list[k];
+            const cls = classData[k];
             if (!cls) return;
             if (field === 'className' || !field) { cls.className = cls.className.replace(new RegExp(oldText, 'g'), newText); updated++; }
             if (field === 'classSub' || field === 'all') { cls.classSub = cls.classSub.replace(new RegExp(oldText, 'g'), newText); updated++; }
         });
-        await saveData(d);
+        await saveSystemData({
+            classDataList: classData,
+            users: d.users,
+            seatStatus: d.seat_status,
+            teacherStatus: d.teacher_status
+        });
         res.json({ success: true, message: '成功更新 ' + updated + ' 个班级', updated });
     } catch (e) { res.status(500).json({ success: false, error: e.message }); }
 });
 
+// ================================================================
+//  API: 就餐锁
+// ================================================================
 app.get('/api/diner-check', async (req, res) => {
     try {
         const config = await getSystemConfig();
@@ -385,29 +406,63 @@ app.get('/api/diner-check', async (req, res) => {
         d.setHours(h, m, 0, 0);
         res.json({ success: true, canEdit: now < d, deadline, currentTime: now.toLocaleTimeString() });
     } catch (e) {
-        console.error('❌ 就餐锁检查失败:', e.message);
         res.status(500).json({ success: false, error: e.message });
     }
 });
 
 // ================================================================
-//  📝 系统配置（教师点评词 + 就餐截止时间）
+//  系统配置
 // ================================================================
+async function getSystemConfig() {
+    try {
+        const r = await axios.get(SUPABASE_URL + '/rest/v1/system_config?id=eq.main', { headers: SUPA_HEADERS });
+        return r.data && r.data[0] || null;
+    } catch (e) { return null; }
+}
+
+async function saveSystemConfig(config) {
+    try {
+        const existing = await getSystemConfig();
+        const payload = {
+            id: 'main',
+            praise_comments: config.praise_comments || [],
+            negative_comments: config.negative_comments || [],
+            teacher_praise: config.teacher_praise || [],
+            teacher_abnormal: config.teacher_abnormal || [],
+            diner_deadline: config.diner_deadline || '09:00',
+            alert_threshold: config.alert_threshold || 20,
+            grade_fees: config.grade_fees || {},
+            meal_price: config.meal_price !== undefined ? config.meal_price : 10,
+            after_school_fee: config.after_school_fee !== undefined ? config.after_school_fee : 5
+        };
+        if (existing) {
+            await axios.patch(SUPABASE_URL + '/rest/v1/system_config?id=eq.main', payload, { headers: SUPA_HEADERS });
+        } else {
+            await axios.post(SUPABASE_URL + '/rest/v1/system_config', payload, { headers: SUPA_HEADERS });
+        }
+        return true;
+    } catch (e) {
+        console.error('❌ 保存系统配置失败:', e.message);
+        if (e.response) console.error('响应:', e.response.status, e.response.data);
+        return false;
+    }
+}
+
 app.get('/api/config', async (req, res) => {
     try {
         const config = await getSystemConfig();
         if (config) {
-            res.json({ 
-                success: true, 
-                data: {
-                    praise_comments: config.praise_comments || ['🌟 听课专注', '🙋 积极发言', '📝 笔记认真', '🤝 善于合作', '💡 思维活跃'],
-                    negative_comments: config.negative_comments || ['💬 交头接耳', '😴 听课走神', '🤫 纪律差', '📱 注意力分散', '📢 随意讲话'],
-                    teacher_praise: config.teacher_praise || ['课堂气氛好', '备课充分', '精心辅导'],
-                    teacher_abnormal: config.teacher_abnormal || ['空堂', '上课玩手机', '上课迟到', '课堂有待提高'],
-                    diner_deadline: config.diner_deadline || '09:00',
-                    alert_threshold: config.alert_threshold || 20
-                }
-            });
+            res.json({ success: true, data: {
+                praise_comments: config.praise_comments || ['🌟 听课专注', '🙋 积极发言', '📝 笔记认真', '🤝 善于合作', '💡 思维活跃'],
+                negative_comments: config.negative_comments || ['💬 交头接耳', '😴 听课走神', '🤫 纪律差', '📱 注意力分散', '📢 随意讲话'],
+                teacher_praise: config.teacher_praise || ['课堂气氛好', '备课充分', '精心辅导'],
+                teacher_abnormal: config.teacher_abnormal || ['空堂', '上课玩手机', '上课迟到', '课堂有待提高'],
+                diner_deadline: config.diner_deadline || '09:00',
+                alert_threshold: config.alert_threshold || 20,
+                grade_fees: config.grade_fees || {},
+                meal_price: config.meal_price !== undefined ? config.meal_price : 10,
+                after_school_fee: config.after_school_fee !== undefined ? config.after_school_fee : 5
+            }});
         } else {
             res.json({ success: true, data: {
                 praise_comments: ['🌟 听课专注', '🙋 积极发言', '📝 笔记认真', '🤝 善于合作', '💡 思维活跃'],
@@ -415,32 +470,32 @@ app.get('/api/config', async (req, res) => {
                 teacher_praise: ['课堂气氛好', '备课充分', '精心辅导'],
                 teacher_abnormal: ['空堂', '上课玩手机', '上课迟到', '课堂有待提高'],
                 diner_deadline: '09:00',
-                alert_threshold: 20
+                alert_threshold: 20,
+                grade_fees: {},
+                meal_price: 10,
+                after_school_fee: 5
             }});
         }
-    } catch (e) {
-        console.error('❌ 读取配置失败:', e.message);
-        res.status(500).json({ success: false, error: e.message });
-    }
+    } catch (e) { res.status(500).json({ success: false, error: e.message }); }
 });
 
 app.post('/api/config', async (req, res) => {
     try {
-        const { praise_comments, negative_comments, teacher_praise, teacher_abnormal, diner_deadline, alert_threshold } = req.body;
+        const { praise_comments, negative_comments, teacher_praise, teacher_abnormal, diner_deadline, alert_threshold, grade_fees, meal_price, after_school_fee } = req.body;
         const config = {
             praise_comments: praise_comments || ['🌟 听课专注', '🙋 积极发言', '📝 笔记认真', '🤝 善于合作', '💡 思维活跃'],
             negative_comments: negative_comments || ['💬 交头接耳', '😴 听课走神', '🤫 纪律差', '📱 注意力分散', '📢 随意讲话'],
             teacher_praise: teacher_praise || ['课堂气氛好', '备课充分', '精心辅导'],
             teacher_abnormal: teacher_abnormal || ['空堂', '上课玩手机', '上课迟到', '课堂有待提高'],
             diner_deadline: diner_deadline || '09:00',
-            alert_threshold: alert_threshold || 20
+            alert_threshold: alert_threshold || 20,
+            grade_fees: grade_fees || {},
+            meal_price: meal_price !== undefined ? meal_price : 10,
+            after_school_fee: after_school_fee !== undefined ? after_school_fee : 5
         };
         const ok = await saveSystemConfig(config);
         res.json({ success: ok, message: ok ? '配置保存成功' : '保存失败' });
-    } catch (e) {
-        console.error('❌ 保存配置失败:', e.message);
-        res.status(500).json({ success: false, error: e.message });
-    }
+    } catch (e) { res.status(500).json({ success: false, error: e.message }); }
 });
 
 app.post('/send', async (req, res) => {
