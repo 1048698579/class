@@ -719,7 +719,17 @@
     function isStatusStop(status) {
         return status === 'leave' || status === 'absent';
     }
+   
+    function isHolidayDay(date) {
+        var rec = attendanceRecords[date] && attendanceRecords[date]['__holiday__'];
+        return !!(rec && rec._holiday === true);
+    }
 
+    function isOvertimeDay(date) {
+        var rec = attendanceRecords[date] && attendanceRecords[date]['__holiday__'];
+        return !!(rec && rec._overtime === true);
+    }
+   
     // 从 attendanceRecords[日期] 恢复 seatStatus
     function restoreSeatStatusFromRecords(date) {
         var students = getCurrentStudents();
@@ -1064,13 +1074,10 @@
     function toggleHoliday(checked) {
         var today = getTodayStr();
         if (!attendanceRecords[today]) attendanceRecords[today] = {};
-        attendanceRecords[today]._holiday = checked;
-        if (checked) {
-            attendanceRecords[today]._overtime = false;
-            var ot = $('overtimeToggle');
-            if (ot) ot.checked = false;
-        }
-        saveAllDataToServer().then(function() {
+        if (!attendanceRecords[today]['__holiday__']) attendanceRecords[today]['__holiday__'] = {};
+        attendanceRecords[today]['__holiday__']._holiday = checked;
+        if (checked) attendanceRecords[today]['__holiday__']._overtime = false;
+        saveDayAttendance('__holiday__', today).then(function() {
             updateStats();
             updateSeatStatus();
             showToast(checked ? '📅 今日已设为放假' : '📅 今日已取消放假');
@@ -1081,26 +1088,23 @@
     function toggleOvertime(checked) {
         var today = getTodayStr();
         if (!attendanceRecords[today]) attendanceRecords[today] = {};
-        attendanceRecords[today]._overtime = checked;
-        if (checked) {
-            attendanceRecords[today]._holiday = false;
-            var ht = $('holidayToggle');
-            if (ht) ht.checked = false;
-        }
-        saveAllDataToServer().then(function() {
+        if (!attendanceRecords[today]['__holiday__']) attendanceRecords[today]['__holiday__'] = {};
+        attendanceRecords[today]['__holiday__']._overtime = checked;
+        if (checked) attendanceRecords[today]['__holiday__']._holiday = false;
+        saveDayAttendance('__holiday__', today).then(function() {
             updateStats();
             updateSeatStatus();
             showToast(checked ? '📚 今日设为调休上课' : '📚 已取消调休上课');
             renderHolidayBar();
         });
     }
-
+    
     function renderHolidayBar() {
         var container = $('holidayBarContainer');
         if (!container) return;
         var today = getTodayStr();
-        var isHoliday = attendanceRecords[today] && attendanceRecords[today]._holiday === true;
-        var isOvertime = attendanceRecords[today] && attendanceRecords[today]._overtime === true;
+        var _isHoliday = isHolidayDay(today);
+        var isOvertime = isOvertimeDay(today);
         var isClassMode = (currentUser && (currentUser.role === '班主任' || currentUser.role === '科任老师')) || (window.location.search.indexOf('class=') !== -1);
         var canToggle = currentUser && (currentUser.role === '班主任' || hasFullAccess(currentUser) || currentUser.role === '级委会');
         if (!isClassMode && !(currentUser && currentUser.role === '班主任')) {
@@ -1284,8 +1288,8 @@
     function updateStats() {
         var students = getCurrentStudents();
         var today = getTodayStr();
-        var isHoliday = attendanceRecords[today] && attendanceRecords[today]._holiday === true;
-        var isOvertime = attendanceRecords[today] && attendanceRecords[today]._overtime === true;
+        var _isHoliday = isHolidayDay(today);
+        var isOvertime = isOvertimeDay(today);
         if (isHoliday && !isOvertime) {
             var statEls0 = ['statPresent', 'statLate', 'statAbsent', 'statLeave', 'statNotInRoom'];
             for (var i = 0; i < statEls0.length; i++) { var el0 = $(statEls0[i]); if (el0) el0.textContent = '—'; }
@@ -2465,7 +2469,7 @@
     function renderAdminDiner(data) {
         var students = data.students || [];
         var today = getTodayStr();
-        var isHoliday = attendanceRecords[today] && attendanceRecords[today]._holiday === true;
+        var _isHoliday = isHolidayDay(today);
         var totalDiners = 0, presentDiners = 0, stopDiners = 0;
         var totalAfter = 0, afterPresent = 0, afterAbsent = 0;
         if (!isHoliday) {
@@ -2527,7 +2531,7 @@
         var html = '<div class="stats-table-wrap"><table class="stats-table"><thead><tr><th style="min-width:50px;">姓名</th><th style="min-width:40px;">就餐</th><th style="min-width:40px;">课后</th>';
         for (var d = 1; d <= daysInMonth; d++) {
             var dateStr = year + '-' + String(mon).padStart(2, '0') + '-' + String(d).padStart(2, '0');
-            var isHoliday = attendanceRecords[dateStr] && attendanceRecords[dateStr]._holiday === true;
+            var _isHoliday = isHolidayDay(dateStr);
             var label = isHoliday ? '放假' : d;
             var style = isHoliday ? 'color:#ccc;' : '';
             html += '<th style="font-weight:400;font-size:10px;' + style + '">' + label + '</th>';
@@ -2556,11 +2560,11 @@
             var normalCount = 0, stopCount = 0, afterP = 0, afterA = 0;
             for (var d = 1; d <= daysInMonth; d++) {
                 var dateStr = year + '-' + String(mon).padStart(2, '0') + '-' + String(d).padStart(2, '0');
-                var isHoliday = attendanceRecords[dateStr] && attendanceRecords[dateStr]._holiday === true;
+                var _isHoliday = isHolidayDay(dateStr);
                 if (isHoliday) { html += '<td style="color:#ccc;">-</td>'; continue; }
                 var dayOfWeek = new Date(year, mon - 1, d).getDay();
-                var isOvertimeDay = attendanceRecords[dateStr] && attendanceRecords[dateStr]._overtime === true;
-                if ((dayOfWeek === 0 || dayOfWeek === 6) && !isOvertimeDay) { html += '<td>-</td>'; continue; }
+                var _isOvertime = isOvertimeDay(dateStr);
+                if ((dayOfWeek === 0 || dayOfWeek === 6) && !_isOvertime) { html += '<td>-</td>'; continue; }
 
                 var status = 'present';
                 var rec = attendanceRecords[dateStr] && attendanceRecords[dateStr][currentClassKey];
@@ -2591,7 +2595,7 @@
         html += '<tr class="stats-total-row"><td colspan="3">📊 合计</td>';
         for (var d = 1; d <= daysInMonth; d++) {
             var dateStr = year + '-' + String(mon).padStart(2, '0') + '-' + String(d).padStart(2, '0');
-            var isHoliday = attendanceRecords[dateStr] && attendanceRecords[dateStr]._holiday === true;
+            var _isHoliday = isHolidayDay(dateStr);
             var dayOfWeek = new Date(year, mon - 1, d).getDay();
             html += '<td>' + (isHoliday ? '放' : (dayOfWeek === 0 || dayOfWeek === 6 ? '-' : '·')) + '</td>';
         }
@@ -2676,7 +2680,7 @@
         });
     }
         
-    function doExportDinerReport(month, targets) {
+        function doExportDinerReport(month, targets) {
         var targetKeys = targets.targetKeys;
         var allClassNames = targets.allClassNames;
 
@@ -2712,11 +2716,11 @@
             var header = ['姓名', '类型'];
             for (var d = 1; d <= daysInMonth; d++) {
                 var dateStr = year + '-' + String(mon).padStart(2, '0') + '-' + String(d).padStart(2, '0');
-                var isHoliday = attendanceRecords[dateStr] && attendanceRecords[dateStr]._holiday === true;
+                var _isHoliday = isHolidayDay(dateStr);
                 var dayOfWeek = new Date(year, mon - 1, d).getDay();
-                var isOvertimeDay = attendanceRecords[dateStr] && attendanceRecords[dateStr]._overtime === true;
-                var isWeekend = (dayOfWeek === 0 || dayOfWeek === 6) && !isOvertimeDay;
-                if (isHoliday) header.push(d + '日(放)');
+                var _isOvertime = isOvertimeDay(dateStr);
+                var isWeekend = (dayOfWeek === 0 || dayOfWeek === 6) && !_isOvertime;
+                if (_isHoliday) header.push(d + '日(放)');
                 else if (!isWeekend) header.push(d + '日');
             }
             header.push('正常', '停餐/缺', '天数', '费用');
@@ -2749,11 +2753,11 @@
                     var normalCount = 0, stopCount = 0;
                     for (var d = 1; d <= daysInMonth; d++) {
                         var dateStr = year + '-' + String(mon).padStart(2, '0') + '-' + String(d).padStart(2, '0');
-                        var isHoliday = attendanceRecords[dateStr] && attendanceRecords[dateStr]._holiday === true;
-                        if (isHoliday) { row.push('放'); continue; }
+                        var _isHoliday = isHolidayDay(dateStr);
+                        if (_isHoliday) { row.push('放'); continue; }
                         var dayOfWeek = new Date(year, mon - 1, d).getDay();
-                        var isOvertimeDay = attendanceRecords[dateStr] && attendanceRecords[dateStr]._overtime === true;
-                        if ((dayOfWeek === 0 || dayOfWeek === 6) && !isOvertimeDay) { continue; }
+                        var _isOvertime = isOvertimeDay(dateStr);
+                        if ((dayOfWeek === 0 || dayOfWeek === 6) && !_isOvertime) { continue; }
                         var dayDiner = getDayDiner(dateStr, classKey, name);
                         if (dayDiner) {
                             var status = 'present';
@@ -2780,11 +2784,11 @@
                     var p1 = 0, a1 = 0;
                     for (var d = 1; d <= daysInMonth; d++) {
                         var dateStr = year + '-' + String(mon).padStart(2, '0') + '-' + String(d).padStart(2, '0');
-                        var isHoliday = attendanceRecords[dateStr] && attendanceRecords[dateStr]._holiday === true;
-                        if (isHoliday) { row1.push('放'); continue; }
+                        var _isHoliday = isHolidayDay(dateStr);
+                        if (_isHoliday) { row1.push('放'); continue; }
                         var dayOfWeek = new Date(year, mon - 1, d).getDay();
-                        var isOvertimeDay = attendanceRecords[dateStr] && attendanceRecords[dateStr]._overtime === true;
-                        if ((dayOfWeek === 0 || dayOfWeek === 6) && !isOvertimeDay) { continue; }
+                        var _isOvertime = isOvertimeDay(dateStr);
+                        if ((dayOfWeek === 0 || dayOfWeek === 6) && !_isOvertime) { continue; }
                         var dayA1 = getDayAfter1(dateStr, classKey, name);
                         if (dayA1) {
                             var status1 = 'present';
@@ -2811,11 +2815,11 @@
                     var p2 = 0, a2 = 0;
                     for (var d = 1; d <= daysInMonth; d++) {
                         var dateStr = year + '-' + String(mon).padStart(2, '0') + '-' + String(d).padStart(2, '0');
-                        var isHoliday = attendanceRecords[dateStr] && attendanceRecords[dateStr]._holiday === true;
-                        if (isHoliday) { row2.push('放'); continue; }
+                        var _isHoliday = isHolidayDay(dateStr);
+                        if (_isHoliday) { row2.push('放'); continue; }
                         var dayOfWeek = new Date(year, mon - 1, d).getDay();
-                        var isOvertimeDay = attendanceRecords[dateStr] && attendanceRecords[dateStr]._overtime === true;
-                        if ((dayOfWeek === 0 || dayOfWeek === 6) && !isOvertimeDay) { continue; }
+                        var _isOvertime = isOvertimeDay(dateStr);
+                        if ((dayOfWeek === 0 || dayOfWeek === 6) && !_isOvertime) { continue; }
                         if ((studentGrade === '一年级' || studentGrade === '二年级') && dayOfWeek === 1) {
                             row2.push('无');
                             continue;
@@ -2874,11 +2878,11 @@
         for (var d = 1; d <= daysInMonth; d++) {
             var dateStr = year + '-' + String(mon).padStart(2, '0') + '-' + String(d).padStart(2, '0');
             if (dateStr > today) continue;
-            var isHoliday = attendanceRecords[dateStr] && attendanceRecords[dateStr]._holiday === true;
-            if (isHoliday) continue;
+            var _isHoliday = isHolidayDay(dateStr);
+            if (_isHoliday) continue;
             var dayOfWeek = new Date(year, mon - 1, d).getDay();
-            var isOvertime = attendanceRecords[dateStr] && attendanceRecords[dateStr]._overtime === true;
-            if ((dayOfWeek === 0 || dayOfWeek === 6) && !isOvertime) continue;
+            var _isOvertime = isOvertimeDay(dateStr);
+            if ((dayOfWeek === 0 || dayOfWeek === 6) && !_isOvertime) continue;
             totalDays++;
             var hasRecord = false;
             for (var t = 0; t < targetKeys.length; t++) {
@@ -2914,7 +2918,6 @@
         link.click();
         showToast('✅ ' + allClassNames + ' 导出成功！共 ' + allStudentCount + ' 名学生');
     }
-
     // ================================================================
     //  导出考勤统计（逐日）
     // ================================================================
@@ -3742,8 +3745,7 @@
         var classKeys = Object.keys(CLASS_DATA_LIST);
         var today = getTodayStr();
         var results = [];
-        var isHoliday = attendanceRecords[today] && attendanceRecords[today]._holiday === true;
-        if (isHoliday) return results;
+        if (isHolidayDay(today)) return results;
         for (var i = 0; i < classKeys.length; i++) {
             var key = classKeys[i];
             var cls = CLASS_DATA_LIST[key];
@@ -3808,8 +3810,8 @@
         var grid = $('seatGrid');
         if (!grid) return;
         var today = getTodayStr();
-        var isHoliday = attendanceRecords[today] && attendanceRecords[today]._holiday === true;
-        var isOvertime = attendanceRecords[today] && attendanceRecords[today]._overtime === true;
+        var _isHoliday = isHolidayDay(today);
+        var isOvertime = isOvertimeDay(today);
         if (isHoliday && !isOvertime) {
             grid.innerHTML = '<div style="text-align:center;padding:40px;color:#999;font-size:16px;">📅 今日放假，数据暂停统计</div>';
             return;
