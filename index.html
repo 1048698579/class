@@ -1112,12 +1112,12 @@
             return;
         }
         container.innerHTML = '<div class="holiday-bar">' +
-            '<label><input type="checkbox" id="holidayToggle" ' + (isHoliday ? 'checked' : '') + (canToggle ? '' : ' disabled') + ' onchange="toggleHoliday(this.checked)"> ' +
+            '<label><input type="checkbox" id="holidayToggle" ' + (_isHoliday ? 'checked' : '') + (canToggle ? '' : ' disabled') + ' onchange="toggleHoliday(this.checked)"> ' +
             '<span style="font-weight:500;">📅 今日放假</span></label>' +
             '<label><input type="checkbox" id="overtimeToggle" ' + (isOvertime ? 'checked' : '') + (canToggle ? '' : ' disabled') + ' onchange="toggleOvertime(this.checked)"> ' +
             '<span style="font-weight:500;">📚 调休上课</span></label>' +
             '<span class="hint">' + (canToggle ? '（放假不统计，调休上课正常统计）' : '（仅班主任及以上可修改）') + '</span>' +
-            (isHoliday ? '<span class="holiday-active">✅ 已放假</span>' : '') +
+            (_isHoliday ? '<span class="holiday-active">✅ 已放假</span>' : '') +
             (isOvertime ? '<span class="holiday-active" style="color:#4A90D9;">✅ 调休上课</span>' : '') +
             '</div>';
     }
@@ -1290,7 +1290,7 @@
         var today = getTodayStr();
         var _isHoliday = isHolidayDay(today);
         var isOvertime = isOvertimeDay(today);
-        if (isHoliday && !isOvertime) {
+        if (_isHoliday && !isOvertime) {
             var statEls0 = ['statPresent', 'statLate', 'statAbsent', 'statLeave', 'statNotInRoom'];
             for (var i = 0; i < statEls0.length; i++) { var el0 = $(statEls0[i]); if (el0) el0.textContent = '—'; }
             return;
@@ -2472,7 +2472,7 @@
         var _isHoliday = isHolidayDay(today);
         var totalDiners = 0, presentDiners = 0, stopDiners = 0;
         var totalAfter = 0, afterPresent = 0, afterAbsent = 0;
-        if (!isHoliday) {
+        if (!_isHoliday) {
             for (var i = 0; i < students.length; i++) {
                 var name = students[i];
                 if (!name || name.trim() === '') continue;
@@ -2495,7 +2495,7 @@
             }
         }
         var html = '<div style="font-size:14px;color:#555;margin-bottom:10px;">🍱 <strong>' + getCurrentData().className + '</strong> 今日就餐/课后（' + today + '）<br>';
-        if (isHoliday) html += '📅 今日放假，数据不计入统计';
+        if (_isHoliday) html += '📅 今日放假，数据不计入统计';
         else {
             html += '🍽️ 在校就餐：<strong>' + totalDiners + '</strong> 人 | ✅ 正常：<strong style="color:#28A745;">' + presentDiners + '</strong> | ⚠️ 停餐：<strong style="color:#DC3545;">' + stopDiners + '</strong><br>';
             html += '📚 参加课后：<strong>' + totalAfter + '</strong> 人 | ✅ 已到：<strong style="color:#28A745;">' + afterPresent + '</strong> | ⚠️ 缺：<strong style="color:#DC3545;">' + afterAbsent + '</strong>';
@@ -2532,8 +2532,8 @@
         for (var d = 1; d <= daysInMonth; d++) {
             var dateStr = year + '-' + String(mon).padStart(2, '0') + '-' + String(d).padStart(2, '0');
             var _isHoliday = isHolidayDay(dateStr);
-            var label = isHoliday ? '放假' : d;
-            var style = isHoliday ? 'color:#ccc;' : '';
+            var label = _isHoliday ? '放假' : d;
+            var style = _isHoliday ? 'color:#ccc;' : '';
             html += '<th style="font-weight:400;font-size:10px;' + style + '">' + label + '</th>';
         }
         html += '<th>正常</th><th>停餐</th><th>课后到</th><th>课后缺</th></tr></thead><tbody>';
@@ -2561,7 +2561,7 @@
             for (var d = 1; d <= daysInMonth; d++) {
                 var dateStr = year + '-' + String(mon).padStart(2, '0') + '-' + String(d).padStart(2, '0');
                 var _isHoliday = isHolidayDay(dateStr);
-                if (isHoliday) { html += '<td style="color:#ccc;">-</td>'; continue; }
+                if (_isHoliday) { html += '<td style="color:#ccc;">-</td>'; continue; }
                 var dayOfWeek = new Date(year, mon - 1, d).getDay();
                 var _isOvertime = isOvertimeDay(dateStr);
                 if ((dayOfWeek === 0 || dayOfWeek === 6) && !_isOvertime) { html += '<td>-</td>'; continue; }
@@ -2597,7 +2597,7 @@
             var dateStr = year + '-' + String(mon).padStart(2, '0') + '-' + String(d).padStart(2, '0');
             var _isHoliday = isHolidayDay(dateStr);
             var dayOfWeek = new Date(year, mon - 1, d).getDay();
-            html += '<td>' + (isHoliday ? '放' : (dayOfWeek === 0 || dayOfWeek === 6 ? '-' : '·')) + '</td>';
+            html += '<td>' + (_isHoliday ? '放' : (dayOfWeek === 0 || dayOfWeek === 6 ? '-' : '·')) + '</td>';
         }
         html += '<td><strong>' + totalNormal + '</strong></td><td style="color:#DC3545;"><strong>' + totalStop + '</strong></td><td><strong>' + totalAfterP + '</strong></td><td style="color:#DC3545;"><strong>' + totalAfterA + '</strong></td></tr>';
         html += '</tbody></table></div>';
@@ -3812,7 +3812,7 @@
         var today = getTodayStr();
         var _isHoliday = isHolidayDay(today);
         var isOvertime = isOvertimeDay(today);
-        if (isHoliday && !isOvertime) {
+        if (_isHoliday && !isOvertime) {
             grid.innerHTML = '<div style="text-align:center;padding:40px;color:#999;font-size:16px;">📅 今日放假，数据暂停统计</div>';
             return;
         }
