@@ -2658,13 +2658,34 @@
     function getStudentGrade(studentName, classKey) {
         var cls = CLASS_DATA_LIST[classKey];
         if (!cls || !cls.className) return '';
+        var name = cls.className;
+        
+        // 中文写法：一年级 / 二年级 ...
         var gradeMap = ['一年级','二年级','三年级','四年级','五年级','六年级','七年级','八年级','九年级','高一年级'];
         for (var i = 0; i < gradeMap.length; i++) {
-            if (cls.className.indexOf(gradeMap[i]) !== -1) return gradeMap[i];
+            if (name.indexOf(gradeMap[i]) !== -1) return gradeMap[i];
         }
+        
+        // 阿拉伯数字写法：1年级 / 2年级 ...
+        var match = name.match(/(\d{1,2})\s*年级/);
+        if (match) {
+            var num = parseInt(match[1]);
+            if (num >= 1 && num <= 9) return gradeMap[num - 1];
+            if (num === 10) return '高一年级';
+        }
+        
+        // 纯数字班号：如 2024-101 → 取第 5 位
+        var m2 = String(classKey).match(/(\d{4})-(\d+)/);
+        if (m2) {
+            var n = m2[2];
+            var first = n.charAt(0) === '0' ? n.charAt(1) : n.charAt(0);
+            var num2 = parseInt(first);
+            if (num2 >= 1 && num2 <= 9) return gradeMap[num2 - 1];
+            if (num2 === 0) return '高一年级';
+        }
+        
         return '';
     }
-
     function getGradeFees(grade) {
         var gradeFees = window.gradeFees || {};
         var defaultMeal = window.mealPrice || 10;
