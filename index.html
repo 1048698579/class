@@ -31,7 +31,7 @@
         .identity-bar .back-btn:active{transform:scale(0.94)}
         .stats-bar{background:#fff;border-radius:12px;padding:12px 16px;margin-bottom:14px;box-shadow:0 2px 8px rgba(0,0,0,0.06);display:flex;flex-wrap:wrap;gap:8px 14px;font-size:13px}
         .stats-bar .stat-item{display:flex;align-items:center;gap:4px}
-        .stats-bar .stat-item .num{font-weight:700;font-size:15px}
+        .stats-bar .stat-item .num{font-weight:700;font-size:16px;margin-left:2px}
         .stats-bar .stat-item.present .num{color:#28A745}
         .stats-bar .stat-item.late .num{color:#B8860B}
         .stats-bar .stat-item.absent .num{color:#DC3545}
@@ -218,11 +218,11 @@
 
     <!-- 统计栏 -->
     <div class="stats-bar hidden" id="statsBar">
-        <span class="stat-item present">✅ <span class="num" id="statPresent">0</span></span>
-        <span class="stat-item late">⏰ <span class="num" id="statLate">0</span></span>
-        <span class="stat-item absent">❌ <span class="num" id="statAbsent">0</span></span>
-        <span class="stat-item leave">📝 <span class="num" id="statLeave">0</span></span>
-        <span class="stat-item not-in-room">🚪 <span class="num" id="statNotInRoom">0</span></span>
+        <span class="stat-item present">✅到 <span class="num" id="statPresent">0</span></span>
+        <span class="stat-item late">⏰迟 <span class="num" id="statLate">0</span></span>
+        <span class="stat-item absent">❌缺 <span class="num" id="statAbsent">0</span></span>
+        <span class="stat-item leave">📝假 <span class="num" id="statLeave">0</span></span>
+        <span class="stat-item not-in-room">🚪离 <span class="num" id="statNotInRoom">0</span></span>
         <span class="stat-item" style="margin-left:auto;cursor:pointer;font-size:16px;" onclick="refreshStats()" title="刷新数据">🔄</span>
     </div>
 
@@ -232,11 +232,13 @@
             <h1 id="className">加载中...</h1>
             <div class="sub" id="classSub">🏫 扫码查看班级信息</div>
         </div>
-        <div class="header-right" id="headerRight">
-            <span class="stats-badge" id="headerDinerStats">🍱 就餐: 0人</span>
-            <span class="stats-badge" id="headerAfterStats">📚 课后: 0人</span>
-            <button class="btn-manage" id="manageClassBtn" onclick="openAdminModal('student')" style="display:none;">📝 管理班级信息</button>
-        </div>
+     <div class="header-right" id="headerRight">
+     <span class="stats-badge" id="headerClassStats">🏫 0个班级</span>
+     <span class="stats-badge" id="headerStudentStats">👥 共0人</span>
+     <span class="stats-badge" id="headerDinerStats">🍱就餐：0人</span>
+     <span class="stats-badge" id="headerAfterStats">📚课后：0人</span>
+     <button class="btn-manage" id="manageClassBtn" onclick="openAdminModal('student')" style="display:none;">📝 管理班级信息</button>
+</div>
     </div>
 
     <!-- 放假开关 -->
@@ -258,6 +260,9 @@
     <!-- 座位表 -->
     <div class="card">
         <div class="card-title">💺 座位表 <span class="badge" id="seatInfo">点击学生可标注</span><span class="lock-icon" id="seatLockIcon">🔒</span></div>
+        <div style="text-align:right;margin-bottom:8px;">
+            <button class="refresh-btn" onclick="location.reload()" style="width:auto;display:inline-block;margin-top:0;padding:4px 12px;">🔄 刷新页面</button>
+        </div>
         <div class="seat-grid" id="seatGrid"></div>
         <div class="seat-legend">
             <span><span class="dot" style="background:#D4EDDA;border-color:#28A745;"></span> 到课</span>
@@ -1378,39 +1383,51 @@
     }
 
     function updateHeaderStats() {
+        var classEl = $('headerClassStats');
+        var studentEl = $('headerStudentStats');
+        var dinerEl = $('headerDinerStats');
+        var afterEl = $('headerAfterStats');
+
         var role = currentUser ? currentUser.role : '';
-        var isLeader = (role === '超级管理员' || role === '管理员' || role === '校委会' || role === '级委会');
-        var today = getTodayStr();
-        var totalDiner = 0, totalAfter = 0;
+        var level = getUserRoleLevel(currentUser);
+        var isLeader = (level >= 3);
+        var isGradeLeader = (level === 2);
+
+        var targetKeys = [];
         if (isLeader) {
-            var keys = getVisibleClassKeys();
-            for (var i = 0; i < keys.length; i++) {
-                var cls = CLASS_DATA_LIST[keys[i]];
-                if (!cls) continue;
-                var students = cls.students || [];
-                for (var j = 0; j < students.length; j++) {
-                    var name = students[j];
-                    if (!name || name.trim() === '') continue;
-                    if (getDayDiner(today, keys[i], name)) totalDiner++;
-                    if (getDayAfter1(today, keys[i], name) || getDayAfter2(today, keys[i], name)) totalAfter++;
-                }
+            targetKeys = Object.keys(CLASS_DATA_LIST);
+        } else if (isGradeLeader) {
+            var grade = currentUser.grade || '';
+            var allKeys = Object.keys(CLASS_DATA_LIST);
+            for (var i = 0; i < allKeys.length; i++) {
+                if (getClassGrade(allKeys[i]) === grade) targetKeys.push(allKeys[i]);
             }
         } else {
-            var data = getCurrentData();
-            var students = data.students || [];
-            for (var i = 0; i < students.length; i++) {
-                var name = students[i];
-                if (!name || name.trim() === '') continue;
-                if (getDayDiner(today, currentClassKey, name)) totalDiner++;
-                if (getDayAfter1(today, currentClassKey, name) || getDayAfter2(today, currentClassKey, name)) totalAfter++;
-            }
+            if (currentClassKey) targetKeys = [currentClassKey];
         }
-        var dinerEl = $('headerDinerStats');
-        if (dinerEl) dinerEl.textContent = '🍱 就餐: ' + totalDiner + '人';
-        var afterEl = $('headerAfterStats');
-        if (afterEl) afterEl.textContent = '📚 课后: ' + totalAfter + '人';
-    }
 
+        var totalClass = 0, totalStudents = 0, totalDiner = 0, totalAfter = 0;
+        for (var i = 0; i < targetKeys.length; i++) {
+            var cls = CLASS_DATA_LIST[targetKeys[i]];
+            if (!cls) continue;
+            var students = cls.students || [];
+            var hasStudent = false;
+            for (var j = 0; j < students.length; j++) {
+                var name = students[j];
+                if (!name || name.trim() === '') continue;
+                hasStudent = true;
+                totalStudents++;
+                if (cls.diners && cls.diners[name]) totalDiner++;
+                if ((cls.afterClass1 && cls.afterClass1[name]) || (cls.afterClass2 && cls.afterClass2[name])) totalAfter++;
+            }
+            if (hasStudent) totalClass++;
+        }
+
+        if (classEl) classEl.textContent = '🏫 ' + totalClass + '个班级';
+        if (studentEl) studentEl.textContent = '👥 ' + totalStudents + '人';
+        if (dinerEl) dinerEl.textContent = '🍱 ' + totalDiner + '人';
+        if (afterEl) afterEl.textContent = '📚 ' + totalAfter + '人';
+    }
     // ================================================================
     //  快捷点评
     // ================================================================
@@ -4188,37 +4205,51 @@
             return;
         }
 
-        var totalStudents = 0, totalDiners = 0, totalAfter = 0;
+        var totalStudents = 0, totalPresent = 0, totalLate = 0, totalAbsent = 0, totalLeave = 0, totalNotIn = 0;
+        var totalDinerToday = 0, totalAfterToday = 0;
         var classStats = [];
         for (var i = 0; i < filteredKeys.length; i++) {
             var key = filteredKeys[i];
             var cls = CLASS_DATA_LIST[key];
             var students = cls.students || [];
-            var dinerCount = 0, afterCount = 0;
+            var todayRec = attendanceRecords[today] && attendanceRecords[today][key] ? attendanceRecords[today][key] : {};
             var actualCount = 0;
+            var p = 0, l = 0, a = 0, le = 0, n = 0;
+            var dinerToday = 0, afterToday = 0;
             for (var j = 0; j < students.length; j++) {
                 var name = students[j];
                 if (!name || name.trim() === '') continue;
                 actualCount++;
-                if (cls.diners && cls.diners[name]) dinerCount++;
-                if ((cls.afterClass1 && cls.afterClass1[name]) ||
-                    (cls.afterClass2 && cls.afterClass2[name])) afterCount++;
+                var status = typeof todayRec[name] === 'string' ? todayRec[name] : 'present';
+                if (status === 'present') p++;
+                else if (status === 'late') l++;
+                else if (status === 'absent') a++;
+                else if (status === 'leave') le++;
+                else if (status === 'not-in-room') n++;
+                if (getDayDiner(today, key, name)) dinerToday++;
+                if (getDayAfter1(today, key, name) || getDayAfter2(today, key, name)) afterToday++;
             }
             totalStudents += actualCount;
-            totalDiners += dinerCount;
-            totalAfter += afterCount;
+            totalPresent += p;
+            totalLate += l;
+            totalAbsent += a;
+            totalLeave += le;
+            totalNotIn += n;
+            totalDinerToday += dinerToday;
+            totalAfterToday += afterToday;
             classStats.push({
                 key: key,
                 name: cls.className || key,
                 total: actualCount,
-                diner: dinerCount,
-                after: afterCount
+                present: p, late: l, absent: a, leave: le, notIn: n,
+                dinerToday: dinerToday,
+                afterToday: afterToday
             });
         }
 
         var statsBar = $('statsBar');
         if (statsBar) statsBar.style.display = '';
-        var title = isGradeLeader ? ('📊 ' + (gradeFilter || '本年级') + ' 数据总览') : '📊 全校数据总览';
+        var title = isGradeLeader ? ('📊 ' + (gradeFilter || '本年级') + ' 今日总览') : '📊 全校今日总览';
         $('seatInfo').textContent = title;
         var legend = document.querySelector('.seat-legend');
         if (legend) legend.style.display = 'none';
@@ -4227,26 +4258,28 @@
 
         var html = '';
         html += '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:14px;">' +
-            '<div style="background:linear-gradient(135deg,#4A90D9,#357ABD);color:white;border-radius:12px;padding:14px;text-align:center;"><div style="font-size:24px;font-weight:700;">' + totalStudents + '</div><div style="font-size:12px;opacity:0.8;">' + (isGradeLeader ? '本年级学生' : '在校学生') + '</div></div>' +
-            '<div style="background:linear-gradient(135deg,#FFC107,#d39e00);color:#333;border-radius:12px;padding:14px;text-align:center;"><div style="font-size:24px;font-weight:700;">' + totalDiners + '</div><div style="font-size:12px;opacity:0.8;">本月就餐</div></div>' +
-            '<div style="background:linear-gradient(135deg,#9B59B6,#7D3C98);color:white;border-radius:12px;padding:14px;text-align:center;"><div style="font-size:24px;font-weight:700;">' + totalAfter + '</div><div style="font-size:12px;opacity:0.8;">本月课后</div></div>' +
+            '<div style="background:linear-gradient(135deg,#28A745,#1e7e34);color:white;border-radius:12px;padding:14px;text-align:center;"><div style="font-size:24px;font-weight:700;">' + totalPresent + '</div><div style="font-size:12px;opacity:0.8;">今日到课</div></div>' +
+            '<div style="background:linear-gradient(135deg,#FFC107,#d39e00);color:#333;border-radius:12px;padding:14px;text-align:center;"><div style="font-size:24px;font-weight:700;">' + totalDinerToday + '</div><div style="font-size:12px;opacity:0.8;">今日就餐</div></div>' +
+            '<div style="background:linear-gradient(135deg,#9B59B6,#7D3C98);color:white;border-radius:12px;padding:14px;text-align:center;"><div style="font-size:24px;font-weight:700;">' + totalAfterToday + '</div><div style="font-size:12px;opacity:0.8;">今日课后</div></div>' +
             '</div>';
 
-        html += '<div style="font-size:14px;font-weight:600;color:#333;margin-bottom:10px;">📋 ' + (isGradeLeader ? '本年级各班本月名额' : '各班级本月名额') + '</div>';
+        html += '<div style="font-size:14px;font-weight:600;color:#333;margin-bottom:10px;">📋 ' + (isGradeLeader ? '本年级各班今日数据' : '各班级今日数据') + '</div>';
         html += '<div class="admin-table-wrap"><table class="admin-table"><thead><tr>' +
-            '<th>班级</th><th>总人数</th><th>🍱 本月就餐</th><th>📚 本月课后</th><th>操作</th></tr></thead><tbody>';
+            '<th>班级</th><th>总人数</th><th>到课</th><th>迟到</th><th>缺勤</th><th>请假</th><th>🍱今日就餐</th><th>📚今日课后</th><th>操作</th></tr></thead><tbody>';
         if (classStats.length === 0) {
-            html += '<tr><td colspan="5" style="text-align:center;color:#999;padding:20px;">暂无班级数据</td></tr>';
+            html += '<tr><td colspan="9" style="text-align:center;color:#999;padding:20px;">暂无班级数据</td></tr>';
         } else {
             for (var i = 0; i < classStats.length; i++) {
                 var stat = classStats[i];
-                var dinerRate = stat.total > 0 ? Math.round(stat.diner / stat.total * 100) : 0;
-                var afterRate = stat.total > 0 ? Math.round(stat.after / stat.total * 100) : 0;
                 html += '<tr>' +
                     '<td><strong>' + stat.name + '</strong></td>' +
                     '<td>' + stat.total + '</td>' +
-                    '<td style="color:#B8860B;">' + stat.diner + ' <span style="color:#999;font-size:11px;">(' + dinerRate + '%)</span></td>' +
-                    '<td style="color:#7D3C98;">' + stat.after + ' <span style="color:#999;font-size:11px;">(' + afterRate + '%)</span></td>' +
+                    '<td style="color:#28A745;">' + stat.present + '</td>' +
+                    '<td style="color:#B8860B;">' + stat.late + '</td>' +
+                    '<td style="color:#DC3545;">' + stat.absent + '</td>' +
+                    '<td style="color:#6C757D;">' + stat.leave + '</td>' +
+                    '<td style="color:#B8860B;">' + stat.dinerToday + '</td>' +
+                    '<td style="color:#7D3C98;">' + stat.afterToday + '</td>' +
                     '<td><button onclick="switchToClass(\'' + stat.key + '\')" style="padding:4px 10px;border-radius:6px;border:1px solid #4A90D9;background:white;color:#4A90D9;font-size:12px;cursor:pointer;">进入</button></td>' +
                     '</tr>';
             }
