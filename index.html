@@ -4198,7 +4198,11 @@
             for (var j = 0; j < students.length; j++) {
                 if (students[j] && students[j].trim() !== '') actualCount++;
             }
-            var s = summary[key] || { present: 0, late: 0, absent: 0, leave: 0, notIn: 0, diner: 0, after1: 0, after2: 0 };
+            var s = summary[key];
+            if (!s) {
+                // 该班今天没有任何记录 → 全班默认到课
+                s = { present: actualCount, late: 0, absent: 0, leave: 0, notIn: 0, diner: 0, after1: 0, after2: 0 };
+            }
             totalStudents += actualCount;
             totalPresent += s.present;
             totalLate += s.late;
