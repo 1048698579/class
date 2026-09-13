@@ -1321,26 +1321,57 @@
     //  统计
     // ================================================================
     function updateStats() {
-        var students = getCurrentStudents();
         var today = getTodayStr();
         var _isHoliday = isHolidayDay(today);
-        var isOvertime = isOvertimeDay(today);
-        if (_isHoliday && !isOvertime) {
+        var _isOvertime = isOvertimeDay(today);
+        if (_isHoliday && !_isOvertime) {
             var statEls0 = ['statPresent', 'statLate', 'statAbsent', 'statLeave', 'statNotInRoom'];
             for (var i = 0; i < statEls0.length; i++) { var el0 = $(statEls0[i]); if (el0) el0.textContent = '—'; }
             return;
         }
+
+        var level = getUserRoleLevel(currentUser);
+        var isLeader = (level >= 3);
+        var isGradeLeader = (level === 2);
+
         var p = 0, l = 0, a = 0, le = 0, n = 0;
-        for (var i = 0; i < students.length; i++) {
-            var name = students[i];
-            if (!name || name.trim() === '') continue;
-            var s = seatStatus[i] || 'present';
-            if (s === 'present') p++;
-            else if (s === 'late') l++;
-            else if (s === 'absent') a++;
-            else if (s === 'leave') le++;
-            else if (s === 'not-in-room') n++;
+
+        if (isLeader || isGradeLeader) {
+            // 领导/级委会：统计可见范围内的所有班级
+            var keys = getVisibleClassKeys();
+            for (var k = 0; k < keys.length; k++) {
+                var classKey = keys[k];
+                var cls = CLASS_DATA_LIST[classKey];
+                if (!cls) continue;
+                var students = cls.students || [];
+                var todayRec = attendanceRecords[today] && attendanceRecords[today][classKey]
+                    ? attendanceRecords[today][classKey] : {};
+                for (var i = 0; i < students.length; i++) {
+                    var name = students[i];
+                    if (!name || name.trim() === '') continue;
+                    var s = typeof todayRec[name] === 'string' ? todayRec[name] : 'present';
+                    if (s === 'present') p++;
+                    else if (s === 'late') l++;
+                    else if (s === 'absent') a++;
+                    else if (s === 'leave') le++;
+                    else if (s === 'not-in-room') n++;
+                }
+            }
+        } else {
+            // 班主任/科任老师：只统计当前班
+            var students2 = getCurrentStudents();
+            for (var i = 0; i < students2.length; i++) {
+                var name2 = students2[i];
+                if (!name2 || name2.trim() === '') continue;
+                var s2 = seatStatus[i] || 'present';
+                if (s2 === 'present') p++;
+                else if (s2 === 'late') l++;
+                else if (s2 === 'absent') a++;
+                else if (s2 === 'leave') le++;
+                else if (s2 === 'not-in-room') n++;
+            }
         }
+
         var statEls = ['statPresent', 'statLate', 'statAbsent', 'statLeave', 'statNotInRoom'];
         var vals = [p, l, a, le, n];
         for (var i = 0; i < statEls.length; i++) { var el = $(statEls[i]); if (el) el.textContent = vals[i]; }
@@ -4134,8 +4165,8 @@
         if (!grid) return;
         var today = getTodayStr();
         var _isHoliday = isHolidayDay(today);
-        var isOvertime = isOvertimeDay(today);
-        if (_isHoliday && !isOvertime) {
+        var _isOvertime = isOvertimeDay(today);
+        if (_isHoliday && !_isOvertime) {
             grid.innerHTML = '<div style="text-align:center;padding:40px;color:#999;font-size:16px;">📅 今日放假，数据暂停统计</div>';
             return;
         }
@@ -4156,56 +4187,35 @@
             grid.innerHTML = '<div style="text-align:center;padding:30px;color:#999;font-size:14px;">📭 您还没有关联的班级</div>';
             return;
         }
-        var totalStudents = 0, totalDiners = 0, totalPresent = 0;
-        var totalAfter = 0, totalAfterPresent = 0, totalStop = 0;
+
+        var totalStudents = 0, totalDiners = 0, totalAfter = 0;
         var classStats = [];
         for (var i = 0; i < filteredKeys.length; i++) {
             var key = filteredKeys[i];
             var cls = CLASS_DATA_LIST[key];
             var students = cls.students || [];
-            var todayRec = attendanceRecords[today] && attendanceRecords[today][key] ? attendanceRecords[today][key] : {};
-            var p = 0;
-            var dinerCount = 0, eatenCount = 0, stopCount = 0;
-            var afterCount = 0, afterP = 0, afterA = 0;
+            var dinerCount = 0, afterCount = 0;
             var actualCount = 0;
             for (var j = 0; j < students.length; j++) {
                 var name = students[j];
                 if (!name || name.trim() === '') continue;
                 actualCount++;
-                var status = typeof todayRec[name] === 'string' ? todayRec[name] : 'present';
-                if (status === 'present') p++;
-                var dayDiner = getDayDiner(today, key, name);
-                if (dayDiner) {
-                    dinerCount++;
-                    if (isStatusStop(status)) stopCount++;
-                    else eatenCount++;
-                }
-                var dayA1 = getDayAfter1(today, key, name);
-                var dayA2 = getDayAfter2(today, key, name);
-                if (dayA1 || dayA2) {
-                    afterCount++;
-                    if (isStatusStop(status) || status === 'not-in-room') afterA++;
-                    else afterP++;
-                }
+                if (cls.diners && cls.diners[name]) dinerCount++;
+                if ((cls.afterClass1 && cls.afterClass1[name]) ||
+                    (cls.afterClass2 && cls.afterClass2[name])) afterCount++;
             }
             totalStudents += actualCount;
             totalDiners += dinerCount;
-            totalPresent += p;
             totalAfter += afterCount;
-            totalAfterPresent += afterP;
-            totalStop += stopCount;
             classStats.push({
                 key: key,
                 name: cls.className || key,
                 total: actualCount,
                 diner: dinerCount,
-                eaten: eatenCount,
-                stop: stopCount,
-                after: afterCount,
-                afterP: afterP,
-                present: p
+                after: afterCount
             });
         }
+
         var statsBar = $('statsBar');
         if (statsBar) statsBar.style.display = '';
         var title = isGradeLeader ? ('📊 ' + (gradeFilter || '本年级') + ' 数据总览') : '📊 全校数据总览';
@@ -4216,30 +4226,27 @@
         $('scheduleBody').innerHTML = '';
 
         var html = '';
-        html += '<div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px;margin-bottom:14px;">' +
+        html += '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:14px;">' +
             '<div style="background:linear-gradient(135deg,#4A90D9,#357ABD);color:white;border-radius:12px;padding:14px;text-align:center;"><div style="font-size:24px;font-weight:700;">' + totalStudents + '</div><div style="font-size:12px;opacity:0.8;">' + (isGradeLeader ? '本年级学生' : '在校学生') + '</div></div>' +
-            '<div style="background:linear-gradient(135deg,#28A745,#1e7e34);color:white;border-radius:12px;padding:14px;text-align:center;"><div style="font-size:24px;font-weight:700;">' + totalPresent + '</div><div style="font-size:12px;opacity:0.8;">今日到课</div></div>' +
-            '<div style="background:linear-gradient(135deg,#FFC107,#d39e00);color:#333;border-radius:12px;padding:14px;text-align:center;"><div style="font-size:24px;font-weight:700;">' + totalDiners + '</div><div style="font-size:12px;opacity:0.8;">在校就餐</div></div>' +
-            '<div style="background:linear-gradient(135deg,#9B59B6,#7D3C98);color:white;border-radius:12px;padding:14px;text-align:center;"><div style="font-size:24px;font-weight:700;">' + totalAfter + '</div><div style="font-size:12px;opacity:0.8;">参加课后</div></div>' +
+            '<div style="background:linear-gradient(135deg,#FFC107,#d39e00);color:#333;border-radius:12px;padding:14px;text-align:center;"><div style="font-size:24px;font-weight:700;">' + totalDiners + '</div><div style="font-size:12px;opacity:0.8;">本月就餐</div></div>' +
+            '<div style="background:linear-gradient(135deg,#9B59B6,#7D3C98);color:white;border-radius:12px;padding:14px;text-align:center;"><div style="font-size:24px;font-weight:700;">' + totalAfter + '</div><div style="font-size:12px;opacity:0.8;">本月课后</div></div>' +
             '</div>';
 
-        html += '<div style="font-size:14px;font-weight:600;color:#333;margin-bottom:10px;">📋 ' + (isGradeLeader ? '本年级各班今日数据' : '各班级今日数据') + '</div>';
+        html += '<div style="font-size:14px;font-weight:600;color:#333;margin-bottom:10px;">📋 ' + (isGradeLeader ? '本年级各班本月名额' : '各班级本月名额') + '</div>';
         html += '<div class="admin-table-wrap"><table class="admin-table"><thead><tr>' +
-            '<th>班级</th><th>总人数</th><th>到课</th><th>🍱就餐</th><th>✅已就餐</th><th>⚠️停餐</th><th>📚课后</th><th>✅已到</th><th>操作</th></tr></thead><tbody>';
+            '<th>班级</th><th>总人数</th><th>🍱 本月就餐</th><th>📚 本月课后</th><th>操作</th></tr></thead><tbody>';
         if (classStats.length === 0) {
-            html += '<tr><td colspan="9" style="text-align:center;color:#999;padding:20px;">暂无班级数据</td></tr>';
+            html += '<tr><td colspan="5" style="text-align:center;color:#999;padding:20px;">暂无班级数据</td></tr>';
         } else {
             for (var i = 0; i < classStats.length; i++) {
                 var stat = classStats[i];
+                var dinerRate = stat.total > 0 ? Math.round(stat.diner / stat.total * 100) : 0;
+                var afterRate = stat.total > 0 ? Math.round(stat.after / stat.total * 100) : 0;
                 html += '<tr>' +
                     '<td><strong>' + stat.name + '</strong></td>' +
                     '<td>' + stat.total + '</td>' +
-                    '<td style="color:#28A745;">' + stat.present + '</td>' +
-                    '<td>' + stat.diner + '</td>' +
-                    '<td style="color:#28A745;">' + stat.eaten + '</td>' +
-                    '<td style="color:#DC3545;">' + stat.stop + '</td>' +
-                    '<td>' + stat.after + '</td>' +
-                    '<td style="color:#28A745;">' + stat.afterP + '</td>' +
+                    '<td style="color:#B8860B;">' + stat.diner + ' <span style="color:#999;font-size:11px;">(' + dinerRate + '%)</span></td>' +
+                    '<td style="color:#7D3C98;">' + stat.after + ' <span style="color:#999;font-size:11px;">(' + afterRate + '%)</span></td>' +
                     '<td><button onclick="switchToClass(\'' + stat.key + '\')" style="padding:4px 10px;border-radius:6px;border:1px solid #4A90D9;background:white;color:#4A90D9;font-size:12px;cursor:pointer;">进入</button></td>' +
                     '</tr>';
             }
