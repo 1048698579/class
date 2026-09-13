@@ -259,9 +259,9 @@
 
     <!-- 座位表 -->
     <div class="card">
-        <div class="card-title">💺 座位表 <span class="badge" id="seatInfo">点击学生可标注</span><span class="lock-icon" id="seatLockIcon">🔒</span></div>
-        <div style="text-align:right;margin-bottom:8px;">
-            <button class="refresh-btn" onclick="location.reload()" style="width:auto;display:inline-block;margin-top:0;padding:4px 12px;">🔄 刷新页面</button>
+        <div class="card-title" style="justify-content:space-between;">
+            <span>💺 座位表 <span class="badge" id="seatInfo">点击学生可标注</span><span class="lock-icon" id="seatLockIcon">🔒</span></span>
+            <button class="refresh-btn" onclick="location.reload()" style="width:auto;margin-top:0;padding:4px 12px;font-size:11px;">🔄 刷新</button>
         </div>
         <div class="seat-grid" id="seatGrid"></div>
         <div class="seat-legend">
@@ -286,7 +286,6 @@
             <button class="admin-btn" onclick="openAdminModal('user')">👤 教师账号</button>
             <button class="admin-btn" onclick="openAdminModal('config')">⚙️ 系统配置</button>
         </div>
-        <button class="refresh-btn" onclick="location.reload()">🔄 刷新页面（布局错乱时点击）</button>
     </div>
 
     <!-- 修改密码弹窗 -->
