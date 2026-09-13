@@ -258,8 +258,9 @@
 
     <!-- 座位表 -->
     <div class="card" id="seatCard">
-        <div class="card-title" id="seatCardTitle">💺 座位表 <span class="badge" id="seatInfo">点击学生可标注</span><span class="lock-icon" id="seatLockIcon">🔒</span></div>
-            <button class="refresh-btn" onclick="location.reload()" style="width:auto;margin-top:0;padding:4px 12px;font-size:11px;">🔄 刷新（页面错乱时）</button>
+        <div class="card-title" id="seatCardTitle" style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;">
+            <span>💺 座位表 <span class="badge" id="seatInfo">点击学生可标注</span><span class="lock-icon" id="seatLockIcon">🔒</span></span>
+            <button onclick="location.reload()" style="width:auto;padding:3px 10px;border:1px solid #ccc;border-radius:6px;background:white;font-size:11px;color:#999;cursor:pointer;white-space:nowrap;">🔄 刷新页面（布局错乱时点击）</button>
         </div>
         <div class="seat-grid" id="seatGrid"></div>
         <div class="seat-legend">
@@ -4229,8 +4230,8 @@
         $('scheduleBody').innerHTML = '';
 
         var seatCardTitle = $('seatCardTitle');
-        if (seatCardTitle) seatCardTitle.innerHTML = '📊 今日数据总览';
-
+        if (seatCardTitle) seatCardTitle.innerHTML = '<span>📊 今日数据总览</span>' +
+        '<button onclick="location.reload()" style="width:auto;padding:3px 10px;border:1px solid #ccc;border-radius:6px;background:white;font-size:11px;color:#999;cursor:pointer;white-space:nowrap;">🔄 刷新页面（布局错乱时点击）</button>';
         var html = '';
         html += '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:14px;">' +
             '<div style="background:linear-gradient(135deg,#28A745,#1e7e34);color:white;border-radius:12px;padding:14px;text-align:center;"><div style="font-size:24px;font-weight:700;">' + totalPresent + '</div><div style="font-size:12px;opacity:0.8;">今日到课</div></div>' +
@@ -4494,7 +4495,8 @@
                     // 恢复座位表标题
                     var seatCardTitle2 = $('seatCardTitle');
                     if (seatCardTitle2) {
-                        seatCardTitle2.innerHTML = '💺 座位表 <span class="badge" id="seatInfo">点击学生可标注</span><span class="lock-icon" id="seatLockIcon">🔒</span>';
+                        seatCardTitle2.innerHTML = '<span>💺 座位表 <span class="badge" id="seatInfo">点击学生可标注</span><span class="lock-icon" id="seatLockIcon">🔒</span></span>' +
+                            '<button onclick="location.reload()" style="width:auto;padding:3px 10px;border:1px solid #ccc;border-radius:6px;background:white;font-size:11px;color:#999;cursor:pointer;white-space:nowrap;">🔄 刷新页面（布局错乱时点击）</button>';
                     }
                         $('seatGrid').innerHTML = '';
                         $('statsBar').style.display = '';
