@@ -4208,12 +4208,16 @@
 
         var statsBar = $('statsBar');
         if (statsBar) statsBar.style.display = '';
-        var title = isGradeLeader ? ('📊 ' + (gradeFilter || '本年级') + ' 今日总览') : '📊 全校今日总览';
-        $('seatInfo').textContent = title;
         var legend = document.querySelector('.seat-legend');
         if (legend) legend.style.display = 'none';
         $('teacherGrid').innerHTML = '';
         $('scheduleBody').innerHTML = '';
+
+        // 隐藏座位表标题，改成总览标题
+        var seatCardTitle = document.querySelector('.card:last-of-type .card-title');
+        if (seatCardTitle) {
+            seatCardTitle.innerHTML = '📊 ' + (isGradeLeader ? (gradeFilter || '本年级') + ' 今日总览' : '全校今日总览');
+        }
 
         var html = '';
         html += '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:14px;">' +
@@ -4475,7 +4479,11 @@
                         if (actionRow) actionRow.style.display = '';
                         for (var i = 0; i < adminEntries.length; i++) adminEntries[i].style.display = '';
                         if (legend) legend.style.display = '';
-                        $('seatInfo').textContent = '点击学生可标注';
+                    // 恢复座位表标题
+                    var seatCardTitle2 = document.querySelector('.card:last-of-type .card-title');
+                    if (seatCardTitle2) {
+                        seatCardTitle2.innerHTML = '💺 座位表 <span class="badge" id="seatInfo">点击学生可标注</span><span class="lock-icon" id="seatLockIcon">🔒</span>';
+                    }
                         $('seatGrid').innerHTML = '';
                         $('statsBar').style.display = '';
 
