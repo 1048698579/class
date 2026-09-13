@@ -541,6 +541,7 @@
     var _backfillData = {};
     var _editingClassKey = null;
     var _batchTab = 'create';
+    var _dashboardSummary = null;tchTab = 'create';
     var _loadedMonths = {};   // 已加载的月份缓存 { "班级_YYYY-MM": true }_batchTab = 'create';
 
     function $(id) { return document.getElementById(id); }
@@ -2823,16 +2824,23 @@
         if (targetKeys.length === 0) { showToast('⚠️ 没有可导出的班级数据'); return; }
 
         showToast('⏳ 正在加载数据...');
-        var chain = Promise.resolve();
-        targetKeys.forEach(function(k) {
-            chain = chain.then(function() { return loadAttendanceMonth(k, month); });
-        });
-        chain.then(function() {
-            doExportDinerReport(month, targets);
-        }).catch(function(e) {
-            console.error('导出失败:', e);
-            showToast('❌ 导出失败：' + e.message);
-        });
+        fetch(API_BASE + '/api/attendance-batch?classKeys=' + encodeURIComponent(targetKeys.join(',')) + '&month=' + month)
+            .then(function(r) { return r.json(); })
+            .then(function(result) {
+                if (result.success && result.data) {
+                    for (var ck in result.data) {
+                        for (var dt in result.data[ck]) {
+                            if (!attendanceRecords[dt]) attendanceRecords[dt] = {};
+                            attendanceRecords[dt][ck] = result.data[ck][dt];
+                        }
+                    }
+                }
+                doExportDinerReport(month, targets);
+            })
+            .catch(function(e) {
+                console.error('导出失败:', e);
+                showToast('❌ 导出失败：' + e.message);
+            });
     }
         
         function doExportDinerReport(month, targets) {
@@ -3087,16 +3095,23 @@
         if (targetKeys.length === 0) { showToast('⚠️ 没有可导出的班级数据'); return; }
 
         showToast('⏳ 正在加载数据...');
-        var chain = Promise.resolve();
-        targetKeys.forEach(function(k) {
-            chain = chain.then(function() { return loadAttendanceMonth(k, month); });
-        });
-        chain.then(function() {
-            doExportCommentReport(month, targets);
-        }).catch(function(e) {
-            console.error('导出失败:', e);
-            showToast('❌ 导出失败：' + e.message);
-        });
+        fetch(API_BASE + '/api/attendance-batch?classKeys=' + encodeURIComponent(targetKeys.join(',')) + '&month=' + month)
+            .then(function(r) { return r.json(); })
+            .then(function(result) {
+                if (result.success && result.data) {
+                    for (var ck in result.data) {
+                        for (var dt in result.data[ck]) {
+                            if (!attendanceRecords[dt]) attendanceRecords[dt] = {};
+                            attendanceRecords[dt][ck] = result.data[ck][dt];
+                        }
+                    }
+                }
+                doExportCommentReport(month, targets);
+            })
+            .catch(function(e) {
+                console.error('导出失败:', e);
+                showToast('❌ 导出失败：' + e.message);
+            });
     }
 
     function doExportCommentReport(month, targets) {
@@ -3287,7 +3302,7 @@
     // ================================================================
     //  导出考勤统计（逐日）
     // ================================================================
-        function exportAttendanceReport(monthArg) {
+    function exportAttendanceReport(monthArg) {
         var month = monthArg || ($('dinerMonth') ? $('dinerMonth').value : '');
         if (!month) { showToast('请先选择月份'); return; }
         if (!/^\d{4}-\d{2}$/.test(month)) { showToast('⚠️ 月份格式应为 2026-09'); return; }
@@ -3297,18 +3312,24 @@
         if (targetKeys.length === 0) { showToast('⚠️ 没有可导出的班级数据'); return; }
 
         showToast('⏳ 正在加载数据...');
-        var chain = Promise.resolve();
-        targetKeys.forEach(function(k) {
-            chain = chain.then(function() { return loadAttendanceMonth(k, month); });
-        });
-        chain.then(function() {
-            doExportAttendanceReport(month, targets);
-        }).catch(function(e) {
-            console.error('导出失败:', e);
-            showToast('❌ 导出失败：' + e.message);
-        });
+        fetch(API_BASE + '/api/attendance-batch?classKeys=' + encodeURIComponent(targetKeys.join(',')) + '&month=' + month)
+            .then(function(r) { return r.json(); })
+            .then(function(result) {
+                if (result.success && result.data) {
+                    for (var ck in result.data) {
+                        for (var dt in result.data[ck]) {
+                            if (!attendanceRecords[dt]) attendanceRecords[dt] = {};
+                            attendanceRecords[dt][ck] = result.data[ck][dt];
+                        }
+                    }
+                }
+                doExportAttendanceReport(month, targets);
+            })
+            .catch(function(e) {
+                console.error('导出失败:', e);
+                showToast('❌ 导出失败：' + e.message);
+            });
     }
-
     function doExportAttendanceReport(month, targets) {
         var targetKeys = targets.targetKeys;
         var allClassNames = targets.allClassNames;
@@ -4112,32 +4133,32 @@
         if (!grid) return;
         var today = getTodayStr();
 
-        // 领导/级委会视图：先加载所有可见班最近 1 个月
         if (currentUser && getUserRoleLevel(currentUser) >= 2) {
-            var thisMonth = today.substring(0, 7);
-            var keys = getVisibleClassKeys();
-            var needLoad = false;
-            for (var i = 0; i < keys.length; i++) {
-                if (!_loadedMonths[keys[i] + '_' + thisMonth]) { needLoad = true; break; }
-            }
-            if (needLoad) {
-                grid.innerHTML = '<div style="text-align:center;padding:40px;color:#999;font-size:14px;">⏳ 正在加载数据...</div>';
-                var chain = Promise.resolve();
-                keys.forEach(function(k) {
-                    chain = chain.then(function() { return loadAttendanceMonth(k, thisMonth); });
-                });
-                chain.then(function() {
+            grid.innerHTML = '<div style="text-align:center;padding:40px;color:#999;font-size:14px;">⏳ 正在加载数据...</div>';
+            fetch(API_BASE + '/api/dashboard-summary?date=' + today)
+                .then(function(r) { return r.json(); })
+                .then(function(result) {
+                    _dashboardSummary = (result.success && result.summary) ? result.summary : {};
+                    doRenderDashboard();
+                })
+                .catch(function(e) {
+                    console.error('总览加载失败:', e);
+                    _dashboardSummary = {};
                     doRenderDashboard();
                 });
-                return;
-            }
+            return;
         }
         doRenderDashboard();
     }
-
+        
     function doRenderDashboard() {
         var grid = $('seatGrid');
         if (!grid) return;
+
+        var seatCard = $('seatCard');
+        if (seatCard) seatCard.style.display = 'block';
+        grid.style.display = '';
+
         var today = getTodayStr();
         var _isHoliday = isHolidayDay(today);
         var _isOvertime = isOvertimeDay(today);
@@ -4145,6 +4166,7 @@
             grid.innerHTML = '<div style="text-align:center;padding:40px;color:#999;font-size:16px;">📅 今日放假，数据暂停统计</div>';
             return;
         }
+
         var level = getUserRoleLevel(currentUser);
         var isGradeLeader = (level === 2);
         var gradeFilter = currentUser ? currentUser.grade : '';
@@ -4163,45 +4185,35 @@
             return;
         }
 
+        var summary = _dashboardSummary || {};
         var totalStudents = 0, totalPresent = 0, totalLate = 0, totalAbsent = 0, totalLeave = 0, totalNotIn = 0;
         var totalDinerToday = 0, totalAfterToday = 0;
         var classStats = [];
+
         for (var i = 0; i < filteredKeys.length; i++) {
             var key = filteredKeys[i];
             var cls = CLASS_DATA_LIST[key];
             var students = cls.students || [];
-            var todayRec = attendanceRecords[today] && attendanceRecords[today][key] ? attendanceRecords[today][key] : {};
             var actualCount = 0;
-            var p = 0, l = 0, a = 0, le = 0, n = 0;
-            var dinerToday = 0, afterToday = 0;
             for (var j = 0; j < students.length; j++) {
-                var name = students[j];
-                if (!name || name.trim() === '') continue;
-                actualCount++;
-                var status = typeof todayRec[name] === 'string' ? todayRec[name] : 'present';
-                if (status === 'present') p++;
-                else if (status === 'late') l++;
-                else if (status === 'absent') a++;
-                else if (status === 'leave') le++;
-                else if (status === 'not-in-room') n++;
-                if (getDayDiner(today, key, name)) dinerToday++;
-                if (getDayAfter1(today, key, name) || getDayAfter2(today, key, name)) afterToday++;
+                if (students[j] && students[j].trim() !== '') actualCount++;
             }
+            var s = summary[key] || { present: 0, late: 0, absent: 0, leave: 0, notIn: 0, diner: 0, after1: 0, after2: 0 };
             totalStudents += actualCount;
-            totalPresent += p;
-            totalLate += l;
-            totalAbsent += a;
-            totalLeave += le;
-            totalNotIn += n;
-            totalDinerToday += dinerToday;
-            totalAfterToday += afterToday;
+            totalPresent += s.present;
+            totalLate += s.late;
+            totalAbsent += s.absent;
+            totalLeave += s.leave;
+            totalNotIn += s.notIn;
+            totalDinerToday += s.diner;
+            totalAfterToday += (s.after1 + s.after2);
             classStats.push({
                 key: key,
                 name: cls.className || key,
                 total: actualCount,
-                present: p, late: l, absent: a, leave: le, notIn: n,
-                dinerToday: dinerToday,
-                afterToday: afterToday
+                present: s.present, late: s.late, absent: s.absent, leave: s.leave, notIn: s.notIn,
+                dinerToday: s.diner,
+                afterToday: s.after1 + s.after2
             });
         }
 
@@ -4212,17 +4224,8 @@
         $('teacherGrid').innerHTML = '';
         $('scheduleBody').innerHTML = '';
 
-        // 把"座位表"标题换成"今日数据总览"
         var seatCardTitle = $('seatCardTitle');
-        if (seatCardTitle) {
-            seatCardTitle.innerHTML = '📊 今日数据总览';
-        }
-
-        // 隐藏座位表标题，改成总览标题
-        var seatCardTitle = document.querySelector('.card:last-of-type .card-title');
-        if (seatCardTitle) {
-            seatCardTitle.innerHTML = '📊 ' + (isGradeLeader ? (gradeFilter || '本年级') + ' 今日总览' : '全校今日总览');
-        }
+        if (seatCardTitle) seatCardTitle.innerHTML = '📊 今日数据总览';
 
         var html = '';
         html += '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:14px;">' +
@@ -4363,10 +4366,10 @@
                     }
                 }
 
-                // 加载当前班最近 3 个月考勤
+                // 加载当前班最近 1 个月考勤
                 var loadChain = Promise.resolve();
                 if (currentClassKey) {
-                    loadChain = loadRecentMonths(currentClassKey, 3);
+                    loadChain = loadRecentMonths(currentClassKey, 1);
                 }
 
                 loadChain.then(function() {
