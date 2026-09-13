@@ -321,17 +321,20 @@ app.get('/api/attendance-batch', async (req, res) => {
         const start = month + '-01';
         const end = month + '-' + String(lastDay).padStart(2, '0');
 
-        // Supabase in 查询
-        const inList = keys.map(function(k) { return '"' + k + '"'; }).join(',');
+        // 一次拉整月全部班级（不按 class_key 过滤，避免 in.() 编码问题）
         const url = SUPABASE_URL + '/rest/v1/attendance_records?select=class_key,date,data' +
-            '&class_key=in.(' + encodeURIComponent(inList) + ')' +
             '&date=gte.' + start + '&date=lte.' + end +
-            '&order=date.asc&limit=10000';
+            '&order=date.asc&limit=50000';
 
         const r = await axios.get(url, { headers: SUPA_HEADERS });
 
+        // 服务端按 keys 过滤
+        const keySet = {};
+        keys.forEach(function(k) { keySet[k] = true; });
+
         const result = {};
         for (const row of r.data) {
+            if (!keySet[row.class_key]) continue;   // 不在目标列表，跳过
             if (!result[row.class_key]) result[row.class_key] = {};
             result[row.class_key][row.date] = row.data || {};
         }
