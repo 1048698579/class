@@ -257,9 +257,8 @@
     </div>
 
     <!-- 座位表 -->
-    <div class="card">
-        <div class="card-title" style="justify-content:space-between;">
-            <span>💺 座位表 <span class="badge" id="seatInfo">点击学生可标注</span><span class="lock-icon" id="seatLockIcon">🔒</span></span>
+    <div class="card" id="seatCard">
+        <div class="card-title" id="seatCardTitle">💺 座位表 <span class="badge" id="seatInfo">点击学生可标注</span><span class="lock-icon" id="seatLockIcon">🔒</span></div>
             <button class="refresh-btn" onclick="location.reload()" style="width:auto;margin-top:0;padding:4px 12px;font-size:11px;">🔄 刷新（页面错乱时）</button>
         </div>
         <div class="seat-grid" id="seatGrid"></div>
@@ -4214,7 +4213,7 @@
         $('scheduleBody').innerHTML = '';
 
         // 把"座位表"标题换成"今日数据总览"
-        var seatCardTitle = document.querySelector('.card:last-of-type .card-title');
+        var seatCardTitle = $('seatCardTitle');
         if (seatCardTitle) {
             seatCardTitle.innerHTML = '📊 今日数据总览';
         }
@@ -4453,7 +4452,7 @@
                     else isClassMode = true;
 
                     var cards = document.querySelectorAll('.card');
-                    var seatCard = document.querySelector('.card:last-of-type');
+                    var seatCard = $('seatCard');
                     var actionRow = document.querySelector('.action-row');
                     var adminEntries = document.querySelectorAll('.admin-entry');
                     var legend = document.querySelector('.seat-legend');
@@ -4486,7 +4485,7 @@
                         for (var i = 0; i < adminEntries.length; i++) adminEntries[i].style.display = '';
                         if (legend) legend.style.display = '';
                     // 恢复座位表标题
-                    var seatCardTitle2 = document.querySelector('.card:last-of-type .card-title');
+                    var seatCardTitle2 = $('seatCardTitle');
                     if (seatCardTitle2) {
                         seatCardTitle2.innerHTML = '💺 座位表 <span class="badge" id="seatInfo">点击学生可标注</span><span class="lock-icon" id="seatLockIcon">🔒</span>';
                     }
