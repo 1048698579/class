@@ -4109,43 +4109,6 @@
     }
 
     // ================================================================
-    //  优秀班级
-    // ================================================================
-    function getTopClasses() {
-        var classKeys = Object.keys(CLASS_DATA_LIST);
-        var today = getTodayStr();
-        var results = [];
-        if (isHolidayDay(today)) return results;
-        for (var i = 0; i < classKeys.length; i++) {
-            var key = classKeys[i];
-            var cls = CLASS_DATA_LIST[key];
-            var students = cls.students || [];
-            var actualCount = 0;
-            for (var j = 0; j < students.length; j++) {
-                if (students[j] && students[j].trim() !== '') actualCount++;
-            }
-            if (actualCount === 0) continue;
-            var todayRec = attendanceRecords[today] && attendanceRecords[today][key] ? attendanceRecords[today][key] : {};
-            var presentCount = 0;
-            for (var j = 0; j < students.length; j++) {
-                var name = students[j];
-                if (!name || name.trim() === '') continue;
-                var status = typeof todayRec[name] === 'string' ? todayRec[name] : 'present';
-                if (status === 'present') presentCount++;
-            }
-            var attendanceRate = actualCount > 0 ? presentCount / actualCount : 0;
-            results.push({
-                classKey: key,
-                className: cls.className || key,
-                attendanceRate: Math.round(attendanceRate * 100),
-                score: Math.round(attendanceRate * 100)
-            });
-        }
-        results.sort(function(a, b) { return b.score - a.score; });
-        return results.slice(0, 5);
-    }
-
-    // ================================================================
     //  数据面板
     // ================================================================
     function renderDashboard() {
@@ -4284,17 +4247,6 @@
             }
         }
         html += '</tbody></table></div>';
-
-        var topClasses = getTopClasses();
-        if (topClasses.length > 0) {
-            html += '<div style="margin-top:14px;padding:12px;background:#E8F5E9;border-radius:10px;font-size:13px;color:#2E7D32;">🏆 优秀班级（出勤率）<br>';
-            for (var i = 0; i < topClasses.length; i++) {
-                var c = topClasses[i];
-                var medal = ['🥇', '🥈', '🥉'][i] || (i + 1 + '.');
-                html += medal + ' ' + c.className + '（出勤' + c.attendanceRate + '%） ';
-            }
-            html += '</div>';
-        }
 
         if (canManageUsers(currentUser) || canManageClasses(currentUser)) {
             html += '<div style="margin-top:14px;display:flex;gap:10px;flex-wrap:wrap;">';
