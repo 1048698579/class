@@ -220,6 +220,84 @@ app.post('/api/data', async (req, res) => {
 });
 
 // ================================================================
+//  API: 总览汇总（一次返回所有班指定日期的汇总）
+// ================================================================
+app.get('/api/dashboard-summary', async (req, res) => {
+    try {
+        const date = req.query.date;
+        if (!date) return res.status(400).json({ success: false, error: '缺少日期' });
+
+        const r = await axios.get(
+            SUPABASE_URL + '/rest/v1/attendance_records?select=class_key,data&date=eq.' + date,
+            { headers: SUPA_HEADERS }
+        );
+
+        const summary = {};
+        for (const row of r.data) {
+            const data = row.data || {};
+            let present = 0, late = 0, absent = 0, leave = 0, notIn = 0;
+            let diner = 0, after1 = 0, after2 = 0;
+            for (const key in data) {
+                if (key === '_holiday' || key === '_overtime') continue;
+                if (key.indexOf('_diner_') === 0) { if (data[key]) diner++; continue; }
+                if (key.indexOf('_after1_') === 0) { if (data[key]) after1++; continue; }
+                if (key.indexOf('_after2_') === 0) { if (data[key]) after2++; continue; }
+                if (key.indexOf('_comment_') === 0 || key.indexOf('_teacher_') === 0 || key === '_classoverall') continue;
+                const s = data[key];
+                if (s === 'present') present++;
+                else if (s === 'late') late++;
+                else if (s === 'absent') absent++;
+                else if (s === 'leave') leave++;
+                else if (s === 'not-in-room') notIn++;
+            }
+            summary[row.class_key] = { present, late, absent, leave, notIn, diner, after1, after2 };
+        }
+
+        res.json({ success: true, date, summary });
+    } catch (e) {
+        console.error('总览汇总失败:', e.message);
+        res.status(500).json({ success: false, error: e.message });
+    }
+});
+
+// ================================================================
+//  API: 批量拉取多班某月数据（导出用）
+// ================================================================
+app.get('/api/attendance-batch', async (req, res) => {
+    try {
+        const { classKeys, month } = req.query;
+        if (!classKeys || !month) return res.status(400).json({ success: false, error: '缺少参数' });
+        const keys = classKeys.split(',').filter(function(k) { return k; });
+        if (keys.length === 0) return res.status(400).json({ success: false, error: '无班级' });
+
+        const [y, m] = month.split('-').map(Number);
+        const lastDay = new Date(y, m, 0).getDate();
+        const start = month + '-01';
+        const end = month + '-' + String(lastDay).padStart(2, '0');
+
+        // Supabase in 查询
+        const inList = keys.map(function(k) { return '"' + k + '"'; }).join(',');
+        const url = SUPABASE_URL + '/rest/v1/attendance_records?select=class_key,date,data' +
+            '&class_key=in.(' + encodeURIComponent(inList) + ')' +
+            '&date=gte.' + start + '&date=lte.' + end +
+            '&order=date.asc&limit=10000';
+
+        const r = await axios.get(url, { headers: SUPA_HEADERS });
+
+        const result = {};
+        for (const row of r.data) {
+            if (!result[row.class_key]) result[row.class_key] = {};
+            result[row.class_key][row.date] = row.data || {};
+        }
+
+        res.json({ success: true, month, data: result });
+    } catch (e) {
+        console.error('批量拉取失败:', e.message);
+        res.status(500).json({ success: false, error: e.message });
+    }
+});
+
+// ================================================================
 //  API: 考勤读取（按班+月）
 // ================================================================
 app.get('/api/attendance', async (req, res) => {
