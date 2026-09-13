@@ -4213,6 +4213,12 @@
         $('teacherGrid').innerHTML = '';
         $('scheduleBody').innerHTML = '';
 
+        // 把"座位表"标题换成"今日数据总览"
+        var seatCardTitle = document.querySelector('.card:last-of-type .card-title');
+        if (seatCardTitle) {
+            seatCardTitle.innerHTML = '📊 今日数据总览';
+        }
+
         // 隐藏座位表标题，改成总览标题
         var seatCardTitle = document.querySelector('.card:last-of-type .card-title');
         if (seatCardTitle) {
