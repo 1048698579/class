@@ -233,9 +233,9 @@
             <div class="sub" id="classSub">🏫 扫码查看班级信息</div>
         </div>
      <div class="header-right" id="headerRight">
-     <span class="stats-badge" id="headerStudentStats">👥共0人</span>
-     <span class="stats-badge" id="headerDinerStats">🍱就餐：0人</span>
-     <span class="stats-badge" id="headerAfterStats">📚课后：0人</span>
+     <span class="stats-badge" id="headerStudentStats">👥 0人</span>
+     <span class="stats-badge" id="headerDinerStats">🍱 0人</span>
+     <span class="stats-badge" id="headerAfterStats">📚 0人</span>
      <button class="btn-manage" id="manageClassBtn" onclick="openAdminModal('student')" style="display:none;">📝 管理班级信息</button>
 </div>
     </div>
@@ -1420,9 +1420,9 @@
             if (hasStudent) totalClass++;
         }
         
-        if (studentEl) studentEl.textContent = '👥共 ' + totalStudents + '人';
-        if (dinerEl) dinerEl.textContent = '🍱就餐： ' + totalDiner + '人';
-        if (afterEl) afterEl.textContent = '📚课后： ' + totalAfter + '人';
+        if (studentEl) studentEl.textContent = '👥 ' + totalStudents + '人';
+        if (dinerEl) dinerEl.textContent = '🍱 ' + totalDiner + '人';
+        if (afterEl) afterEl.textContent = '📚 ' + totalAfter + '人';
     }
     // ================================================================
     //  快捷点评
