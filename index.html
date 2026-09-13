@@ -205,16 +205,17 @@
     </div>
 
     <!-- 顶部身份栏 -->
-    <div class="identity-bar hidden" id="identityBar">
-        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-            <button class="back-btn" id="backToHomeBtn" onclick="goBackToHome()">← 返回</button>
-            <div class="user-info">👤 <span class="name" id="displayName">超级管理员</span><span class="role" id="displayRole">· 超级管理员</span><span class="class" id="displayClass"></span></div>
-        </div>
-        <div style="display:flex;gap:6px;align-items:center;">
-            <button class="logout-btn" onclick="openChangePassword()" style="border-color:#4A90D9;color:#4A90D9;">🔑 修改密码</button>
-            <button class="logout-btn" onclick="doLogout()">退出</button>
-        </div>
+<div class="identity-bar hidden" id="identityBar">
+    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+        <button class="back-btn" id="backToHomeBtn" onclick="goBackToHome()">← 返回</button>
+        <div class="user-info">👤 <span class="name" id="displayName">超级管理员</span><span class="role" id="displayRole">· 超级管理员</span><span class="class" id="displayClass"></span></div>
     </div>
+    <div style="display:flex;gap:6px;align-items:center;">
+        <button class="logout-btn" onclick="refreshStats()" style="border-color:#28A745;color:#28A745;">🔄 刷新</button>
+        <button class="logout-btn" onclick="openChangePassword()" style="border-color:#4A90D9;color:#4A90D9;">🔑 修改密码</button>
+        <button class="logout-btn" onclick="doLogout()">退出</button>
+    </div>
+</div>
 
     <!-- 统计栏 -->
     <div class="stats-bar hidden" id="statsBar">
@@ -223,7 +224,6 @@
         <span class="stat-item absent">❌缺 <span class="num" id="statAbsent">0</span></span>
         <span class="stat-item leave">📝假 <span class="num" id="statLeave">0</span></span>
         <span class="stat-item not-in-room">🚪离 <span class="num" id="statNotInRoom">0</span></span>
-        <span class="stat-item" style="margin-left:auto;cursor:pointer;font-size:16px;" onclick="refreshStats()" title="刷新数据">🔄</span>
     </div>
 
     <!-- 头部 -->
