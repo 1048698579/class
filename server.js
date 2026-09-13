@@ -227,30 +227,76 @@ app.get('/api/dashboard-summary', async (req, res) => {
         const date = req.query.date;
         if (!date) return res.status(400).json({ success: false, error: '缺少日期' });
 
-        const r = await axios.get(
-            SUPABASE_URL + '/rest/v1/attendance_records?select=class_key,data&date=eq.' + date,
-            { headers: SUPA_HEADERS }
-        );
+        // 并行拉取：当天考勤 + 班级名单（含长期资格）
+        const [attRes, sysRes] = await Promise.all([
+            axios.get(
+                SUPABASE_URL + '/rest/v1/attendance_records?select=class_key,data&date=eq.' + date,
+                { headers: SUPA_HEADERS }
+            ),
+            axios.get(
+                SUPABASE_URL + '/rest/v1/system_data?id=eq.main',
+                { headers: SUPA_HEADERS }
+            )
+        ]);
+
+        const attendanceMap = {};
+        for (const row of (attRes.data || [])) {
+            attendanceMap[row.class_key] = row.data || {};
+        }
+        const sys = sysRes.data && sysRes.data[0] ? sysRes.data[0] : {};
+        const classDataList = sys.class_data_list || {};
 
         const summary = {};
-        for (const row of r.data) {
-            const data = row.data || {};
+
+        // 遍历所有班级（不只是有记录的）
+        for (const classKey in classDataList) {
+            const cls = classDataList[classKey];
+            const students = cls.students || [];
+            const diners = cls.diners || {};
+            const afterClass1 = cls.afterClass1 || {};
+            const afterClass2 = cls.afterClass2 || {};
+            const rec = attendanceMap[classKey] || {};
+
             let present = 0, late = 0, absent = 0, leave = 0, notIn = 0;
             let diner = 0, after1 = 0, after2 = 0;
-            for (const key in data) {
-                if (key === '_holiday' || key === '_overtime') continue;
-                if (key.indexOf('_diner_') === 0) { if (data[key]) diner++; continue; }
-                if (key.indexOf('_after1_') === 0) { if (data[key]) after1++; continue; }
-                if (key.indexOf('_after2_') === 0) { if (data[key]) after2++; continue; }
-                if (key.indexOf('_comment_') === 0 || key.indexOf('_teacher_') === 0 || key === '_classoverall') continue;
-                const s = data[key];
-                if (s === 'present') present++;
-                else if (s === 'late') late++;
-                else if (s === 'absent') absent++;
-                else if (s === 'leave') leave++;
-                else if (s === 'not-in-room') notIn++;
+
+            for (let i = 0; i < students.length; i++) {
+                const name = students[i];
+                if (!name || name.trim() === '') continue;
+
+                // 出勤状态（没记录 = 默认到课）
+                let status = 'present';
+                if (typeof rec[name] === 'string') status = rec[name];
+
+                if (status === 'present') present++;
+                else if (status === 'late') late++;
+                else if (status === 'absent') absent++;
+                else if (status === 'leave') leave++;
+                else if (status === 'not-in-room') notIn++;
+
+                // 是否停（请假/缺勤不算就餐/课后）
+                const isStop = (status === 'leave' || status === 'absent');
+
+                // 就餐：优先按天覆盖，否则读长期资格
+                let dayDiner = (rec['_diner_' + name] !== undefined)
+                    ? rec['_diner_' + name]
+                    : (diners[name] || false);
+                if (dayDiner && !isStop) diner++;
+
+                // 课后1
+                let dayA1 = (rec['_after1_' + name] !== undefined)
+                    ? rec['_after1_' + name]
+                    : (afterClass1[name] || false);
+                if (dayA1 && !isStop && status !== 'not-in-room') after1++;
+
+                // 课后2
+                let dayA2 = (rec['_after2_' + name] !== undefined)
+                    ? rec['_after2_' + name]
+                    : (afterClass2[name] || false);
+                if (dayA2 && !isStop && status !== 'not-in-room') after2++;
             }
-            summary[row.class_key] = { present, late, absent, leave, notIn, diner, after1, after2 };
+
+            summary[classKey] = { present, late, absent, leave, notIn, diner, after1, after2 };
         }
 
         res.json({ success: true, date, summary });
