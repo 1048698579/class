@@ -1192,8 +1192,6 @@
         }
         var lock = $('teacherLockIcon');
         if (lock) lock.textContent = canEdit ? '🔓' : '🔒';
-        var badge = $('teacherBadge');
-        if (badge) badge.textContent = canEdit ? '点击可点评' : '仅领导可评';
     }
 
     // ================================================================
@@ -1630,7 +1628,10 @@
     // ================================================================
     function openTeacherModal(index) {
         if (!currentUser) { showToast('🔒 请先登录'); return; }
-        if (!canComment(currentUser, currentClassKey)) { showToast('🔒 您无权点评该班教师'); return; }
+        if (!hasFullAccess(currentUser) && currentUser.role !== '级委会') {
+    showToast('🔒 仅领导可点评教师');
+    return;
+}
         var teachers = getCurrentTeachers();
         if (!teachers || index >= teachers.length) return;
         selectedTeacherIndex = index;
@@ -4212,7 +4213,6 @@
         var legend = document.querySelector('.seat-legend');
         if (legend) legend.style.display = 'none';
         $('teacherGrid').innerHTML = '';
-        $('teacherBadge').textContent = isGradeLeader ? '本年级概览' : '全校概览';
         $('scheduleBody').innerHTML = '';
 
         var html = '';
@@ -4488,7 +4488,6 @@
                         for (var i = 0; i < adminEntries.length; i++) adminEntries[i].style.display = '';
                         if (legend) legend.style.display = '';
                         $('seatInfo').textContent = '点击学生可标注';
-                        $('teacherBadge').textContent = '点击可点评';
                         $('seatGrid').innerHTML = '';
                         $('statsBar').style.display = '';
 
@@ -4515,7 +4514,6 @@
                         for (var i = 0; i < adminEntries.length; i++) adminEntries[i].style.display = 'none';
                         if (legend) legend.style.display = 'none';
                         $('seatInfo').textContent = '';
-                        $('teacherBadge').textContent = '';
                         $('scheduleBody').innerHTML = '';
                         $('teacherGrid').innerHTML = '';
                         $('seatGrid').innerHTML = '';
