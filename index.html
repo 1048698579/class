@@ -542,7 +542,7 @@
     var _backfillData = {};
     var _editingClassKey = null;
     var _batchTab = 'create';
-    var _dashboardSummary = null;tchTab = 'create';
+    var _dashboardSummary = null;
     var _loadedMonths = {};   // 已加载的月份缓存 { "班级_YYYY-MM": true }_batchTab = 'create';
 
     function $(id) { return document.getElementById(id); }
@@ -1381,7 +1381,6 @@
     }
 
     function updateHeaderStats() {
-        var classEl = $('headerClassStats');
         var studentEl = $('headerStudentStats');
         var dinerEl = $('headerDinerStats');
         var afterEl = $('headerAfterStats');
@@ -1637,19 +1636,17 @@
         applyDayAfter1(today, currentClassKey, name, after1Checked);
         applyDayAfter2(today, currentClassKey, name, after2Checked);
 
-        // 清理空的班级记录
+                // 清理空的班级记录
         var clsRec = attendanceRecords[today][currentClassKey];
         var hasAnyData = false;
         for (var k in clsRec) { hasAnyData = true; break; }
         if (!hasAnyData) delete attendanceRecords[today][currentClassKey];
 
-        saveDayAttendance(currentClassKey, today).then(function() { updateHeaderStats(); });
         updateSeatStatus();
 
         if (canComment(currentUser, currentClassKey) && comment) {
             var statusMap = { present:'✅ 到课', late:'⏰ 迟到', absent:'❌ 缺勤', leave:'📝 请假', 'not-in-room':'🚪 未在教室' };
             var statusLabel = status ? (statusMap[status] || status) : '✅ 到课';
-            // 保存点评
             appendComment(today, currentClassKey, '_comment_' + name, {
                 text: comment,
                 operator: currentUser.name,
@@ -1657,17 +1654,17 @@
                 time: getNowStr()
             });
             saveDayAttendance(currentClassKey, today).then(function() {
+                updateHeaderStats();
                 var msg = '📢 **学生课堂点评**\n\n🏫 班级：' + data.className + '\n👤 学生：' + name + '\n📊 出勤：' + statusLabel + '\n💬 点评：' + comment + '\n👨‍🏫 点评人：' + currentUser.name + '（' + currentUser.role + '）\n🕐 时间：' + getNowStr();
                 sendDingTalk(msg, false);
             });
             showToast('✅ 已点评 ' + name);
         } else {
+            saveDayAttendance(currentClassKey, today).then(function() { updateHeaderStats(); });
             var statusMap2 = { present:'✅ 到课', late:'⏰ 迟到', absent:'❌ 缺勤', leave:'📝 请假', 'not-in-room':'🚪 未在教室' };
             showToast('✅ 已更新 ' + name + '：' + (statusMap2[status] || status));
         }
         closeStudentModal();
-    }
-
     // ================================================================
     //  教师弹窗
     // ================================================================
@@ -2825,7 +2822,7 @@
         if (targetKeys.length === 0) { showToast('⚠️ 没有可导出的班级数据'); return; }
 
         showToast('⏳ 正在加载数据...');
-        fetch(API_BASE + '/api/attendance-batch?classKeys=' + encodeURIComponent(targetKeys.join(',')) + '&month=' + month)
+        fetch(API_BASE + '/api/attendance-batch?classKeys=' + targetKeys.join(',') + '&month=' + month)
             .then(function(r) { return r.json(); })
             .then(function(result) {
                 if (result.success && result.data) {
@@ -3096,7 +3093,7 @@
         if (targetKeys.length === 0) { showToast('⚠️ 没有可导出的班级数据'); return; }
 
         showToast('⏳ 正在加载数据...');
-        fetch(API_BASE + '/api/attendance-batch?classKeys=' + encodeURIComponent(targetKeys.join(',')) + '&month=' + month)
+        fetch(API_BASE + '/api/attendance-batch?classKeys=' + targetKeys.join(',') + '&month=' + month)
             .then(function(r) { return r.json(); })
             .then(function(result) {
                 if (result.success && result.data) {
@@ -3313,7 +3310,7 @@
         if (targetKeys.length === 0) { showToast('⚠️ 没有可导出的班级数据'); return; }
 
         showToast('⏳ 正在加载数据...');
-        fetch(API_BASE + '/api/attendance-batch?classKeys=' + encodeURIComponent(targetKeys.join(',')) + '&month=' + month)
+        fetch(API_BASE + '/api/attendance-batch?classKeys=' + targetKeys.join(',') + '&month=' + month)
             .then(function(r) { return r.json(); })
             .then(function(result) {
                 if (result.success && result.data) {
