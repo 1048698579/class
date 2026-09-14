@@ -648,9 +648,33 @@
 
     function getDayAfter2(date, classKey, name) {
         if (!name || !classKey) return false;
+
+        // 一二年级周一没有第二节
+        var grade = '';
+        var cls = CLASS_DATA_LIST[classKey];
+        if (cls && cls.className) {
+            var gradeMap = ['一年级','二年级','三年级','四年级','五年级','六年级','七年级','八年级','九年级','高一年级'];
+            for (var i = 0; i < gradeMap.length; i++) {
+                if (cls.className.indexOf(gradeMap[i]) !== -1) { grade = gradeMap[i]; break; }
+            }
+            if (!grade) {
+                var m = cls.className.match(/(\d{1,2})\s*[\.\(（]/);
+                if (m) {
+                    var n = parseInt(m[1]);
+                    if (n === 1) grade = '一年级';
+                    else if (n === 2) grade = '二年级';
+                }
+            }
+        }
+        if (!grade) grade = getClassGrade(classKey);
+
+        if (grade === '一年级' || grade === '二年级') {
+            var dt = new Date(date);
+            if (dt.getDay() === 1) return false;  // 周一
+        }
+
         var rec = attendanceRecords[date] && attendanceRecords[date][classKey];
         if (rec && rec['_after2_' + name] !== undefined) return rec['_after2_' + name];
-        var cls = CLASS_DATA_LIST[classKey];
         return cls && cls.afterClass2 ? (cls.afterClass2[name] || false) : false;
     }
 
@@ -1519,7 +1543,46 @@
 
         if (dinerCheck) dinerCheck.checked = todayDiner;
         if (afterCheck1) afterCheck1.checked = todayAfter1;
-        if (afterCheck2) afterCheck2.checked = todayAfter2;
+        
+        // 一二年级周一没有课后2
+        var _dow = new Date(today).getDay();
+        var _grade = '';
+        var _cls = CLASS_DATA_LIST[currentClassKey];
+        if (_cls && _cls.className) {
+            if (_cls.className.indexOf('一年级') !== -1) _grade = '一年级';
+            else if (_cls.className.indexOf('二年级') !== -1) _grade = '二年级';
+            else {
+                var _m = _cls.className.match(/^(\d{1,2})\s*[\.\(（]/);
+                if (_m) {
+                    var _n = parseInt(_m[1]);
+                    if (_n === 1) _grade = '一年级';
+                    else if (_n === 2) _grade = '二年级';
+                }
+            }
+        }
+        var isMonNoAfter2 = (_grade === '一年级' || _grade === '二年级') && _dow === 1;
+        
+        if (afterCheck2) {
+            if (isMonNoAfter2) {
+                afterCheck2.checked = false;
+                afterCheck2.disabled = true;
+            } else {
+                afterCheck2.checked = todayAfter2;
+                afterCheck2.disabled = false;
+            }
+        }
+        
+        // 提示
+        var afterLabel2El = $('afterLabel2');
+        if (afterLabel2El) {
+            if (isMonNoAfter2) {
+                afterLabel2El.className = 'disabled-label';
+                afterLabel2El.title = '一二年级周一没有第二节';
+            } else {
+                afterLabel2El.className = '';
+                afterLabel2El.title = '';
+            }
+        }
 
         var dinerHint = $('dinerDayHint');
         if (dinerHint) {
@@ -1632,10 +1695,29 @@
         var after1Checked = $('studentAfterCheck1') ? $('studentAfterCheck1').checked : false;
         var after2Checked = $('studentAfterCheck2') ? $('studentAfterCheck2').checked : false;
 
+        // 一二年级周一强制 false
+        var _dow2 = new Date(today).getDay();
+        var _grade2 = '';
+        var _cls2 = CLASS_DATA_LIST[currentClassKey];
+        if (_cls2 && _cls2.className) {
+            if (_cls2.className.indexOf('一年级') !== -1) _grade2 = '一年级';
+            else if (_cls2.className.indexOf('二年级') !== -1) _grade2 = '二年级';
+            else {
+                var _m2 = _cls2.className.match(/^(\d{1,2})\s*[\.\(（]/);
+                if (_m2) {
+                    var _n2 = parseInt(_m2[1]);
+                    if (_n2 === 1) _grade2 = '一年级';
+                    else if (_n2 === 2) _grade2 = '二年级';
+                }
+            }
+        }
+        if ((_grade2 === '一年级' || _grade2 === '二年级') && _dow2 === 1) {
+            after2Checked = false;
+        }
+
         applyDayDiner(today, currentClassKey, name, dinerChecked);
         applyDayAfter1(today, currentClassKey, name, after1Checked);
         applyDayAfter2(today, currentClassKey, name, after2Checked);
-
                 // 清理空的班级记录
         var clsRec = attendanceRecords[today][currentClassKey];
         var hasAnyData = false;
